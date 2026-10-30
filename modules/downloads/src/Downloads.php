@@ -121,6 +121,11 @@ final class Downloads
         if (!in_array($status, ['paid', 'completed'], true) || in_array($old, ['paid', 'processing', 'completed'], true)) {
             return;
         }
+        foreach ((array) get_post_meta($orderId, '_order_items', true) as $item) {
+            if (is_array($item)) {
+                self::protectProduct((int) ($item['id'] ?? 0)); // a file uploaded before the module ran
+            }
+        }
         $links = self::links($orderId);
         $email = (string) get_post_meta($orderId, '_order_email', true);
         if ($links === [] || !is_email($email)) {
@@ -134,12 +139,35 @@ final class Downloads
     }
 
     /** Protect files of private `file` fields when a product is saved. */
+    /**
+     * save_post_product: move the product's download file into the private dir. No capability check of the saving
+     * user: WordPress already authorized the save (admin, REST, WP-CLI, import, cron), the attachment id comes from
+     * the stored private field (never from the request), and the move only makes the file less reachable.
+     */
     public static function onSave(int $postId): void
     {
-        $id = self::attachment($postId);
-        if ($id > 0 && current_user_can('edit_post', $postId)) {
-            Storage::protect($id);
+        self::protectProduct($postId);
+    }
+
+    /** added/updated_post_meta: the file field was set after the save (WP-CLI, importers, demo scripts). */
+    public static function onMeta(int $metaId, int $postId, string $key): void
+    {
+        if ($key !== '' && str_ends_with($key, '_' . self::$field)) {
+            self::protectProduct($postId);
         }
+    }
+
+    /** True when a file was moved (or already private). */
+    public static function protectProduct(int $postId): bool
+    {
+        if (get_post_type($postId) !== 'product') {
+            return false;
+        }
+        $id = self::attachment($postId);
+        if ($id <= 0 || get_post_type($id) !== 'attachment') {
+            return false;
+        }
+        return Storage::protect($id) !== '';
     }
 
     /** admin-post.php?action=moduly_download — serve or 403. */
