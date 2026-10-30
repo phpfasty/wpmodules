@@ -15,6 +15,10 @@
         <!-- ADR-002 names migrations Migration_NNNN_<Name> -->
         <exclude-pattern>*/Migrations/Migration_*</exclude-pattern>
     </rule>
+    <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+        <!-- conditional declaration of the theme interface next to its loader class (types module) -->
+        <exclude-pattern>*/modules/types/src/ThemeContract.php</exclude-pattern>
+    </rule>
     <rule ref="Generic.Files.LineLength">
         <properties><property name="lineLimit" value="140"/></properties>
     </rule>
