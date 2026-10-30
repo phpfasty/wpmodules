@@ -20,7 +20,8 @@ final class Module implements ModuleInterface
         Reviews::configure($context->settings);
         $host = $context->host;
         $host->on('action', 'wpfasty_types_loaded', [Reviews::class, 'setRegistry'], 7);
-        $host->on('filter', 'comments_open', [Reviews::class, 'open'], 10, 2);
+        // After the latte parent's comments-off default (priority 20): products stay open while the module runs.
+        $host->on('filter', 'comments_open', [Reviews::class, 'open'], 30, 2);
         $host->on('filter', 'preprocess_comment', [Reviews::class, 'preprocess'], 5);
         $host->on('action', 'comment_post', [Reviews::class, 'saved']);
         $host->on('action', 'wp_set_comment_status', [Reviews::class, 'statusChanged']);
