@@ -40,6 +40,7 @@ final class FieldTypesTest extends TestCase
 
     public function testFileIsPrivateIntegerAndNeverInRest(): void
     {
+        $GLOBALS['moduly_test_post_types'][42] = 'attachment';
         $f = self::field('file');
         $this->assertTrue($f->isPrivate());
         $this->assertSame('integer', $f->metaType());

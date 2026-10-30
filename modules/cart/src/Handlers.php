@@ -30,20 +30,22 @@ final class Handlers
         $op = isset($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '';
         $id = isset($_POST['product_id']) ? absint(wp_unslash($_POST['product_id'])) : 0;
         $qty = isset($_POST['qty']) ? absint(wp_unslash($_POST['qty'])) : 1;
+        $tier = isset($_POST['license']) ? sanitize_key(wp_unslash($_POST['license'])) : '';
+        $key = isset($_POST['key']) ? sanitize_text_field(wp_unslash($_POST['key'])) : (string) $id;
         $notice = 'updated';
 
         switch ($op) {
             case 'add':
-                $notice = Cart::add($id, max(1, min(Cart::MAX_QTY, $qty))) ? 'added' : 'unavailable';
+                $notice = Cart::add($id, max(1, min(Cart::MAX_QTY, $qty)), $tier) ? 'added' : 'unavailable';
                 break;
             case 'update':
                 $qtys = isset($_POST['qtys']) && is_array($_POST['qtys']) ? array_map('absint', wp_unslash($_POST['qtys'])) : [];
-                foreach ((array) $qtys as $pid => $q) {
-                    Cart::set(absint($pid), max(0, min(Cart::MAX_QTY, (int) $q)));
+                foreach ((array) $qtys as $lineKey => $q) {
+                    Cart::set(self::lineKey((string) $lineKey), max(0, min(Cart::MAX_QTY, (int) $q)));
                 }
                 break;
             case 'remove':
-                Cart::set($id, 0);
+                Cart::set(self::lineKey($key), 0);
                 $notice = 'removed';
                 break;
             default:
@@ -57,6 +59,12 @@ final class Handlers
         }
         wp_safe_redirect(add_query_arg('cart', $notice, $target));
         exit;
+    }
+
+    /** Cart line key from a form (`5` or `5~extended`); anything else matches no line. */
+    private static function lineKey(string $raw): string
+    {
+        return preg_match('/^\d+(?:~[a-z0-9_-]{1,32})?$/', $raw) === 1 ? $raw : '0';
     }
 
     /** Nonce + POST + rate limit (shared with the orders module). */
