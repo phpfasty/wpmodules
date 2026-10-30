@@ -30,3 +30,9 @@ if (!function_exists('esc_url')) {
         return preg_match('#^https?://#', $url) === 1 ? htmlspecialchars($url, ENT_QUOTES) : '';
     }
 }
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags(string $text): string
+    {
+        return trim(strip_tags($text));
+    }
+}

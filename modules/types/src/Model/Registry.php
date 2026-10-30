@@ -150,6 +150,10 @@ final class Registry implements BootableServiceInterface
             'number' => is_numeric($raw),
             'boolean' => in_array($raw, ['0', '1', ''], true),
             'date' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) === 1,
+            'file', 'user' => preg_match('/^\d*$/', $raw) === 1,
+            'semver' => $raw === '' || Field::semver($raw) === $raw,
+            'enum' => $raw === '' || in_array($raw, $field->options(), true),
+            'license_tiers' => $raw === '' || Field::tiers($raw) !== [],
             default => true,
         };
     }
@@ -169,6 +173,9 @@ final class Registry implements BootableServiceInterface
         }
         $data['fields'] = [];
         foreach ($type->fields as $name => $field) {
+            if ($field->isPrivate()) {
+                continue; // e.g. download_file: only the downloads module reads it, after payment
+            }
             $data['fields'][$name] = self::read($post->ID, $field);
         }
         $data['terms'] = [];
