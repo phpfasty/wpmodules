@@ -55,10 +55,12 @@ try {
             $tmp = sys_get_temp_dir() . '/moduly-verify-' . bin2hex(random_bytes(4));
             $installed = [];
             $installer = new Installer($tmp . '/m', $tmp . '/q', new Verifier(new Keyring([$argv[3] ?? '' => [$argv[4] ?? '']])), new DependencyResolver(Moduly::VERSION, PHP_VERSION, ['wp' => '99.0.0']));
+            $byId = static fn (array $list): array => array_column(array_map(static fn ($m) => [$m->id, $m], $list), 1, 0);
             foreach (array_slice($argv, 5) as $dep) {
-                $installed[] = $installer->install($dep)->manifest;
+                // Each dependency is checked against the ones listed before it (cart before orders).
+                $installed[] = $installer->install($dep, $byId($installed))->manifest;
             }
-            $r = $installer->install($argv[2] ?? '', array_column(array_map(static fn ($m) => [$m->id, $m], $installed), 1, 0));
+            $r = $installer->install($argv[2] ?? '', $byId($installed));
             fwrite(STDERR, sprintf("OK %s %s signed=%s\n", $r->manifest->id, (string) $r->manifest->version, $r->signed ? 'yes' : 'no'));
             Fs::remove($tmp);
             break;
