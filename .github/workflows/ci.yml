@@ -45,6 +45,7 @@ jobs:
           KEY=$(sed -n "s/.*PHPFASTY = '\(.*\)';/\1/p" moduly/src/Keys.php)
           php tools/moduly.php verify dist/modules/cart-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/orders-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
+          php tools/moduly.php verify dist/modules/types-*.zip phpfasty "$KEY"
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -113,6 +114,18 @@ jobs:
           grep -q 'Back to site' /tmp/b.html
           wp moduly enable orders
           curl -s -o /dev/null -w '%{http_code}\n' -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
+      - name: Types module — old schema → migrate → switch theme → back, disable/enable, prune (meta intact)
+        working-directory: site
+        env:
+          WPFASTY_GIST: 534c59bcd01563580218570cfac273ca
+        run: |
+          mkdir -p ../themes
+          curl -fsSL "https://api.github.com/gists/$WPFASTY_GIST" -H "Authorization: Bearer ${{ github.token }}" > /tmp/gist.json
+          for f in latte latte-shop wpfasty-types; do
+            url=$(php -r '$g=json_decode(file_get_contents("/tmp/gist.json"),true); echo $g["files"][$argv[1].".zip.b64"]["raw_url"];' "$f")
+            curl -fsSL "$url" | base64 -d > "../themes/$f.zip"
+          done
+          bash ../tests/wp/types-roundtrip.sh ../dist ../themes
       - name: Tampered package is rejected
         working-directory: site
         run: |

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/stubs-theme.php';
 
 // Minimal WordPress stubs for unit tests of module code (no WP runtime).
 if (!function_exists('wp_salt')) {

@@ -27,3 +27,13 @@ WordPress adapter (this repo): `moduly/src/Unavailable.php` registers fallbacks 
 `admin_post_nopriv_<action>` and `rest_pre_dispatch` of declared endpoints of installed modules that did not boot.
 Required tests: `tests/UnavailableTest.php::testEveryModuleDeclaresItsEndpoints` (static: every `admin_post_*` hook and
 `register_rest_route` namespace in `modules/*/src` is declared) plus the CI "Disable scenario" step (503 + Retry-After).
+
+## Data and migrations (all modules)
+
+- Migrations are forward-only `Migration_NNNN_<Name>` (no `down()`), idempotent, batched; they never call
+  `delete_*` or destructive SQL (`MigrationGuard`, `TypesTest`). Disable/uninstall never deletes data.
+- The only deletes allowed in module code are explicit WP-CLI commands marked `@moduly-destructive-cli`
+  (dry-run by default, `--yes` required, JSON backup first, no hooks) — enforced by `ModulePackagesTest`.
+- A module replacing theme classes (types) must leave the theme fallback working when disabled; cover it with
+  an integration step (see `tests/wp/types-roundtrip.sh`).
+

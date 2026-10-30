@@ -20,6 +20,7 @@
             "PhpFasty\\Moduly\\": "moduly/lib/core/src/",
             "PhpFasty\\Module\\Cart\\": "modules/cart/src/",
             "PhpFasty\\Module\\Orders\\": "modules/orders/src/",
+            "PhpFasty\\Module\\Types\\": "modules/types/src/",
             "PhpFasty\\WpModules\\Tests\\": "tests/"
         }
     },

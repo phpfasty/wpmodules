@@ -59,6 +59,11 @@ final class ModulePackagesTest extends TestCase
     {
         foreach (Fs::files($dir) as $rel) {
             $code = (string) file_get_contents($dir . '/' . $rel);
+            if (str_contains($code, '@moduly-destructive-cli')) {
+                // Explicit WP-CLI deletes (backup first, --yes): must not hook into requests.
+                $this->assertDoesNotMatchRegularExpression('/\b(add_action|add_filter|->on)\s*\(/', $code, $rel);
+                continue;
+            }
             $this->assertDoesNotMatchRegularExpression('/\b(delete_post_meta|wp_delete_post|DROP\s+TABLE|TRUNCATE)\b/i', $code, $rel);
         }
     }

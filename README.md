@@ -12,6 +12,15 @@ Monorepo of the WordPress side of [phpfasty/moduly](https://github.com/phpfasty/
 - `modules/cart`, `modules/orders` — the shop logic extracted from the latte-shop theme (alexy-os/wp-fasty): signed
   cookie cart `latte_shop_cart`, money in integer cents, private `shop_order` posts with the same `_order_*` meta keys.
   Themes keep presentation only and read `wpfasty_shop_{state,cart,product,checkout,order}` filters.
+- `modules/types` — declarative post types (`types/*.php` of the active theme): the theme's
+  `WPFasty\Types\{Registry,Field,PostType}` are `class_alias`ed to the module on `plugins_loaded` (before the theme's
+  Composer autoloader exists), `wpfasty_*` hooks unchanged; data side of the `wpfasty-types` plugin (meta, metaboxes,
+  columns). Forward-only, idempotent `Migration_NNNN_*` (option `moduly_schema_version`): field kind/key changes
+  declare `aliases` (read new key, then aliases; invalid → default + `moduly_types_invalid_value`), `0002` backfills
+  new keys in batches, nothing is deleted. `wp moduly types prune --dry-run` lists unclaimed meta; only `--yes`
+  deletes, after a JSON backup in `wp-content/moduly/backups`, batched under a lock. Disabled → theme Registry +
+  plugin resume, data intact (`tests/wp/types-roundtrip.sh` in CI).
+- Release `edge` is published only from a green CI run on main (`release.yml` on `workflow_run`).
 
 Trust: modules signed by publisher `phpfasty` are accepted (public key in `moduly/src/Keys.php`); add keys with
 `MODULY_TRUSTED_KEYS`, revoke with `MODULY_REVOKED_KEYS`; unsigned modules only with `MODULY_ALLOW_UNSIGNED` on

@@ -68,6 +68,8 @@ final class Plugin
         $container = new Container();
         $container->instance('wp.rate_limiter', new RateLimiter());
         $container->instance('wp.audit', $audit);
+        $container->instance('wp.migrator', new \PhpFasty\Moduly\Migration\Migrator(new OptionVersions(), new OptionLock()));
+        $container->instance('wp.theme_definitions', new ThemeDefinitions());
         $kernel = new Kernel(Paths::modules(), $state, $host, $resolver, $container, $audit);
         $modules = new Modules($kernel, $state, $audit, $resolver);
         $container->instance('wp.modules', $modules);

@@ -1,0 +1,39 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "types",
+    "name": "Types",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Declarative post types for WP FastY themes (types/*.php): registry, meta, metaboxes, forward-only data migrations and a safe prune command.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4"
+    },
+    "provides": {
+        "features": [
+            "types"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none",
+        "cpt:register",
+        "db:options",
+        "db:postmeta",
+        "files:private",
+        "rest:public"
+    ],
+    "entry": "PhpFasty\\Module\\Types\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\Types\\": "src/"
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": []
+    }
+}

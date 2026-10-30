@@ -1,12 +1,16 @@
 name: Release zips
 # Signed release zips as public GitHub release assets (no extra token: GITHUB_TOKEN, contents: write).
-#   push to main → rolling pre-release "edge" (assets replaced in place; the tag is never moved, notes carry the commit)
+#   CI green on main → rolling pre-release "edge" (workflow_run: only commits whose full CI — lint, phpstan, phpunit,
+#                       WordPress integration incl. the types roundtrip — passed; assets replaced in place, tag never moved)
 #   tag v*       → versioned release
 # Stable URLs (wp-fasty tools/playground-build.sh downloads them server-side):
-#   https://github.com/phpfasty/wpmodules/releases/download/edge/{moduly,cart,orders}.zip + SHA256SUMS
+#   https://github.com/phpfasty/wpmodules/releases/download/edge/{moduly,cart,orders,types}.zip + SHA256SUMS
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
+  push:
     tags: ['v*']
   workflow_dispatch:
 permissions:
@@ -17,8 +21,16 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # edge only from a green CI run of a push to main; tags and manual runs re-run the tests below
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -37,6 +49,7 @@ jobs:
           KEY=$(sed -n "s/.*PHPFASTY = '\(.*\)';/\1/p" moduly/src/Keys.php)
           php tools/moduly.php verify dist/modules/cart-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/orders-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
+          php tools/moduly.php verify dist/modules/types-*.zip phpfasty "$KEY"
       - name: Stable asset names
         run: |
           mkdir out
@@ -50,16 +63,16 @@ jobs:
         run: |
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
-            gh release create "$TAG" out/* --title "$TAG" --notes "Signed ModulY plugin and modules ($GITHUB_SHA)" --verify-tag
+            gh release create "$TAG" out/* --title "$TAG" --notes "Signed ModulY plugin and modules ($SHA)" --verify-tag
           else
             TAG=edge
-            gh release view edge >/dev/null 2>&1 || gh release create edge --prerelease --title "edge (main)" --notes "Rolling build of main" --target "$GITHUB_SHA"
-            gh release edit edge --notes "Rolling build of main at $GITHUB_SHA" --prerelease
+            gh release view edge >/dev/null 2>&1 || gh release create edge --prerelease --title "edge (main)" --notes "Rolling build of main" --target "$SHA"
+            gh release edit edge --notes "Rolling build of main at $SHA (CI green)" --prerelease
             gh release upload edge out/* --clobber
           fi
       - name: Public download check
         run: |
           TAG=${GITHUB_REF#refs/tags/}; [[ "$GITHUB_REF" == refs/tags/* ]] || TAG=edge
-          for f in moduly.zip cart.zip orders.zip SHA256SUMS; do
+          for f in moduly.zip cart.zip orders.zip types.zip SHA256SUMS; do
             curl -fsSLo /dev/null -w "$f %{http_code}\n" "https://github.com/phpfasty/wpmodules/releases/download/$TAG/$f"
           done

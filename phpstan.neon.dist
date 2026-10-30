@@ -9,9 +9,12 @@ parameters:
         - moduly/src
         - modules
         - tests
+    excludePaths:
+        - tests/fake-wp-functions.php
     scanFiles:
         - vendor/php-stubs/wp-cli-stubs/wp-cli-stubs.php
         - vendor/php-stubs/wp-cli-stubs/wp-cli-commands-stubs.php
     bootstrapFiles:
         - tests/bootstrap.php
         - tests/phpstan-constants.php
+        - tests/stubs-theme.php
