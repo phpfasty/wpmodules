@@ -26,6 +26,9 @@ final class Module implements ModuleInterface
         $host->on('filter', 'wpfasty_shop_order', [Downloads::class, 'order'], 20);
         $host->on('action', 'wpfasty_shop_order_status', [Downloads::class, 'onStatus'], 10, 3);
         $host->on('action', 'save_post_product', [Downloads::class, 'onSave'], 20);
+        foreach (['added_post_meta', 'updated_post_meta'] as $hook) {
+            $host->on('action', $hook, [Downloads::class, 'onMeta'], 20, 3);
+        }
     }
 
     public function activate(ModuleContext $context): void
