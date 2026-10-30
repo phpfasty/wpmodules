@@ -40,6 +40,9 @@ final class Money
         $value = function_exists('number_format_i18n')
             ? number_format_i18n($cents / 100, 2)
             : number_format($cents / 100, 2);
-        return $symbol . $value;
+        // number_format_i18n() may return &nbsp; entities; views escape, so hand back plain characters.
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Ruble and euro follow the number (ГОСТ style: 4 900,00 ₽).
+        return in_array($currency, ['RUB', 'EUR'], true) ? $value . "\u{00A0}" . $symbol : $symbol . $value;
     }
 }
