@@ -44,6 +44,8 @@ final class Manifest
         public readonly array $hooks,
         public readonly array $settings,
         public readonly array $raw,
+        /** @var array{actions: list<string>, rest: list<string>} */
+        public readonly array $endpoints = ['actions' => [], 'rest' => []],
     ) {
     }
 }

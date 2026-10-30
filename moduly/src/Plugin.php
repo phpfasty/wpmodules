@@ -88,6 +88,15 @@ final class Plugin
 
         register_shutdown_function([$self, 'onShutdown']);
         $self->boot = $kernel->boot($safe);
+        // Disable scenario: answer the declared endpoints of installed modules that are not running.
+        $installed = [];
+        foreach ($state->load() as $rec) {
+            $m = $modules->manifest($rec);
+            if ($m !== null) {
+                $installed[$m->id] = $m;
+            }
+        }
+        Unavailable::register(Unavailable::collect($installed, $self->boot['booted']));
         if ($safe) {
             $audit->record('safe-mode', '', '', 'active');
         }

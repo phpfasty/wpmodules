@@ -98,6 +98,21 @@ jobs:
         run: |
           wp eval '$s = apply_filters("wpfasty_shop_state", []); if (empty($s["enabled"])) { exit(1); } echo "shop enabled\n";'
           wp eval 'foreach (["admin_post_nopriv_latte_shop_cart","admin_post_latte_shop_cart","admin_post_latte_shop_checkout"] as $h) { if (!has_action($h)) { echo "missing $h\n"; exit(1); } } echo "handlers ok\n";'
+      - name: Disable scenario — a disabled module's form answers 503, not a blank page
+        working-directory: site
+        run: |
+          wp moduly disable orders
+          wp server --host=127.0.0.1 --port=8080 >/tmp/server.log 2>&1 &
+          sleep 3
+          curl -s -D /tmp/h.txt -o /tmp/b.html -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php
+          cat /tmp/h.txt
+          grep -q '^HTTP/1.1 503' /tmp/h.txt
+          grep -qi '^Retry-After: 300' /tmp/h.txt
+          grep -qi 'no-cache\|no-store' /tmp/h.txt
+          grep -q 'Temporarily unavailable' /tmp/b.html
+          grep -q 'Back to site' /tmp/b.html
+          wp moduly enable orders
+          curl -s -o /dev/null -w '%{http_code}\n' -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
       - name: Tampered package is rejected
         working-directory: site
         run: |

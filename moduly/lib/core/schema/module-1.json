@@ -61,6 +61,15 @@
         }
       }
     },
+    "endpoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Entry points the module owns; while it is disabled the host answers them with 503 'temporarily unavailable'",
+      "properties": {
+        "actions": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_\\-/]{0,99}$" } },
+        "rest": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_\\-/]{0,99}$" } }
+      }
+    },
     "settings": { "type": "object", "description": "JSON Schema subset (type/enum/min/max/pattern/format); objects need additionalProperties: false" }
   }
 }

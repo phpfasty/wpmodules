@@ -20,8 +20,11 @@ final class ManifestValidator
 
     private const TOP = [
         '$schema', 'id', 'name', 'version', 'publisher', 'license', 'description', 'requires', 'provides',
-        'permissions', 'entry', 'autoload', 'hooks', 'settings',
+        'permissions', 'entry', 'autoload', 'hooks', 'settings', 'endpoints',
     ];
+    /** Host entry points a module owns; the host answers them with "unavailable" while the module is disabled. */
+    private const ENDPOINT_KINDS = ['actions', 'rest'];
+    private const ENDPOINT_PATTERN = '#^[a-z0-9][a-z0-9_\-/]{0,99}$#';
     private const REQUIRED = ['id', 'name', 'version', 'publisher', 'license', 'entry', 'autoload'];
     private const RESERVED_NAMESPACES = ['PhpFasty\\Moduly\\', 'WP_', 'WPFasty\\Core\\'];
     private const HOOK_TYPES = ['action', 'filter'];
@@ -105,6 +108,8 @@ final class ManifestValidator
             $this->settingsSchema($settings, 'settings');
         }
 
+        $endpoints = $this->endpoints($data['endpoints'] ?? []);
+
         if ($this->errors !== [] || $version === null) {
             throw new ManifestException('invalid_manifest', "Invalid module.json:\n- " . implode("\n- ", $this->errors));
         }
@@ -129,6 +134,7 @@ final class ManifestValidator
             $hooks,
             $settings,
             $data,
+            $endpoints,
         );
     }
 
@@ -367,5 +373,37 @@ final class ManifestValidator
                 $this->settingsSchema($schema['items'], "{$path}.items");
             }
         }
+    }
+
+    /**
+     * `endpoints`: {actions: [form/action names], rest: [route prefixes]} — declared so the host can still answer them
+     * (HTTP 503 "temporarily unavailable") while the module is disabled.
+     *
+     * @return array{actions: list<string>, rest: list<string>}
+     */
+    private function endpoints(mixed $endpoints): array
+    {
+        $out = ['actions' => [], 'rest' => []];
+        if (!is_array($endpoints) || ($endpoints !== [] && array_is_list($endpoints))) {
+            $this->errors[] = '"endpoints" must be an object';
+            return $out;
+        }
+        $this->unknownKeys($endpoints, self::ENDPOINT_KINDS, 'endpoints.');
+        foreach (self::ENDPOINT_KINDS as $kind) {
+            $list = $endpoints[$kind] ?? [];
+            if (!is_array($list) || !array_is_list($list)) {
+                $this->errors[] = sprintf('"endpoints.%s" must be an array of strings', $kind);
+                continue;
+            }
+            foreach ($list as $name) {
+                if (!is_string($name) || preg_match(self::ENDPOINT_PATTERN, $name) !== 1) {
+                    $this->errors[] = sprintf('endpoints.%s: invalid name %s', $kind, is_string($name) ? '"' . $name . '"' : '');
+                    continue;
+                }
+                $out[$kind][] = $name;
+            }
+            $out[$kind] = array_values(array_unique($out[$kind]));
+        }
+        return $out;
     }
 }

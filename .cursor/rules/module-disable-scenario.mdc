@@ -1,0 +1,29 @@
+---
+description: Every ModulY module must handle being disabled (endpoints, forms, UI, cron, data) — with a test
+alwaysApply: true
+---
+
+# Disable scenario is mandatory for every module
+
+A module can be disabled (by an admin, by ModulY after a fatal, or in safe mode) while its pages, forms and bookmarks
+still exist. Every module and every change to a module MUST handle that:
+
+1. **Endpoints** — declare every entry point it owns in `module.json` → `endpoints`:
+   `actions` (form/admin-post action names) and `rest` (REST route prefixes, e.g. `cart/v1`). The host answers them
+   while the module is disabled: HTTP 503 + `Retry-After`, no-cache, escaped i18n "temporarily unavailable" page with a
+   safe "Back to site" link (REST: 503 error). Never a blank page, never a PHP error.
+2. **Forms / UI** — themes and other modules read an "is available" flag from data (context/filters with safe defaults),
+   never assume the module is there; when it is off they hide the form/button and show the unavailable message.
+3. **Cron / queues** — scheduled events are unscheduled in `deactivate()` and re-scheduled in `activate()`; a handler that
+   still fires while disabled must be a no-op.
+4. **Data is kept** — `deactivate()` and removal never delete posts, meta, options or tables (ADR-002, forward-only).
+5. **Test required** — each module ships a test that covers the disabled state: its endpoints are declared in
+   `module.json`, and nothing it registers runs when it is not booted. A PR that adds an endpoint without declaring it
+   (or without the test) is not mergeable.
+
+Core (this repo): `ManifestValidator` validates `endpoints`; `Manifest::$endpoints` exposes them to hosts.
+
+WordPress adapter (this repo): `moduly/src/Unavailable.php` registers fallbacks for `admin_post_<action>` /
+`admin_post_nopriv_<action>` and `rest_pre_dispatch` of declared endpoints of installed modules that did not boot.
+Required tests: `tests/UnavailableTest.php::testEveryModuleDeclaresItsEndpoints` (static: every `admin_post_*` hook and
+`register_rest_route` namespace in `modules/*/src` is declared) plus the CI "Disable scenario" step (503 + Retry-After).
