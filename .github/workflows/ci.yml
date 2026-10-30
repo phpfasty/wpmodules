@@ -120,10 +120,8 @@ jobs:
           WPFASTY_GIST: 534c59bcd01563580218570cfac273ca
         run: |
           mkdir -p ../themes
-          curl -fsSL "https://api.github.com/gists/$WPFASTY_GIST" -H "Authorization: Bearer ${{ github.token }}" > /tmp/gist.json
           for f in latte latte-shop wpfasty-types; do
-            url=$(php -r '$g=json_decode(file_get_contents("/tmp/gist.json"),true); echo $g["files"][$argv[1].".zip.b64"]["raw_url"];' "$f")
-            curl -fsSL "$url" | base64 -d > "../themes/$f.zip"
+            curl -fsSL --retry 3 "https://gist.githubusercontent.com/alexy-os/$WPFASTY_GIST/raw/$f.zip.b64" | base64 -d > "../themes/$f.zip"
           done
           bash ../tests/wp/types-roundtrip.sh ../dist ../themes
       - name: Tampered package is rejected
