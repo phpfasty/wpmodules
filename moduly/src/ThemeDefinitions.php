@@ -18,6 +18,15 @@ final class ThemeDefinitions
     public function arrays(array $dirs): array
     {
         $roots = array_filter([realpath(get_stylesheet_directory()), realpath(get_template_directory())]);
+        // A base layer of the active theme (Latte `Extends:` header) adds its dir through `wpfasty_theme_dirs`;
+        // only directories inside the themes root are accepted.
+        $themes = realpath(get_theme_root());
+        foreach ((array) apply_filters('wpfasty_theme_dirs', []) as $extra) {
+            $real = realpath((string) $extra);
+            if ($real !== false && $themes !== false && $this->inside($real, [$themes])) {
+                $roots[] = $real;
+            }
+        }
         $out = [];
         foreach (array_unique($dirs) as $dir) {
             $real = realpath((string) $dir);
