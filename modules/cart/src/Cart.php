@@ -19,7 +19,12 @@ final class Cart
     public const MAX_QTY = 99;
     public const MAX_LINES = 50;
 
-    /** @var array<int, int>|null product id => qty */
+    /**
+     * Line key => qty. A key is the product id, or `<id>~<tier>` for a product sold under license tiers
+     * (cookie `5:1,9~extended:2.<hmac>`; old `id:qty` cookies stay valid).
+     *
+     * @var array<int|string, int>|null
+     */
     private static ?array $lines = null;
 
     /** @var array{flat: int, free: int} */
@@ -43,7 +48,19 @@ final class Cart
         return (bool) apply_filters('wpfasty_shop_digital_only', self::$digitalOnly);
     }
 
-    /** @return array<int, int> */
+    public static function key(int $id, string $tier = ''): string
+    {
+        return $tier === '' ? (string) $id : $id . '~' . $tier;
+    }
+
+    /** @return array{0: int, 1: string} product id, tier */
+    public static function parse(int|string $key): array
+    {
+        $parts = explode('~', (string) $key, 2);
+        return [(int) $parts[0], $parts[1] ?? ''];
+    }
+
+    /** @return array<int|string, int> */
     public static function lines(): array
     {
         if (self::$lines !== null) {
@@ -54,27 +71,30 @@ final class Cart
         return self::$lines;
     }
 
-    public static function add(int $id, int $qty): bool
+    public static function add(int $id, int $qty, string $tier = ''): bool
     {
-        if (!Catalog::isPurchasable($id)) {
-            return false;
+        $tier = Catalog::tier($id, $tier);
+        if (!Catalog::isPurchasable($id) || $tier === null) {
+            return false; // unknown license tier = tampered form
         }
+        $key = self::key($id, $tier);
         $lines = self::lines();
-        if (!isset($lines[$id]) && count($lines) >= self::MAX_LINES) {
+        if (!isset($lines[$key]) && count($lines) >= self::MAX_LINES) {
             return false;
         }
-        $lines[$id] = ($lines[$id] ?? 0) + max(1, $qty);
+        $lines[$key] = ($lines[$key] ?? 0) + max(1, $qty);
         self::$lines = self::clamp($lines);
         return true;
     }
 
-    public static function set(int $id, int $qty): void
+    public static function set(int|string $key, int $qty): void
     {
         $lines = self::lines();
+        $key = is_int($key) || ctype_digit($key) ? (int) $key : $key;
         if ($qty <= 0) {
-            unset($lines[$id]);
-        } elseif (isset($lines[$id])) {
-            $lines[$id] = $qty;
+            unset($lines[$key]);
+        } elseif (isset($lines[$key])) {
+            $lines[$key] = $qty;
         }
         self::$lines = self::clamp($lines);
     }
@@ -99,17 +119,21 @@ final class Cart
         $items = [];
         $subtotal = 0;
         $physical = false;
-        foreach (self::lines() as $id => $qty) {
-            if (!Catalog::isPurchasable($id)) {
-                continue;
+        foreach (self::lines() as $key => $qty) {
+            [$id, $tier] = self::parse($key);
+            if (!Catalog::isPurchasable($id) || Catalog::tier($id, $tier) !== $tier) {
+                continue; // price is always the server's: a tier the product does not sell is dropped
             }
-            $unit = Catalog::price($id);
+            $unit = Catalog::price($id, $tier);
             $line = $unit * $qty;
             $subtotal += $line;
             $digital = self::digitalOnly() || Catalog::isDigital($id);
             $physical = $physical || !$digital;
             $thumb = get_post_thumbnail_id($id);
             $items[] = [
+                'key' => self::key($id, $tier),
+                'tier' => $tier,
+                'tier_label' => Catalog::tierLabel($id, $tier),
                 'id' => $id,
                 'title' => html_entity_decode(get_the_title($id), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 'url' => (string) get_permalink($id),
@@ -166,7 +190,7 @@ final class Cart
         $_COOKIE[self::COOKIE] = $value;
     }
 
-    /** @param array<int, int> $lines */
+    /** @param array<int|string, int> $lines */
     public static function encode(array $lines): string
     {
         $lines = self::clamp($lines);
@@ -174,27 +198,28 @@ final class Cart
             return '';
         }
         $payload = implode(',', array_map(
-            static fn (int $id, int $qty): string => $id . ':' . $qty,
+            static fn (int|string $key, int $qty): string => $key . ':' . $qty,
             array_keys($lines),
             $lines
         ));
         return $payload . '.' . self::sign($payload);
     }
 
-    /** @return array<int, int> */
+    /** @return array<int|string, int> */
     public static function decode(string $raw): array
     {
         $parts = explode('.', $raw, 2);
         if (count($parts) !== 2 || !hash_equals(self::sign($parts[0]), $parts[1])) {
             return [];
         }
-        if (!preg_match('/^\d+:\d+(?:,\d+:\d+)*$/', $parts[0])) {
+        $line = '\d+(?:~[a-z0-9_-]{1,32})?:\d+';
+        if (!preg_match('/^' . $line . '(?:,' . $line . ')*$/', $parts[0])) {
             return [];
         }
         $lines = [];
         foreach (explode(',', $parts[0]) as $pair) {
-            [$id, $qty] = array_map('intval', explode(':', $pair, 2));
-            $lines[$id] = $qty;
+            [$key, $qty] = explode(':', $pair, 2);
+            $lines[ctype_digit($key) ? (int) $key : $key] = (int) $qty;
         }
         return self::clamp($lines);
     }
@@ -205,22 +230,23 @@ final class Cart
     }
 
     /**
-     * @param array<int, int> $lines
-     * @return array<int, int>
+     * @param array<int|string, int> $lines
+     * @return array<int|string, int>
      */
     private static function clamp(array $lines): array
     {
         $out = [];
-        foreach ($lines as $id => $qty) {
-            $id = (int) $id;
+        foreach ($lines as $key => $qty) {
+            [$id, $tier] = self::parse($key);
             $qty = min(self::MAX_QTY, (int) $qty);
-            if ($id <= 0 || $qty <= 0) {
+            if ($id <= 0 || $qty <= 0 || preg_match('/^[a-z0-9_-]{0,32}$/', $tier) !== 1) {
                 continue;
             }
+            $key = $tier === '' ? $id : self::key($id, $tier);
             $stock = function_exists('get_post_meta') ? Catalog::stock($id) : null;
-            $out[$id] = $stock === null ? $qty : min($qty, $stock);
-            if ($out[$id] <= 0) {
-                unset($out[$id]);
+            $out[$key] = $stock === null ? $qty : min($qty, $stock);
+            if ($out[$key] <= 0) {
+                unset($out[$key]);
             }
             if (count($out) >= self::MAX_LINES) {
                 break;

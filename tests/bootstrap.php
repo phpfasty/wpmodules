@@ -36,3 +36,10 @@ if (!function_exists('wp_strip_all_tags')) {
         return trim(strip_tags($text));
     }
 }
+if (!function_exists('get_post_type')) {
+    /** Post type by id from $GLOBALS['moduly_test_post_types'] (default "product"). */
+    function get_post_type(int $id): string|false
+    {
+        return $GLOBALS['moduly_test_post_types'][$id] ?? 'product';
+    }
+}

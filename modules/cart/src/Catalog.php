@@ -56,9 +56,64 @@ final class Catalog
         return (self::capability($id)['digital'] ?? false) === true;
     }
 
-    /** Effective unit price in cents (sale wins when lower). */
-    public static function price(int $id): int
+    /**
+     * License tiers of a product (`purchasable.license_field`, a types `license_tiers` field: JSON, prices in cents).
+     *
+     * @return list<array{tier: string, label: string, price: int}>
+     */
+    public static function tiers(int $id): array
     {
+        $raw = self::fieldValue($id, 'license_field');
+        $rows = $raw !== '' ? json_decode($raw, true) : null;
+        $out = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $tier = is_array($row) ? (string) ($row['tier'] ?? '') : '';
+            $price = is_array($row) && is_numeric($row['price'] ?? null) ? (int) $row['price'] : 0;
+            if (preg_match('/^[a-z0-9_-]{1,32}$/', $tier) === 1 && $price > 0) {
+                $out[] = ['tier' => $tier, 'label' => (string) ($row['label'] ?? $tier), 'price' => $price];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * The tier a cart line is sold under: '' for products without tiers, the first (default) tier when none was
+     * chosen, the requested one when the product sells it; null when it does not (tampered request).
+     */
+    public static function tier(int $id, string $requested): ?string
+    {
+        $tiers = array_column(self::tiers($id), 'tier');
+        if ($tiers === []) {
+            return $requested === '' ? '' : null;
+        }
+        if ($requested === '') {
+            return $tiers[0];
+        }
+        return in_array($requested, $tiers, true) ? $requested : null;
+    }
+
+    public static function tierLabel(int $id, string $tier): string
+    {
+        foreach (self::tiers($id) as $t) {
+            if ($t['tier'] === $tier) {
+                return $t['label'];
+            }
+        }
+        return '';
+    }
+
+    /** Effective unit price in cents (sale wins when lower); a non-default license tier has its own price. */
+    public static function price(int $id, string $tier = ''): int
+    {
+        $tiers = self::tiers($id);
+        if ($tier !== '' && $tiers !== [] && $tier !== $tiers[0]['tier']) {
+            foreach ($tiers as $t) {
+                if ($t['tier'] === $tier) {
+                    return $t['price'];
+                }
+            }
+            return 0;
+        }
         $regular = Money::cents(self::fieldValue($id, 'price_field'));
         $sale = Money::cents(self::fieldValue($id, 'sale_field'));
         return $sale > 0 && $sale < $regular ? $sale : $regular;
@@ -105,6 +160,12 @@ final class Catalog
             'in_stock' => $stock === null || $stock > 0,
             'purchasable' => self::isPurchasable($id),
             'price_cents' => $price,
+            'licenses' => array_map(static fn (array $t): array => [
+                'tier' => $t['tier'],
+                'label' => $t['label'],
+                'price' => Money::format(self::price($id, $t['tier'])),
+                'price_cents' => self::price($id, $t['tier']),
+            ], self::tiers($id)),
         ]);
     }
 }

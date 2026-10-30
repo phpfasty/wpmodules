@@ -97,6 +97,8 @@ final class Orders
         $items = array_map(static fn (array $i): array => [
             'id' => (int) $i['id'], 'title' => (string) $i['title'], 'sku' => (string) $i['sku'],
             'qty' => (int) $i['qty'], 'unit' => (int) $i['unit'], 'line' => (int) $i['line'],
+            'tier' => (string) ($i['tier'] ?? ''), 'tier_label' => (string) ($i['tier_label'] ?? ''),
+            'digital' => (bool) ($i['digital'] ?? false),
         ], $summary['items']);
         update_post_meta($id, '_order_items', $items);
         update_post_meta($id, '_order_subtotal', $summary['subtotal']);
@@ -168,9 +170,10 @@ final class Orders
                 if (!is_array($item)) {
                     continue;
                 }
+                $tier = (string) ($item['tier_label'] ?? '');
                 printf(
                     '<tr><td>%s</td><td>%d</td><td>%s</td></tr>',
-                    esc_html((string) ($item['title'] ?? '')),
+                    esc_html((string) ($item['title'] ?? '') . ($tier !== '' ? ' — ' . $tier : '')),
                     (int) ($item['qty'] ?? 0),
                     esc_html(self::$cart->format((int) ($item['line'] ?? 0)))
                 );
