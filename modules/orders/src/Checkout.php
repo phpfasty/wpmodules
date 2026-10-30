@@ -54,7 +54,7 @@ final class Checkout
         }
 
         $errors = [];
-        foreach (self::REQUIRED as $required) {
+        foreach (self::required(!empty($summary['digital'])) as $required) {
             if ($c[$required] === '') {
                 $errors[] = $required;
             }
@@ -84,6 +84,18 @@ final class Checkout
     }
 
     /**
+     * Required checkout fields: a downloads-only cart needs no postal address (filter `wpfasty_shop_checkout_required`).
+     *
+     * @return list<string>
+     */
+    public static function required(bool $digital): array
+    {
+        $fields = $digital ? ['name', 'email'] : self::REQUIRED;
+        $fields = (array) apply_filters('wpfasty_shop_checkout_required', $fields, $digital);
+        return array_values(array_intersect(array_map('strval', $fields), self::FIELDS));
+    }
+
+    /**
      * @param array<string, mixed> $shop
      * @return array<string, mixed>
      */
@@ -91,6 +103,7 @@ final class Checkout
     {
         $shop['checkout_nonce'] = wp_create_nonce('latte_shop_checkout');
         $shop['orders'] = true;
+        $shop['checkout_available'] = true;
         return $shop;
     }
 

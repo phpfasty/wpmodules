@@ -29,7 +29,9 @@ final class Shop
             'action' => admin_url('admin-post.php'),
             'cart_nonce' => wp_create_nonce('latte_shop_cart'),
             'count' => Cart::count(),
-            'free_shipping' => Money::format(Cart::freeShippingCents()),
+            'free_shipping' => Cart::digitalOnly() ? '' : Money::format(Cart::freeShippingCents()),
+            'digital' => Cart::digitalOnly(),
+            'cart_available' => true,
         ]);
     }
 

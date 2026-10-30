@@ -25,6 +25,8 @@ final class Cart
     /** @var array{flat: int, free: int} */
     private static array $shipping = ['flat' => 500, 'free' => 10000];
 
+    private static bool $digitalOnly = false;
+
     /** @param array<string, mixed> $settings */
     public static function configure(array $settings): void
     {
@@ -32,6 +34,13 @@ final class Cart
             'flat' => is_int($settings['flat_shipping_cents'] ?? null) ? $settings['flat_shipping_cents'] : 500,
             'free' => is_int($settings['free_shipping_cents'] ?? null) ? $settings['free_shipping_cents'] : 10000,
         ];
+        self::$digitalOnly = ($settings['digital_only'] ?? false) === true;
+    }
+
+    /** Store sells downloads only (setting `digital_only`, filter `wpfasty_shop_digital_only`). */
+    public static function digitalOnly(): bool
+    {
+        return (bool) apply_filters('wpfasty_shop_digital_only', self::$digitalOnly);
     }
 
     /** @return array<int, int> */
@@ -83,12 +92,13 @@ final class Cart
     /**
      * Priced cart (server-side prices only).
      *
-     * @return array{items: list<array<string, mixed>>, count: int, subtotal: int, shipping: int, total: int}
+     * @return array{digital: bool, items: list<array<string, mixed>>, count: int, subtotal: int, shipping: int, total: int}
      */
     public static function summary(): array
     {
         $items = [];
         $subtotal = 0;
+        $physical = false;
         foreach (self::lines() as $id => $qty) {
             if (!Catalog::isPurchasable($id)) {
                 continue;
@@ -96,6 +106,8 @@ final class Cart
             $unit = Catalog::price($id);
             $line = $unit * $qty;
             $subtotal += $line;
+            $digital = self::digitalOnly() || Catalog::isDigital($id);
+            $physical = $physical || !$digital;
             $thumb = get_post_thumbnail_id($id);
             $items[] = [
                 'id' => $id,
@@ -108,10 +120,12 @@ final class Cart
                 'line_display' => Money::format($line),
                 'image' => $thumb ? (string) wp_get_attachment_image_url((int) $thumb, 'thumbnail') : '',
                 'sku' => function_exists('wpfasty_field') ? (string) wpfasty_field($id, 'sku') : '',
+                'digital' => $digital,
             ];
         }
-        $shipping = self::shipping($subtotal);
+        $shipping = $physical ? self::shipping($subtotal) : 0;
         return [
+            'digital' => $items !== [] && !$physical,
             'items' => $items,
             'count' => array_sum(array_column($items, 'qty')),
             'subtotal' => $subtotal,
@@ -125,8 +139,12 @@ final class Cart
         return (int) apply_filters('latte_shop_free_shipping_cents', self::$shipping['free']);
     }
 
+    /** Shipping of physical goods (a cart with downloads only never pays shipping, see summary()). */
     public static function shipping(int $subtotal): int
     {
+        if (self::digitalOnly()) {
+            return 0;
+        }
         $free = self::freeShippingCents();
         $flat = (int) apply_filters('latte_shop_flat_shipping_cents', self::$shipping['flat']);
         return $subtotal === 0 || $subtotal >= $free ? 0 : $flat;

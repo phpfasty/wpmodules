@@ -55,4 +55,14 @@ final class CartTest extends TestCase
         $this->assertSame(0, Cart::shipping(10000));
         $this->assertSame(0, Cart::shipping(0));
     }
+
+    public function testDigitalOnlyStoreNeverChargesShipping(): void
+    {
+        Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000, 'digital_only' => true]);
+        $this->assertTrue(Cart::digitalOnly());
+        $this->assertSame(0, Cart::shipping(5000));
+        Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000]);
+        $this->assertFalse(Cart::digitalOnly());
+        $this->assertSame(500, Cart::shipping(5000));
+    }
 }
