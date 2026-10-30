@@ -22,6 +22,7 @@
             "PhpFasty\\Module\\Orders\\": "modules/orders/src/",
             "PhpFasty\\Module\\Types\\": "modules/types/src/",
             "PhpFasty\\Module\\Downloads\\": "modules/downloads/src/",
+            "PhpFasty\\Module\\ConsentLog\\": "modules/consent-log/src/",
             "PhpFasty\\WpModules\\Tests\\": "tests/"
         }
     },
