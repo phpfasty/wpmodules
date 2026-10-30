@@ -26,6 +26,10 @@ final class Slots
     public static function slots(array $slots, array $context): array
     {
         $state = CookieConsent::state([]);
+        $slots['footer.links'][] = [
+            'view' => 'moduly/cookie-consent/settings',
+            'data' => ['label' => self::t('Cookie settings', 'Настройки cookie')],
+        ];
         $slots['footer'][] = [
             'view' => 'moduly/cookie-consent/banner',
             'data' => [

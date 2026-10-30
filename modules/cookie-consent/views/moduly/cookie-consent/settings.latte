@@ -1,0 +1,3 @@
+{** ModulY cookie-consent — "Cookie settings" item for the footer links (slot footer.links): reopens the banner. *}
+{capture $c_open}{icon('cookie', 'size-4')}{$slot['label']}{/capture}
+{capture $c_li}{include 'button/Button.latte', type: 'button', class: 'inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground', children: (string) $c_open, attrs: ['data-cookie-open' => 'true']}{/capture}{include 'box/Box.latte', tag: 'li', children: (string) $c_li, attrs: []}

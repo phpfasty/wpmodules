@@ -113,6 +113,7 @@ final class SlotsTest extends TestCase
     {
         $slots = CookieSlots::slots([], []);
         $this->assertSame('moduly/cookie-consent/banner', $slots['footer'][0]['view']);
+        $this->assertSame('moduly/cookie-consent/settings', $slots['footer.links'][0]['view']);
         $this->assertNotSame('', $slots['footer'][0]['data']['labels']['settings']);
         $this->assertViewsShipped($slots);
     }

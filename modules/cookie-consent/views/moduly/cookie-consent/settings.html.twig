@@ -1,0 +1,3 @@
+{# ModulY cookie-consent — "Cookie settings" item for the footer links (slot footer.links): reopens the banner. #}
+{% set c_open %}{{ icon('cookie', 'size-4') }}{{ slot.label }}{% endset %}
+{% set c_li %}{% include 'button/Button.html.twig' with {'type': 'button', 'class': 'inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground', 'children': c_open, 'attrs': {'data-cookie-open': 'true'}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'li', 'children': c_li, 'attrs': {}} only %}
