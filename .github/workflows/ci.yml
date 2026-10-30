@@ -46,6 +46,7 @@ jobs:
           php tools/moduly.php verify dist/modules/cart-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/orders-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
           php tools/moduly.php verify dist/modules/types-*.zip phpfasty "$KEY"
+          php tools/moduly.php verify dist/modules/downloads-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -91,9 +92,10 @@ jobs:
         run: |
           wp moduly install ../dist/modules/cart-*.zip --enable
           wp moduly install ../dist/modules/orders-*.zip --enable
+          wp moduly install ../dist/modules/downloads-*.zip --enable
           wp moduly list
           wp moduly status
-          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "2"
+          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "3"
       - name: Cart/orders are wired (filters, handlers)
         working-directory: site
         run: |
@@ -113,6 +115,12 @@ jobs:
           grep -q 'Temporarily unavailable' /tmp/b.html
           grep -q 'Back to site' /tmp/b.html
           wp moduly enable orders
+          wp moduly disable downloads
+          curl -s -D /tmp/h2.txt -o /tmp/b2.html 'http://127.0.0.1:8080/wp-admin/admin-post.php?action=moduly_download&o=1&i=0&e=1&s=x'
+          grep -q '^HTTP/1.1 503' /tmp/h2.txt
+          grep -q 'Temporarily unavailable' /tmp/b2.html
+          wp moduly enable downloads
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8080/wp-admin/admin-post.php?action=moduly_download&o=1&i=0&e=1&s=x')" = "403"
           curl -s -o /dev/null -w '%{http_code}\n' -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
       - name: Types module — old schema → migrate → switch theme → back, disable/enable, prune (meta intact)
         working-directory: site

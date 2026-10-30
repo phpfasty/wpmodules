@@ -16,7 +16,10 @@ use PhpFasty\Module\Cart\CartApi;
 
 final class Orders
 {
-    public const STATUSES = ['pending', 'processing', 'completed', 'cancelled'];
+    public const STATUSES = ['pending', 'paid', 'processing', 'completed', 'cancelled'];
+
+    /** Statuses after payment (downloads open, verified-buyer reviews allowed). */
+    public const PAID = ['paid', 'processing', 'completed'];
     public const PAYMENT_METHODS = ['cod', 'bank'];
 
     private static CartApi $cart;
@@ -147,6 +150,8 @@ final class Orders
             'email' => (string) get_post_meta($id, '_order_email', true),
             'payment' => (string) get_post_meta($id, '_order_payment', true),
             'status' => (string) get_post_meta($id, '_order_status', true),
+            'paid' => in_array((string) get_post_meta($id, '_order_status', true), self::PAID, true),
+            'key' => $key,
             'items' => array_map(
                 static fn (array $i): array => $i + ['line_display' => self::$cart->format((int) $i['line'])],
                 array_filter($items, 'is_array')
@@ -218,7 +223,18 @@ final class Orders
         }
         $status = isset($_POST['order_status']) ? sanitize_key(wp_unslash($_POST['order_status'])) : '';
         if (in_array($status, self::STATUSES, true)) {
-            update_post_meta($postId, '_order_status', $status);
+            self::setStatus($postId, $status);
         }
+    }
+
+    /** Change the status; `wpfasty_shop_order_status` (id, new, old) fires on a real change (downloads, reviews). */
+    public static function setStatus(int $postId, string $status): void
+    {
+        $old = (string) get_post_meta($postId, '_order_status', true);
+        if (!in_array($status, self::STATUSES, true) || $old === $status) {
+            return;
+        }
+        update_post_meta($postId, '_order_status', $status);
+        do_action('wpfasty_shop_order_status', $postId, $status, $old);
     }
 }

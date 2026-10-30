@@ -1,0 +1,66 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "downloads",
+    "name": "Downloads",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Digital delivery for paid orders: signed download links (HMAC, 24 h TTL, download limit), files in a private uploads directory.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4",
+        "modules": {
+            "cart": "^0.2",
+            "orders": "^0.2"
+        }
+    },
+    "provides": {
+        "features": [
+            "downloads"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none",
+        "files:private",
+        "db:postmeta",
+        "mail:send",
+        "rest:public"
+    ],
+    "entry": "PhpFasty\\Module\\Downloads\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\Downloads\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "ttl_hours": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 168,
+                "default": 24
+            },
+            "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 5
+            },
+            "file_field": {
+                "type": "string",
+                "default": "download_file"
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [
+            "moduly_download"
+        ],
+        "rest": []
+    }
+}
