@@ -1,0 +1,50 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "cookie-consent",
+    "name": "Cookie consent",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Self-hosted cookie banner logic (152-FZ / GDPR): necessary cookies only until the visitor accepts analytics; no external requests. The theme renders the banner markup.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4"
+    },
+    "provides": {
+        "features": [
+            "cookie-consent"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none"
+    ],
+    "entry": "PhpFasty\\Module\\CookieConsent\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\CookieConsent\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "max_age_days": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 395,
+                "default": 180
+            },
+            "policy_page": {
+                "type": "string",
+                "default": "cookies"
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": []
+    }
+}

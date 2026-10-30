@@ -48,6 +48,7 @@ jobs:
           php tools/moduly.php verify dist/modules/types-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/downloads-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
           php tools/moduly.php verify dist/modules/consent-log-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
+          php tools/moduly.php verify dist/modules/cookie-consent-*.zip phpfasty "$KEY"
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -95,9 +96,10 @@ jobs:
           wp moduly install ../dist/modules/orders-*.zip --enable
           wp moduly install ../dist/modules/downloads-*.zip --enable
           wp moduly install ../dist/modules/consent-log-*.zip --enable
+          wp moduly install ../dist/modules/cookie-consent-*.zip --enable
           wp moduly list
           wp moduly status
-          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "4"
+          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "5"
       - name: Cart/orders are wired (filters, handlers)
         working-directory: site
         run: |
