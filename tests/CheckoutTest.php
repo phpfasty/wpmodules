@@ -15,4 +15,9 @@ final class CheckoutTest extends TestCase
         $this->assertContains('address', Checkout::required(false));
         $this->assertContains('postcode', Checkout::required(false));
     }
+
+    public function testPaymentMethodsDefaultAndAreSanitized(): void
+    {
+        $this->assertSame(\PhpFasty\Module\Orders\Orders::PAYMENT_METHODS, \PhpFasty\Module\Orders\Orders::paymentMethods());
+    }
 }

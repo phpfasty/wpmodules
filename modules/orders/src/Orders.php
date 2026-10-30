@@ -29,6 +29,17 @@ final class Orders
         self::$cart = $cart;
     }
 
+    /**
+     * Accepted payment method ids (`wpfasty_shop_payment_methods`, e.g. card / sbp / bank for a digital store).
+     *
+     * @return list<string>
+     */
+    public static function paymentMethods(): array
+    {
+        $ids = (array) apply_filters('wpfasty_shop_payment_methods', self::PAYMENT_METHODS);
+        return array_values(array_filter(array_map('strval', $ids), static fn (string $id): bool => preg_match('/^[a-z0-9_-]{1,32}$/', $id) === 1));
+    }
+
     /** Register the post type unless the active theme / types layer already declared it (same arguments). */
     public static function registerType(): void
     {

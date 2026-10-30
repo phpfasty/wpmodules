@@ -64,7 +64,7 @@ final class Checkout
         if ($c['email'] !== '' && !is_email($c['email'])) {
             $errors[] = 'email';
         }
-        if (!in_array($c['payment'], Orders::PAYMENT_METHODS, true)) {
+        if (!in_array($c['payment'], Orders::paymentMethods(), true)) {
             $errors[] = 'payment';
         }
         // Other modules (consent-log) add their own checks; unknown error codes are dropped on display.
