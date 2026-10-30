@@ -72,8 +72,8 @@ final class AuditLog implements AuditLogInterface
             return [];
         }
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table, admin screen only.
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT ts, user_id, action, module_id, version, result FROM {$table} ORDER BY id DESC LIMIT %d", $limit), ARRAY_A);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin screen only.
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT ts, user_id, action, module_id, version, result FROM %i ORDER BY id DESC LIMIT %d", $table, $limit), ARRAY_A);
         return is_array($rows) ? array_values($rows) : [];
     }
 
@@ -86,8 +86,8 @@ final class AuditLog implements AuditLogInterface
         }
         $days = defined('MODULY_AUDIT_DAYS') ? max(1, (int) constant('MODULY_AUDIT_DAYS')) : 180;
         $table = self::table();
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- own table.
-        $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE ts < %s", gmdate('Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS)));
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table.
+        $wpdb->query($wpdb->prepare("DELETE FROM %i WHERE ts < %s", $table, gmdate('Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS)));
     }
 
     public static function ipHash(): string

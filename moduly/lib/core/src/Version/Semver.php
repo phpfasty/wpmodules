@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Version;
 
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CMS-agnostic core: exception messages are data; hosts escape them where they are printed.
+
 use InvalidArgumentException;
 
 /**

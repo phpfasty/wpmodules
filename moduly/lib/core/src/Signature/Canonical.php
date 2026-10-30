@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Signature;
 
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CMS-agnostic core: exception messages are data; hosts escape them where they are printed.
+
 use JsonException;
 
 /**

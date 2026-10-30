@@ -50,10 +50,10 @@ final class Modules
     public function install(string $zipPath, bool $enable = false, bool $allowDowngrade = false): Manifest
     {
         if (defined('DISALLOW_FILE_MODS') && constant('DISALLOW_FILE_MODS') === true && !(defined('WP_CLI') && constant('WP_CLI'))) {
-            throw new ModulyException('file_mods_disallowed', __('Installing modules is disabled on this site (DISALLOW_FILE_MODS). Use WP-CLI from your deployment.', 'moduly'));
+            throw new ModulyException('file_mods_disallowed', esc_html__('Installing modules is disabled on this site (DISALLOW_FILE_MODS). Use WP-CLI from your deployment.', 'moduly'));
         }
         if (!Paths::ensure()) {
-            throw new ModulyException('fs', __('The modules folder cannot be created.', 'moduly'));
+            throw new ModulyException('fs', esc_html__('The modules folder cannot be created.', 'moduly'));
         }
         $records = $this->state->load();
         $installed = [];
@@ -113,9 +113,9 @@ final class Modules
     public function remove(string $id): void
     {
         $records = $this->state->load();
-        $rec = $records[$id] ?? throw new ModulyException('not_installed', __('Module is not installed.', 'moduly'));
+        $rec = $records[$id] ?? throw new ModulyException('not_installed', esc_html__('Module is not installed.', 'moduly'));
         if ($rec->status === ModuleRecord::ENABLED) {
-            throw new ModulyException('enabled', __('Disable the module before removing it.', 'moduly'));
+            throw new ModulyException('enabled', esc_html__('Disable the module before removing it.', 'moduly'));
         }
         $dir = Paths::modules() . '/' . $id;
         $real = realpath($dir);
@@ -132,9 +132,9 @@ final class Modules
     public function rollback(string $id): void
     {
         $records = $this->state->load();
-        $rec = $records[$id] ?? throw new ModulyException('not_installed', __('Module is not installed.', 'moduly'));
+        $rec = $records[$id] ?? throw new ModulyException('not_installed', esc_html__('Module is not installed.', 'moduly'));
         if ($rec->previous === '' || !is_dir($this->kernel->dir($id, $rec->previous))) {
-            throw new ModulyException('no_previous', __('No previous version is available.', 'moduly'));
+            throw new ModulyException('no_previous', esc_html__('No previous version is available.', 'moduly'));
         }
         $records[$id] = new ModuleRecord($id, $rec->previous, $rec->status === ModuleRecord::FAILED ? ModuleRecord::INSTALLED : $rec->status, '', $rec->version);
         $this->state->save($records);

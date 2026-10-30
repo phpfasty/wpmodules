@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Scan;
 
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CMS-agnostic core: exception messages are data; hosts escape them where they are printed.
+
 use PhpFasty\Moduly\Exception\ScanException;
 use PhpFasty\Moduly\Package\Fs;
 

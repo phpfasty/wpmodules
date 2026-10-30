@@ -41,7 +41,6 @@ final class Plugin
         add_filter('map_meta_cap', [self::class, 'mapCaps'], 10, 2);
         add_action('moduly_audit_prune', [AuditLog::class, 'prune']);
         add_action('init', static function (): void {
-            load_plugin_textdomain('moduly', false, dirname(plugin_basename(MODULY_PLUGIN_FILE)) . '/languages');
             if (!wp_next_scheduled('moduly_audit_prune')) {
                 wp_schedule_event(time() + HOUR_IN_SECONDS, 'daily', 'moduly_audit_prune');
             }

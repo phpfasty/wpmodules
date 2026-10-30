@@ -118,9 +118,9 @@ jobs:
         run: |
           mkdir t && cd t && unzip -q ../../dist/modules/cart-*.zip && echo "// x" >> cart/src/Money.php && php ../../tools/moduly.php pack cart ../tampered.zip
           cd .. && ! wp moduly install tampered.zip --force
-      - name: Plugin Check (report)
+      - name: Plugin Check (0 errors required)
         working-directory: site
-        continue-on-error: true
         run: |
           wp plugin install plugin-check --activate --quiet
-          wp plugin check moduly --exclude-checks=plugin_updater --format=table
+          wp plugin check moduly --format=table | tee /tmp/pc.txt
+          ! grep -P '\tERROR\t' /tmp/pc.txt

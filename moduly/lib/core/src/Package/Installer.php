@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Package;
 
+// phpcs:disable WordPress.WP.AlternativeFunctions -- CMS-agnostic core: works on its own quarantine/modules folders with plain PHP I/O (no WordPress here).
+// phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CMS-agnostic core: exception messages are data; hosts escape them where they are printed.
+
 use PhpFasty\Moduly\Exception\ModulyException;
 use PhpFasty\Moduly\Exception\PackageException;
 use PhpFasty\Moduly\Manifest\DependencyResolver;
