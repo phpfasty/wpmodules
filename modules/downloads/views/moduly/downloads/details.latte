@@ -1,0 +1,27 @@
+{** ModulY downloads — compatibility, changelog and live preview of the deliverable (slot product.after). *}
+{var $L = $slot['labels']}
+{capture $c_sec}
+	{capture $c_top}
+		{capture $c_h}{$L['title']}{/capture}{include 'text/Text.latte', tag: 'h2', class: 'text-xl font-bold', children: (string) $c_h, attrs: []}
+		{if $slot['preview_url'] !== ''}{capture $c_pv}{icon('eye', 'size-4')}{$L['preview']}{/capture}{include 'link/Link.latte', href: $slot['preview_url'], class: kit('button', ['variant' => 'outline', 'size' => 'sm'], 'gap-2 no-underline'), children: (string) $c_pv, attrs: ['target' => '_blank', 'rel' => 'noopener']}{/if}
+	{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-wrap items-center justify-between gap-4', children: (string) $c_top, attrs: []}
+	{if !empty($slot['rows'])}
+		{capture $c_dl}
+			{foreach $slot['rows'] as $row}
+				{capture $c_r}{capture $c_dt}{$row['label']}{/capture}{include 'box/Box.latte', tag: 'dt', class: 'text-muted-foreground', children: (string) $c_dt, attrs: []}{capture $c_dd}{$row['value']}{/capture}{include 'box/Box.latte', tag: 'dd', class: 'font-mono font-semibold', children: (string) $c_dd, attrs: []}{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-1 rounded-lg bg-muted p-4', children: (string) $c_r, attrs: []}
+			{/foreach}
+		{/capture}{include 'box/Box.latte', tag: 'dl', class: 'grid grid-cols-3 gap-4 text-sm', children: (string) $c_dl, attrs: []}
+	{/if}
+	{if !empty($slot['changelog'])}
+		{capture $c_ch}{$L['changelog']}{/capture}{include 'text/Text.latte', tag: 'h3', class: 'text-base font-bold', children: (string) $c_ch, attrs: []}
+		{capture $c_list}
+			{foreach $slot['changelog'] as $entry}
+				{capture $c_li}
+					{capture $c_v}v{$entry['version']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'w-fit rounded-md bg-accent px-2 py-1 font-mono text-xs font-semibold text-accent-foreground', children: (string) $c_v, attrs: []}
+					{capture $c_d}{$entry['date']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'text-xs text-muted-foreground', children: (string) $c_d, attrs: []}
+					{capture $c_n}{$entry['notes']}{/capture}{include 'text/Text.latte', tag: 'p', class: 'text-sm sm:col-span-2', children: (string) $c_n, attrs: []}
+				{/capture}{include 'box/Box.latte', tag: 'li', class: 'grid items-center gap-2 py-4 sm:grid-cols-4', children: (string) $c_li, attrs: []}
+			{/foreach}
+		{/capture}{include 'box/Box.latte', tag: 'ul', class: 'flex flex-col divide-y divide-border', children: (string) $c_list, attrs: []}
+	{/if}
+{/capture}{include 'box/Box.latte', tag: 'section', class: 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', children: (string) $c_sec, attrs: ['id' => 'details']}

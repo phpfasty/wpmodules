@@ -1,0 +1,17 @@
+{** ModulY downloads — signed links of a paid order on the confirmation page (slot checkout.order). *}
+{var $L = $slot['labels']}
+{capture $c_sec}
+	{capture $c_h}{icon('download', 'size-5 text-primary')}{$L['title']}{/capture}{include 'text/Text.latte', tag: 'h2', class: 'flex items-center gap-2 text-lg font-bold', children: (string) $c_h, attrs: []}
+	{if !empty($slot['links'])}
+		{capture $c_list}
+			{foreach $slot['links'] as $link}
+				{capture $c_li}
+					{capture $c_tx}{capture $c_t}{$link['title']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'font-semibold', children: (string) $c_t, attrs: []}{capture $c_m}{$link['remaining']} {$L['left']} · {$L['until']} {$link['expires']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'text-xs text-muted-foreground', children: (string) $c_m, attrs: []}{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-1', children: (string) $c_tx, attrs: []}
+					{capture $c_b}{icon('download', 'size-4')}{$L['download']}{/capture}{include 'link/Link.latte', href: $link['url'], class: kit('button', ['size' => 'sm'], 'gap-2 no-underline'), children: (string) $c_b, attrs: []}
+				{/capture}{include 'box/Box.latte', tag: 'li', class: 'flex flex-wrap items-center justify-between gap-4 py-4', children: (string) $c_li, attrs: []}
+			{/foreach}
+		{/capture}{include 'box/Box.latte', tag: 'ul', class: 'flex flex-col divide-y divide-border', children: (string) $c_list, attrs: []}
+	{else}
+		{capture $c_p}{icon('clock', 'size-4 shrink-0')}{$L['pending']}{/capture}{include 'text/Text.latte', tag: 'p', class: 'flex gap-2 text-sm text-muted-foreground', children: (string) $c_p, attrs: ['role' => 'status']}
+	{/if}
+{/capture}{include 'box/Box.latte', tag: 'section', class: 'flex flex-col gap-2 rounded-xl border border-border bg-card p-6', children: (string) $c_sec, attrs: ['id' => 'downloads']}

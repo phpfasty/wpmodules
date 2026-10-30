@@ -1,0 +1,9 @@
+{# ModulY consent-log — checkout ticks with document links (slot checkout.consents). #}
+{% set c_box %}
+	{% for cn in slot.items %}
+		{% set c_row %}
+			{% include 'checkbox/Checkbox.html.twig' with {'id': cn.id, 'name': cn.name, 'value': '1', 'required': cn.required, 'class': 'mt-1 size-4 shrink-0 accent-primary'} only %}
+			{% set c_tx %}{{ cn.label }}{% if cn.url != '' %} ({% set c_dl %}{{ cn.link }}{% endset %}{% include 'link/Link.html.twig' with {'href': cn.url, 'class': 'text-primary underline underline-offset-4', 'children': c_dl, 'attrs': {'target': '_blank', 'rel': 'noopener'}} only %}){% endif %}{% if cn.required %} *{% endif %}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': cn.error ? 'text-sm text-destructive' : 'text-sm', 'children': c_tx, 'attrs': {}} only %}
+		{% endset %}{% include 'label/Label.html.twig' with {'class': 'flex cursor-pointer items-start gap-2', 'children': c_row} only %}
+	{% endfor %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-4 rounded-xl border border-border bg-card p-4', 'children': c_box, 'attrs': {}} only %}

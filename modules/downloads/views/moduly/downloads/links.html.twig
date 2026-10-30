@@ -1,0 +1,17 @@
+{# ModulY downloads — signed links of a paid order on the confirmation page (slot checkout.order). #}
+{% set L = slot.labels %}
+{% set c_sec %}
+	{% set c_h %}{{ icon('download', 'size-5 text-primary') }}{{ L.title }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h2', 'class': 'flex items-center gap-2 text-lg font-bold', 'children': c_h, 'attrs': {}} only %}
+	{% if slot.links is not empty %}
+		{% set c_list %}
+			{% for link in slot.links %}
+				{% set c_li %}
+					{% set c_tx %}{% set c_t %}{{ link.title }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'font-semibold', 'children': c_t, 'attrs': {}} only %}{% set c_m %}{{ link.remaining }} {{ L.left }} · {{ L.until }} {{ link.expires }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'text-xs text-muted-foreground', 'children': c_m, 'attrs': {}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-1', 'children': c_tx, 'attrs': {}} only %}
+					{% set c_b %}{{ icon('download', 'size-4') }}{{ L.download }}{% endset %}{% include 'link/Link.html.twig' with {'href': link.url, 'class': kit('button', {'size': 'sm'}, 'gap-2 no-underline'), 'children': c_b, 'attrs': {}} only %}
+				{% endset %}{% include 'box/Box.html.twig' with {'tag': 'li', 'class': 'flex flex-wrap items-center justify-between gap-4 py-4', 'children': c_li, 'attrs': {}} only %}
+			{% endfor %}
+		{% endset %}{% include 'box/Box.html.twig' with {'tag': 'ul', 'class': 'flex flex-col divide-y divide-border', 'children': c_list, 'attrs': {}} only %}
+	{% else %}
+		{% set c_p %}{{ icon('clock', 'size-4 shrink-0') }}{{ L.pending }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'flex gap-2 text-sm text-muted-foreground', 'children': c_p, 'attrs': {'role': 'status'}} only %}
+	{% endif %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'section', 'class': 'flex flex-col gap-2 rounded-xl border border-border bg-card p-6', 'children': c_sec, 'attrs': {'id': 'downloads'}} only %}

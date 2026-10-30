@@ -4,7 +4,7 @@ name: Release zips
 #                       WordPress integration incl. the types roundtrip — passed; assets replaced in place, tag never moved)
 #   tag v*       → versioned release
 # Stable URLs (wp-fasty tools/playground-build.sh downloads them server-side):
-#   https://github.com/phpfasty/wpmodules/releases/download/edge/{moduly,cart,orders,types,downloads,consent-log,cookie-consent,reviews}.zip + SHA256SUMS
+#   https://github.com/phpfasty/wpmodules/releases/download/edge/{moduly,cart,orders,types,downloads,consent-log,cookie-consent,reviews,licenses}.zip + SHA256SUMS
 on:
   workflow_run:
     workflows: [CI]
@@ -54,6 +54,7 @@ jobs:
           php tools/moduly.php verify dist/modules/consent-log-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
           php tools/moduly.php verify dist/modules/cookie-consent-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/reviews-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
+          php tools/moduly.php verify dist/modules/licenses-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
       - name: Stable asset names
         run: |
           mkdir out
@@ -77,6 +78,6 @@ jobs:
       - name: Public download check
         run: |
           TAG=${GITHUB_REF#refs/tags/}; [[ "$GITHUB_REF" == refs/tags/* ]] || TAG=edge
-          for f in moduly.zip cart.zip orders.zip types.zip downloads.zip consent-log.zip cookie-consent.zip reviews.zip SHA256SUMS; do
+          for f in moduly.zip cart.zip orders.zip types.zip downloads.zip consent-log.zip cookie-consent.zip reviews.zip licenses.zip SHA256SUMS; do
             curl -fsSLo /dev/null -w "$f %{http_code}\n" "https://github.com/phpfasty/wpmodules/releases/download/$TAG/$f"
           done

@@ -1,0 +1,17 @@
+{# ModulY licenses — what each tier allows (slot product.after). #}
+{% set c_sec %}
+	{% set c_h %}{{ slot.labels.compare }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h2', 'class': 'text-xl font-bold', 'children': c_h, 'attrs': {}} only %}
+	{% set c_grid %}
+		{% for tier in slot.tiers %}
+			{% set c_card %}
+				{% set c_hd %}{% set c_n %}{{ tier.label }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h3', 'class': 'font-semibold', 'children': c_n, 'attrs': {}} only %}{% set c_p %}{{ tier.price }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'font-bold', 'children': c_p, 'attrs': {}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex items-baseline justify-between gap-4', 'children': c_hd, 'attrs': {}} only %}
+				{% set c_ul %}
+					{% for term in tier.terms %}
+						{% set c_li %}{{ icon('check', 'size-4 shrink-0 text-primary') }}{{ term }}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'li', 'class': 'flex gap-2', 'children': c_li, 'attrs': {}} only %}
+					{% endfor %}
+				{% endset %}{% include 'box/Box.html.twig' with {'tag': 'ul', 'class': 'flex flex-col gap-2 text-sm text-muted-foreground', 'children': c_ul, 'attrs': {}} only %}
+			{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-4 rounded-lg border border-border p-4', 'children': c_card, 'attrs': {}} only %}
+		{% endfor %}
+	{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'grid gap-4 md:grid-cols-2', 'children': c_grid, 'attrs': {}} only %}
+	{% if slot.terms_url != '' %}{% set c_l %}{{ icon('file-text', 'size-4') }}{{ slot.labels.terms }}{% endset %}{% include 'link/Link.html.twig' with {'href': slot.terms_url, 'class': 'inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary no-underline hover:underline', 'children': c_l, 'attrs': {}} only %}{% endif %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'section', 'class': 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', 'children': c_sec, 'attrs': {'id': 'licenses'}} only %}

@@ -1,0 +1,51 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "licenses",
+    "name": "Licenses",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "License tiers for digital goods: the product `licenses` field (tier, label, price), the license picker on the product page and the comparison of what every tier allows. Prices stay server-side in the cart module.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4",
+        "modules": {
+            "cart": "^0.2"
+        }
+    },
+    "provides": {
+        "features": [
+            "licenses"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none"
+    ],
+    "entry": "PhpFasty\\Module\\Licenses\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\Licenses\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "field": {
+                "type": "string",
+                "default": "licenses"
+            },
+            "terms_page": {
+                "type": "string",
+                "default": "oferta"
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": []
+    }
+}

@@ -20,6 +20,13 @@ Monorepo of the WordPress side of [phpfasty/moduly](https://github.com/phpfasty/
   new keys in batches, nothing is deleted. `wp moduly types prune --dry-run` lists unclaimed meta; only `--yes`
   deletes, after a JSON backup in `wp-content/moduly/backups`, batched under a lock. Disabled → theme Registry +
   plugin resume, data intact (`tests/wp/types-roundtrip.sh` in CI).
+- `modules/licenses` — license tiers of digital products (types field `license_tiers`, prices in cents, first =
+  default): the picker inside the add-to-cart form and a "what each license allows" comparison.
+- Slots: modules add views to the latte-shop extension points without template overrides — filter `wpfasty_slots`
+  (name → list of `['view' => 'moduly/<id>/<view>', 'data' => …]`) and their `views/` dir via `wpfasty_view_roots`
+  (Latte `.latte` + Twig `.html.twig` twins): `product.purchase` (licenses picker), `product.after` (licenses
+  comparison, downloads compatibility/changelog/preview, reviews), `checkout.consents` (consent-log checkboxes),
+  `checkout.order` (downloads links), `footer` (cookie-consent banner + "Cookie settings").
 - Release `edge` is published only from a green CI run on main (`release.yml` on `workflow_run`).
 
 Trust: modules signed by publisher `phpfasty` are accepted (public key in `moduly/src/Keys.php`); add keys with

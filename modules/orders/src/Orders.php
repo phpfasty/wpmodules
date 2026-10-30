@@ -168,6 +168,7 @@ final class Orders
                 array_filter($items, 'is_array')
             ),
             'subtotal_display' => self::$cart->format((int) get_post_meta($id, '_order_subtotal', true)),
+            'shipping' => (int) get_post_meta($id, '_order_shipping', true),
             'shipping_display' => self::$cart->format((int) get_post_meta($id, '_order_shipping', true)),
             'total_display' => self::$cart->format((int) get_post_meta($id, '_order_total', true)),
         ];

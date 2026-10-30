@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "consent-log",
     "name": "Consent log",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "phpfasty",
     "license": "AGPL-3.0-or-later",
     "description": "Checkout consents (offer, personal data, newsletter) with a proof log on the order (time, IP, document version) and WordPress privacy exporter/eraser.",

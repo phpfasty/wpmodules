@@ -1,0 +1,27 @@
+{# ModulY downloads — compatibility, changelog and live preview of the deliverable (slot product.after). #}
+{% set L = slot.labels %}
+{% set c_sec %}
+	{% set c_top %}
+		{% set c_h %}{{ L.title }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h2', 'class': 'text-xl font-bold', 'children': c_h, 'attrs': {}} only %}
+		{% if slot.preview_url != '' %}{% set c_pv %}{{ icon('eye', 'size-4') }}{{ L.preview }}{% endset %}{% include 'link/Link.html.twig' with {'href': slot.preview_url, 'class': kit('button', {'variant': 'outline', 'size': 'sm'}, 'gap-2 no-underline'), 'children': c_pv, 'attrs': {'target': '_blank', 'rel': 'noopener'}} only %}{% endif %}
+	{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-wrap items-center justify-between gap-4', 'children': c_top, 'attrs': {}} only %}
+	{% if slot.rows is not empty %}
+		{% set c_dl %}
+			{% for row in slot.rows %}
+				{% set c_r %}{% set c_dt %}{{ row.label }}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'dt', 'class': 'text-muted-foreground', 'children': c_dt, 'attrs': {}} only %}{% set c_dd %}{{ row.value }}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'dd', 'class': 'font-mono font-semibold', 'children': c_dd, 'attrs': {}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-1 rounded-lg bg-muted p-4', 'children': c_r, 'attrs': {}} only %}
+			{% endfor %}
+		{% endset %}{% include 'box/Box.html.twig' with {'tag': 'dl', 'class': 'grid grid-cols-3 gap-4 text-sm', 'children': c_dl, 'attrs': {}} only %}
+	{% endif %}
+	{% if slot.changelog is not empty %}
+		{% set c_ch %}{{ L.changelog }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h3', 'class': 'text-base font-bold', 'children': c_ch, 'attrs': {}} only %}
+		{% set c_list %}
+			{% for entry in slot.changelog %}
+				{% set c_li %}
+					{% set c_v %}v{{ entry.version }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'w-fit rounded-md bg-accent px-2 py-1 font-mono text-xs font-semibold text-accent-foreground', 'children': c_v, 'attrs': {}} only %}
+					{% set c_d %}{{ entry.date }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'text-xs text-muted-foreground', 'children': c_d, 'attrs': {}} only %}
+					{% set c_n %}{{ entry.notes }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'text-sm sm:col-span-2', 'children': c_n, 'attrs': {}} only %}
+				{% endset %}{% include 'box/Box.html.twig' with {'tag': 'li', 'class': 'grid items-center gap-2 py-4 sm:grid-cols-4', 'children': c_li, 'attrs': {}} only %}
+			{% endfor %}
+		{% endset %}{% include 'box/Box.html.twig' with {'tag': 'ul', 'class': 'flex flex-col divide-y divide-border', 'children': c_list, 'attrs': {}} only %}
+	{% endif %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'section', 'class': 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', 'children': c_sec, 'attrs': {'id': 'details'}} only %}

@@ -22,6 +22,9 @@ final class Module implements ModuleInterface
         $host->on('filter', 'wpfasty_shop_checkout_errors', [Consents::class, 'onValidate']);
         $host->on('action', 'latte_shop_order_created', [Consents::class, 'onOrderCreated']);
         $host->on('filter', 'wpfasty_shop_checkout', [Consents::class, 'checkout'], 20);
+        $views = $context->path . '/views';
+        $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));
+        $host->on('filter', 'wpfasty_slots', [Slots::class, 'slots'], 10, 2);
         $host->on('filter', 'wp_privacy_personal_data_exporters', [Privacy::class, 'exporters']);
         $host->on('filter', 'wp_privacy_personal_data_erasers', [Privacy::class, 'erasers']);
     }
