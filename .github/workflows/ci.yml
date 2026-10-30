@@ -50,6 +50,7 @@ jobs:
           php tools/moduly.php verify dist/modules/consent-log-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
           php tools/moduly.php verify dist/modules/cookie-consent-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/reviews-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
+          php tools/moduly.php verify dist/modules/licenses-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
       - uses: actions/upload-artifact@v4
         with:
           name: dist

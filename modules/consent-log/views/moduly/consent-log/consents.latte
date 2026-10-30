@@ -1,0 +1,9 @@
+{** ModulY consent-log — checkout ticks with document links (slot checkout.consents). *}
+{capture $c_box}
+	{foreach $slot['items'] as $cn}
+		{capture $c_row}
+			{include 'checkbox/Checkbox.latte', id: $cn['id'], name: $cn['name'], value: '1', required: $cn['required'], class: 'mt-1 size-4 shrink-0 accent-primary'}
+			{capture $c_tx}{$cn['label']}{if $cn['url'] !== ''} ({capture $c_dl}{$cn['link']}{/capture}{include 'link/Link.latte', href: $cn['url'], class: 'text-primary underline underline-offset-4', children: (string) $c_dl, attrs: ['target' => '_blank', 'rel' => 'noopener']}){/if}{if $cn['required']} *{/if}{/capture}{include 'text/Text.latte', tag: 'span', class: ($cn['error'] ? 'text-sm text-destructive' : 'text-sm'), children: (string) $c_tx, attrs: []}
+		{/capture}{include 'label/Label.latte', class: 'flex cursor-pointer items-start gap-2', children: (string) $c_row}
+	{/foreach}
+{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-4 rounded-xl border border-border bg-card p-4', children: (string) $c_box, attrs: []}

@@ -1,0 +1,14 @@
+{** ModulY cookie-consent — "Cookie settings" link and the banner (slot footer); the script shows the banner while no choice is stored. *}
+{var $L = $slot['labels']}
+{capture $c_open}{icon('cookie', 'size-4')}{$L['settings']}{/capture}
+{capture $c_bar}{include 'button/Button.latte', type: 'button', class: kit('button', ['variant' => 'ghost', 'size' => 'sm'], 'gap-2 text-muted-foreground'), children: (string) $c_open, attrs: ['data-cookie-open' => 'true']}{/capture}{include 'box/Box.latte', tag: 'div', class: 'container mx-auto flex justify-center px-4 pb-8', children: (string) $c_bar, attrs: []}
+{capture $c_box}
+	{capture $c_t}{icon('shield-check', 'size-5 shrink-0 text-primary')}{capture $c_tx}{$L['text']}{/capture}{include 'text/Text.latte', tag: 'span', children: (string) $c_tx, attrs: []}{/capture}{include 'text/Text.latte', tag: 'p', class: 'flex flex-1 gap-2 text-sm', children: (string) $c_t, attrs: []}
+	{capture $c_acts}
+		{capture $c_a}{$L['accept']}{/capture}{include 'button/Button.latte', type: 'button', class: kit('button', [], 'flex-1 sm:flex-none'), children: (string) $c_a, attrs: ['data-cookie' => 'all']}
+		{capture $c_n}{$L['necessary']}{/capture}{include 'button/Button.latte', type: 'button', class: kit('button', ['variant' => 'outline'], 'flex-1 sm:flex-none'), children: (string) $c_n, attrs: ['data-cookie' => 'necessary']}
+		{if $slot['policy_url'] !== ''}{capture $c_s}{$L['policy']}{/capture}{include 'link/Link.latte', href: $slot['policy_url'], class: kit('button', ['variant' => 'ghost'], 'no-underline'), children: (string) $c_s, attrs: []}{/if}
+	{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-wrap gap-2', children: (string) $c_acts, attrs: []}
+{/capture}
+{capture $c_inner}{include 'box/Box.latte', tag: 'div', class: 'container mx-auto flex flex-col gap-4 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-lg md:flex-row md:items-center', children: (string) $c_box, attrs: []}{/capture}
+{include 'box/Box.latte', tag: 'div', class: 'fixed inset-x-0 bottom-0 z-50 px-4 pb-4', children: (string) $c_inner, attrs: ['id' => 'cookie-banner', 'role' => 'region', 'aria-label' => $L['settings'], 'hidden' => true]}

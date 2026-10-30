@@ -1,0 +1,42 @@
+{** ModulY reviews — rating, approved reviews, form for buyers (slot product.after). *}
+{var $L = $slot['labels']}
+{capture $c_sec}
+	{capture $c_h}{$L['title']} · ★ {$slot['rating']} ({$slot['count']}){/capture}{include 'text/Text.latte', tag: 'h2', class: 'text-xl font-bold', children: (string) $c_h, attrs: []}
+	{if !empty($slot['reviews'])}
+		{capture $c_list}
+			{foreach $slot['reviews'] as $rev}
+				{capture $c_li}
+					{capture $c_who}{capture $c_nm}{$rev['name']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'font-semibold', children: (string) $c_nm, attrs: []}{capture $c_st}{$rev['stars']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'text-primary', children: (string) $c_st, attrs: ['role' => 'img', 'aria-label' => ($rev['rating'] . '/5')]}{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex items-center justify-between gap-4', children: (string) $c_who, attrs: []}
+					{if $rev['verified']}{capture $c_vb}{icon('badge-check', 'size-4')}{$L['verified']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'inline-flex items-center gap-2 text-xs font-semibold text-primary', children: (string) $c_vb, attrs: []}{/if}
+					{capture $c_tx}{$rev['text']}{/capture}{include 'text/Text.latte', tag: 'p', class: 'text-sm text-muted-foreground', children: (string) $c_tx, attrs: []}
+				{/capture}{include 'box/Box.latte', tag: 'li', class: 'flex flex-col gap-2 rounded-lg bg-muted p-4', children: (string) $c_li, attrs: []}
+			{/foreach}
+		{/capture}{include 'box/Box.latte', tag: 'ul', class: 'grid gap-4 md:grid-cols-3', children: (string) $c_list, attrs: []}
+	{else}
+		{capture $c_nr}{$L['none']}{/capture}{include 'text/Text.latte', tag: 'p', class: 'text-sm text-muted-foreground', children: (string) $c_nr, attrs: []}
+	{/if}
+	{if $slot['action'] !== ''}
+		{capture $c_form}
+			{capture $c_wh}{$L['write']}{/capture}{include 'text/Text.latte', tag: 'h3', class: 'text-base font-bold', children: (string) $c_wh, attrs: []}
+			{capture $c_note}{icon('shield-check', 'size-4 shrink-0')}{$L['note']}{/capture}{include 'text/Text.latte', tag: 'p', class: 'flex gap-2 text-xs text-muted-foreground', children: (string) $c_note, attrs: []}
+			{include 'input/Input.latte', attrs: ['type' => 'hidden', 'name' => 'comment_post_ID', 'value' => (string) $slot['post_id']]}
+			{capture $c_row}
+				{foreach [['author', $L['name'], 'text', 'name'], ['email', $L['email'], 'email', 'email']] as [$fn, $fl, $ft, $fa]}
+					{capture $c_fld}
+						{capture $c_lbl}{$fl} *{/capture}{include 'label/Label.latte', htmlFor: 'rv-' . $fn, class: kit('label', []), children: (string) $c_lbl}
+						{include 'input/Input.latte', id: 'rv-' . $fn, type: $ft, name: $fn, required: true, class: kit('input', []), attrs: ['autocomplete' => $fa]}
+					{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-2', children: (string) $c_fld, attrs: []}
+				{/foreach}
+				{capture $c_fld}
+					{capture $c_lbl}{$L['rating']} *{/capture}{include 'label/Label.latte', htmlFor: 'rv-rating', class: kit('label', []), children: (string) $c_lbl}
+					{capture $c_ro}{foreach $slot['rating_options'] as $opt}{capture $c_o}{$opt['stars']}{/capture}{include 'select/SelectOption.latte', value: $opt['value'], children: (string) $c_o}{/foreach}{/capture}{include 'select/Select.latte', id: 'rv-rating', name: 'rating', required: true, class: 'h-10 rounded-md border border-input bg-card px-4 text-sm text-primary', children: (string) $c_ro}
+				{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-2', children: (string) $c_fld, attrs: []}
+			{/capture}{include 'box/Box.latte', tag: 'div', class: 'grid gap-4 md:grid-cols-3', children: (string) $c_row, attrs: []}
+			{capture $c_fld}
+				{capture $c_lbl}{$L['text']} *{/capture}{include 'label/Label.latte', htmlFor: 'rv-comment', class: kit('label', []), children: (string) $c_lbl}
+				{include 'textarea/Textarea.latte', id: 'rv-comment', name: 'comment', rows: '4', required: true, class: 'rounded-md border border-input bg-card px-4 py-2 text-sm text-foreground'}
+			{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-2', children: (string) $c_fld, attrs: []}
+			{capture $c_sb}{icon('send', 'size-4')}{$L['submit']}{/capture}{include 'button/Button.latte', type: 'submit', class: kit('button', [], 'w-fit gap-2'), children: (string) $c_sb}
+		{/capture}{include 'form/Form.latte', action: $slot['action'], class: 'flex flex-col gap-4 border-t border-border pt-6', children: (string) $c_form, attrs: ['method' => 'post', 'id' => 'review-form']}
+	{/if}
+{/capture}{include 'box/Box.latte', tag: 'section', class: 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', children: (string) $c_sec, attrs: ['id' => 'reviews']}

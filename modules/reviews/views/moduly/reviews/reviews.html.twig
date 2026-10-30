@@ -1,0 +1,42 @@
+{# ModulY reviews — rating, approved reviews, form for buyers (slot product.after). #}
+{% set L = slot.labels %}
+{% set c_sec %}
+	{% set c_h %}{{ L.title }} · ★ {{ slot.rating }} ({{ slot.count }}){% endset %}{% include 'text/Text.html.twig' with {'tag': 'h2', 'class': 'text-xl font-bold', 'children': c_h, 'attrs': {}} only %}
+	{% if slot.reviews is not empty %}
+		{% set c_list %}
+			{% for rev in slot.reviews %}
+				{% set c_li %}
+					{% set c_who %}{% set c_nm %}{{ rev.name }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'font-semibold', 'children': c_nm, 'attrs': {}} only %}{% set c_st %}{{ rev.stars }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'text-primary', 'children': c_st, 'attrs': {'role': 'img', 'aria-label': rev.rating ~ '/5'}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex items-center justify-between gap-4', 'children': c_who, 'attrs': {}} only %}
+					{% if rev.verified %}{% set c_vb %}{{ icon('badge-check', 'size-4') }}{{ L.verified }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'inline-flex items-center gap-2 text-xs font-semibold text-primary', 'children': c_vb, 'attrs': {}} only %}{% endif %}
+					{% set c_tx %}{{ rev.text }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'text-sm text-muted-foreground', 'children': c_tx, 'attrs': {}} only %}
+				{% endset %}{% include 'box/Box.html.twig' with {'tag': 'li', 'class': 'flex flex-col gap-2 rounded-lg bg-muted p-4', 'children': c_li, 'attrs': {}} only %}
+			{% endfor %}
+		{% endset %}{% include 'box/Box.html.twig' with {'tag': 'ul', 'class': 'grid gap-4 md:grid-cols-3', 'children': c_list, 'attrs': {}} only %}
+	{% else %}
+		{% set c_nr %}{{ L.none }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'text-sm text-muted-foreground', 'children': c_nr, 'attrs': {}} only %}
+	{% endif %}
+	{% if slot.action != '' %}
+		{% set c_form %}
+			{% set c_wh %}{{ L.write }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'h3', 'class': 'text-base font-bold', 'children': c_wh, 'attrs': {}} only %}
+			{% set c_note %}{{ icon('shield-check', 'size-4 shrink-0') }}{{ L.note }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'flex gap-2 text-xs text-muted-foreground', 'children': c_note, 'attrs': {}} only %}
+			{% include 'input/Input.html.twig' with {'attrs': {'type': 'hidden', 'name': 'comment_post_ID', 'value': slot.post_id ~ ''}} only %}
+			{% set c_row %}
+				{% for f in [['author', L.name, 'text', 'name'], ['email', L.email, 'email', 'email']] %}
+					{% set c_fld %}
+						{% set c_lbl %}{{ f[1] }} *{% endset %}{% include 'label/Label.html.twig' with {'htmlFor': 'rv-' ~ f[0], 'class': kit('label', {}), 'children': c_lbl} only %}
+						{% include 'input/Input.html.twig' with {'id': 'rv-' ~ f[0], 'type': f[2], 'name': f[0], 'required': true, 'class': kit('input', {}), 'attrs': {'autocomplete': f[3]}} only %}
+					{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-2', 'children': c_fld, 'attrs': {}} only %}
+				{% endfor %}
+				{% set c_fld %}
+					{% set c_lbl %}{{ L.rating }} *{% endset %}{% include 'label/Label.html.twig' with {'htmlFor': 'rv-rating', 'class': kit('label', {}), 'children': c_lbl} only %}
+					{% set c_ro %}{% for opt in slot.rating_options %}{% set c_o %}{{ opt.stars }}{% endset %}{% include 'select/SelectOption.html.twig' with {'value': opt.value, 'children': c_o} only %}{% endfor %}{% endset %}{% include 'select/Select.html.twig' with {'id': 'rv-rating', 'name': 'rating', 'required': true, 'class': 'h-10 rounded-md border border-input bg-card px-4 text-sm text-primary', 'children': c_ro} only %}
+				{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-2', 'children': c_fld, 'attrs': {}} only %}
+			{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'grid gap-4 md:grid-cols-3', 'children': c_row, 'attrs': {}} only %}
+			{% set c_fld %}
+				{% set c_lbl %}{{ L.text }} *{% endset %}{% include 'label/Label.html.twig' with {'htmlFor': 'rv-comment', 'class': kit('label', {}), 'children': c_lbl} only %}
+				{% include 'textarea/Textarea.html.twig' with {'id': 'rv-comment', 'name': 'comment', 'rows': '4', 'required': true, 'class': 'rounded-md border border-input bg-card px-4 py-2 text-sm text-foreground'} only %}
+			{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-col gap-2', 'children': c_fld, 'attrs': {}} only %}
+			{% set c_sb %}{{ icon('send', 'size-4') }}{{ L.submit }}{% endset %}{% include 'button/Button.html.twig' with {'type': 'submit', 'class': kit('button', {}, 'w-fit gap-2'), 'children': c_sb} only %}
+		{% endset %}{% include 'form/Form.html.twig' with {'action': slot.action, 'class': 'flex flex-col gap-4 border-t border-border pt-6', 'children': c_form, 'attrs': {'method': 'post', 'id': 'review-form'}} only %}
+	{% endif %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'section', 'class': 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', 'children': c_sec, 'attrs': {'id': 'reviews'}} only %}

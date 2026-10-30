@@ -1,4 +1,4 @@
-/* ModulY cookie-consent: analytics only after "Accept all"; no external requests. Banner markup comes from the theme. */
+/* ModulY cookie-consent: analytics only after "Accept all"; no external requests. Banner markup: views/moduly/cookie-consent/banner (slot footer). */
 (function () {
 	var cfg = window.modulyCookieConsent || {};
 	var NAME = cfg.name || 'wpfasty_cookie_consent';

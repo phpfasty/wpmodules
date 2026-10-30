@@ -1,0 +1,14 @@
+{** ModulY licenses — tier picker inside the add-to-cart form (slot product.purchase). *}
+{capture $c_set}
+	{capture $c_lg}{$slot['labels']['license']}{/capture}{include 'text/Text.latte', tag: 'legend', class: 'mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground', children: (string) $c_lg, attrs: []}
+	{foreach $slot['tiers'] as $tier}
+		{capture $c_opt}
+			{include 'input/Input.latte', class: 'mt-1 size-4 accent-primary', attrs: ['type' => 'radio', 'name' => 'license', 'value' => $tier['id'], 'checked' => $tier['checked'] ? true : null]}
+			{capture $c_tx}
+				{capture $c_n}{$tier['label']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'font-semibold', children: (string) $c_n, attrs: []}
+				{if $tier['summary'] !== ''}{capture $c_s}{$tier['summary']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'text-xs text-muted-foreground', children: (string) $c_s, attrs: []}{/if}
+			{/capture}{include 'text/Text.latte', tag: 'span', class: 'flex flex-1 flex-col gap-1', children: (string) $c_tx, attrs: []}
+			{capture $c_p}{$tier['price']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'text-lg font-bold', children: (string) $c_p, attrs: []}
+		{/capture}{include 'label/Label.latte', class: 'flex cursor-pointer items-start gap-4 rounded-lg border border-border p-4 hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-accent', children: (string) $c_opt}
+	{/foreach}
+{/capture}{include 'box/Box.latte', tag: 'fieldset', class: 'flex flex-col gap-2', children: (string) $c_set, attrs: []}

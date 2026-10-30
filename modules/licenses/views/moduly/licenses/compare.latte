@@ -1,0 +1,17 @@
+{** ModulY licenses — what each tier allows (slot product.after). *}
+{capture $c_sec}
+	{capture $c_h}{$slot['labels']['compare']}{/capture}{include 'text/Text.latte', tag: 'h2', class: 'text-xl font-bold', children: (string) $c_h, attrs: []}
+	{capture $c_grid}
+		{foreach $slot['tiers'] as $tier}
+			{capture $c_card}
+				{capture $c_hd}{capture $c_n}{$tier['label']}{/capture}{include 'text/Text.latte', tag: 'h3', class: 'font-semibold', children: (string) $c_n, attrs: []}{capture $c_p}{$tier['price']}{/capture}{include 'text/Text.latte', tag: 'span', class: 'font-bold', children: (string) $c_p, attrs: []}{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex items-baseline justify-between gap-4', children: (string) $c_hd, attrs: []}
+				{capture $c_ul}
+					{foreach $tier['terms'] as $term}
+						{capture $c_li}{icon('check', 'size-4 shrink-0 text-primary')}{$term}{/capture}{include 'box/Box.latte', tag: 'li', class: 'flex gap-2', children: (string) $c_li, attrs: []}
+					{/foreach}
+				{/capture}{include 'box/Box.latte', tag: 'ul', class: 'flex flex-col gap-2 text-sm text-muted-foreground', children: (string) $c_ul, attrs: []}
+			{/capture}{include 'box/Box.latte', tag: 'div', class: 'flex flex-col gap-4 rounded-lg border border-border p-4', children: (string) $c_card, attrs: []}
+		{/foreach}
+	{/capture}{include 'box/Box.latte', tag: 'div', class: 'grid gap-4 md:grid-cols-2', children: (string) $c_grid, attrs: []}
+	{if $slot['terms_url'] !== ''}{capture $c_l}{icon('file-text', 'size-4')}{$slot['labels']['terms']}{/capture}{include 'link/Link.latte', href: $slot['terms_url'], class: 'inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary no-underline hover:underline', children: (string) $c_l, attrs: []}{/if}
+{/capture}{include 'box/Box.latte', tag: 'section', class: 'mt-8 flex flex-col gap-4 rounded-xl border border-border bg-card p-6', children: (string) $c_sec, attrs: ['id' => 'licenses']}

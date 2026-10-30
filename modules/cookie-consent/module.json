@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "cookie-consent",
     "name": "Cookie consent",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "phpfasty",
     "license": "AGPL-3.0-or-later",
     "description": "Self-hosted cookie banner logic (152-FZ / GDPR): necessary cookies only until the visitor accepts analytics; no external requests. The theme renders the banner markup.",

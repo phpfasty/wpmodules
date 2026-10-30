@@ -1,0 +1,14 @@
+{# ModulY cookie-consent — "Cookie settings" link and the banner (slot footer); the script shows the banner while no choice is stored. #}
+{% set L = slot.labels %}
+{% set c_open %}{{ icon('cookie', 'size-4') }}{{ L.settings }}{% endset %}
+{% set c_bar %}{% include 'button/Button.html.twig' with {'type': 'button', 'class': kit('button', {'variant': 'ghost', 'size': 'sm'}, 'gap-2 text-muted-foreground'), 'children': c_open, 'attrs': {'data-cookie-open': 'true'}} only %}{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'container mx-auto flex justify-center px-4 pb-8', 'children': c_bar, 'attrs': {}} only %}
+{% set c_box %}
+	{% set c_t %}{{ icon('shield-check', 'size-5 shrink-0 text-primary') }}{% set c_tx %}{{ L.text }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'children': c_tx, 'attrs': {}} only %}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'p', 'class': 'flex flex-1 gap-2 text-sm', 'children': c_t, 'attrs': {}} only %}
+	{% set c_acts %}
+		{% set c_a %}{{ L.accept }}{% endset %}{% include 'button/Button.html.twig' with {'type': 'button', 'class': kit('button', {}, 'flex-1 sm:flex-none'), 'children': c_a, 'attrs': {'data-cookie': 'all'}} only %}
+		{% set c_n %}{{ L.necessary }}{% endset %}{% include 'button/Button.html.twig' with {'type': 'button', 'class': kit('button', {'variant': 'outline'}, 'flex-1 sm:flex-none'), 'children': c_n, 'attrs': {'data-cookie': 'necessary'}} only %}
+		{% if slot.policy_url != '' %}{% set c_s %}{{ L.policy }}{% endset %}{% include 'link/Link.html.twig' with {'href': slot.policy_url, 'class': kit('button', {'variant': 'ghost'}, 'no-underline'), 'children': c_s, 'attrs': {}} only %}{% endif %}
+	{% endset %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'flex flex-wrap gap-2', 'children': c_acts, 'attrs': {}} only %}
+{% endset %}
+{% set c_inner %}{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'container mx-auto flex flex-col gap-4 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-lg md:flex-row md:items-center', 'children': c_box, 'attrs': {}} only %}{% endset %}
+{% include 'box/Box.html.twig' with {'tag': 'div', 'class': 'fixed inset-x-0 bottom-0 z-50 px-4 pb-4', 'children': c_inner, 'attrs': {'id': 'cookie-banner', 'role': 'region', 'aria-label': L.settings, 'hidden': true}} only %}

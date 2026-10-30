@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "reviews",
     "name": "Verified reviews",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "phpfasty",
     "license": "AGPL-3.0-or-later",
     "description": "Product reviews (WordPress comments with a 1–5 rating) accepted only from buyers with a paid order; approved ratings are aggregated into the product rating/reviews fields.",

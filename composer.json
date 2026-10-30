@@ -25,6 +25,7 @@
             "PhpFasty\\Module\\ConsentLog\\": "modules/consent-log/src/",
             "PhpFasty\\Module\\CookieConsent\\": "modules/cookie-consent/src/",
             "PhpFasty\\Module\\Reviews\\": "modules/reviews/src/",
+            "PhpFasty\\Module\\Licenses\\": "modules/licenses/src/",
             "PhpFasty\\WpModules\\Tests\\": "tests/"
         }
     },

@@ -22,6 +22,9 @@ final class Module implements ModuleInterface
         CookieConsent::configure($context->settings, is_file($file) ? (string) file_get_contents($file) : '');
         $host = $context->host;
         $host->on('filter', 'wpfasty_cookie_consent', [CookieConsent::class, 'state']);
+        $views = $context->path . '/views';
+        $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));
+        $host->on('filter', 'wpfasty_slots', [Slots::class, 'slots'], 10, 2);
         $host->on('action', 'wp_footer', [CookieConsent::class, 'printScript'], 50);
         $host->on('action', 'admin_init', [CookieConsent::class, 'privacyText']);
     }

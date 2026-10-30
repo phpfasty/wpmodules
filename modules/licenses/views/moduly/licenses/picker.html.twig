@@ -1,0 +1,14 @@
+{# ModulY licenses — tier picker inside the add-to-cart form (slot product.purchase). #}
+{% set c_set %}
+	{% set c_lg %}{{ slot.labels.license }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'legend', 'class': 'mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground', 'children': c_lg, 'attrs': {}} only %}
+	{% for tier in slot.tiers %}
+		{% set c_opt %}
+			{% include 'input/Input.html.twig' with {'class': 'mt-1 size-4 accent-primary', 'attrs': {'type': 'radio', 'name': 'license', 'value': tier.id, 'checked': tier.checked ? true : null}} only %}
+			{% set c_tx %}
+				{% set c_n %}{{ tier.label }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'font-semibold', 'children': c_n, 'attrs': {}} only %}
+				{% if tier.summary != '' %}{% set c_s %}{{ tier.summary }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'text-xs text-muted-foreground', 'children': c_s, 'attrs': {}} only %}{% endif %}
+			{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'flex flex-1 flex-col gap-1', 'children': c_tx, 'attrs': {}} only %}
+			{% set c_p %}{{ tier.price }}{% endset %}{% include 'text/Text.html.twig' with {'tag': 'span', 'class': 'text-lg font-bold', 'children': c_p, 'attrs': {}} only %}
+		{% endset %}{% include 'label/Label.html.twig' with {'class': 'flex cursor-pointer items-start gap-4 rounded-lg border border-border p-4 hover:border-primary has-[:checked]:border-primary has-[:checked]:bg-accent', 'children': c_opt} only %}
+	{% endfor %}
+{% endset %}{% include 'box/Box.html.twig' with {'tag': 'fieldset', 'class': 'flex flex-col gap-2', 'children': c_set, 'attrs': {}} only %}
