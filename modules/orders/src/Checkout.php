@@ -23,6 +23,8 @@ final class Checkout
     private const FIELDS = ['name', 'email', 'phone', 'address', 'city', 'postcode', 'country', 'notes', 'payment'];
     private const REQUIRED = ['name', 'email', 'address', 'city', 'postcode', 'country'];
     private const ERRORS = ['name', 'email', 'address', 'city', 'postcode', 'country', 'payment', 'server'];
+    /** Error codes other modules may add (`wpfasty_shop_checkout_errors`), e.g. consent_offer. */
+    private const EXTRA_ERROR = '/^[a-z][a-z0-9_]{1,31}$/';
 
     private static CartApi $cart;
 
@@ -65,6 +67,8 @@ final class Checkout
         if (!in_array($c['payment'], Orders::PAYMENT_METHODS, true)) {
             $errors[] = 'payment';
         }
+        // Other modules (consent-log) add their own checks; unknown error codes are dropped on display.
+        $errors = array_values(array_map('strval', (array) apply_filters('wpfasty_shop_checkout_errors', $errors, $c)));
         if ($errors !== []) {
             // Keep non-sensitive input across the redirect for 10 minutes, keyed by a random token.
             $token = strtolower(wp_generate_password(16, false));
@@ -114,7 +118,10 @@ final class Checkout
     public static function checkout(array $checkout): array
     {
         $checkout['errors'] = isset($_GET['co_errors'])
-            ? array_values(array_intersect(explode(',', sanitize_text_field(wp_unslash($_GET['co_errors']))), self::ERRORS))
+            ? array_values(array_filter(
+                explode(',', sanitize_text_field(wp_unslash($_GET['co_errors']))),
+                static fn (string $e): bool => in_array($e, self::ERRORS, true) || preg_match(self::EXTRA_ERROR, $e) === 1
+            ))
             : [];
         $token = isset($_GET['co']) ? sanitize_key(wp_unslash($_GET['co'])) : '';
         $old = $token !== '' ? get_transient('latte_shop_co_' . $token) : false;

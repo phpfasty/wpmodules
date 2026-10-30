@@ -1,0 +1,60 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "consent-log",
+    "name": "Consent log",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Checkout consents (offer, personal data, newsletter) with a proof log on the order (time, IP, document version) and WordPress privacy exporter/eraser.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4",
+        "modules": {
+            "orders": "^0.2"
+        }
+    },
+    "provides": {
+        "features": [
+            "consent-log"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none",
+        "db:postmeta"
+    ],
+    "entry": "PhpFasty\\Module\\ConsentLog\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\ConsentLog\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "legal_version": {
+                "type": "string",
+                "default": "2026-10-30"
+            },
+            "offer_page": {
+                "type": "string",
+                "default": "oferta"
+            },
+            "personal_data_page": {
+                "type": "string",
+                "default": "consent"
+            },
+            "newsletter_page": {
+                "type": "string",
+                "default": "newsletter-consent"
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": []
+    }
+}
