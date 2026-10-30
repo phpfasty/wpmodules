@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "types",
     "name": "Types",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "publisher": "phpfasty",
     "license": "AGPL-3.0-or-later",
     "description": "Declarative post types for WP FastY themes (types/*.php): registry, meta, metaboxes, forward-only data migrations and a safe prune command.",
