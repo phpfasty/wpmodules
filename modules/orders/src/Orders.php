@@ -75,7 +75,7 @@ final class Orders
 
     /**
      * @param array<string, string> $customer sanitized fields
-     * @param array{items: list<array<string, mixed>>, subtotal: int, shipping: int, total: int} $summary
+     * @param array{digital?: bool, items: list<array<string, mixed>>, subtotal: int, shipping: int, total: int} $summary
      * @return array{id: int, key: string}|null
      */
     public static function create(array $customer, array $summary): ?array

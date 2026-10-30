@@ -12,7 +12,7 @@ namespace PhpFasty\Module\Cart;
 
 final class CartApi
 {
-    /** @return array{items: list<array<string, mixed>>, count: int, subtotal: int, shipping: int, total: int} */
+    /** @return array{digital: bool, items: list<array<string, mixed>>, count: int, subtotal: int, shipping: int, total: int} */
     public function summary(): array
     {
         return Cart::summary();

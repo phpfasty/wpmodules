@@ -50,6 +50,12 @@ final class Catalog
             && (self::stock($id) === null || self::stock($id) > 0);
     }
 
+    /** Downloadable product: `purchasable.digital` => true on its post type. */
+    public static function isDigital(int $id): bool
+    {
+        return (self::capability($id)['digital'] ?? false) === true;
+    }
+
     /** Effective unit price in cents (sale wins when lower). */
     public static function price(int $id): int
     {
