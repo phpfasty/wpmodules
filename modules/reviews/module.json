@@ -1,0 +1,56 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "reviews",
+    "name": "Verified reviews",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Product reviews (WordPress comments with a 1–5 rating) accepted only from buyers with a paid order; approved ratings are aggregated into the product rating/reviews fields.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.4",
+        "modules": {
+            "orders": "^0.2"
+        }
+    },
+    "provides": {
+        "features": [
+            "reviews"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:none",
+        "db:postmeta"
+    ],
+    "entry": "PhpFasty\\Module\\Reviews\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\Reviews\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "post_type": {
+                "type": "string",
+                "default": "product"
+            },
+            "rating_field": {
+                "type": "string",
+                "default": "rating"
+            },
+            "count_field": {
+                "type": "string",
+                "default": "reviews"
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": []
+    }
+}
