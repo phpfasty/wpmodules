@@ -43,3 +43,9 @@ if (!function_exists('get_post_type')) {
         return $GLOBALS['moduly_test_post_types'][$id] ?? 'product';
     }
 }
+if (!function_exists('wp_unslash')) {
+    function wp_unslash(mixed $value): mixed
+    {
+        return is_string($value) ? stripslashes($value) : $value;
+    }
+}
