@@ -108,16 +108,30 @@ final class Data
                     'single' => true,
                     // Typed values in REST (money = integer minor units).
                     // Opt out per field with 'show_in_rest' => false.
-                    'show_in_rest' => ($field->def['show_in_rest'] ?? true) === false ? false : (
-                        $field->type === 'date' ? ['schema' => ['pattern' => Field::DATE_PATTERN]] : (
-                            $field->options() !== [] ? ['schema' => ['enum' => $field->options()]] : true
-                        )
-                    ),
+                    'show_in_rest' => self::restSchema($field),
                     'sanitize_callback' => [$field, 'toStorage'],
                     'auth_callback' => static fn (): bool => current_user_can('edit_posts'),
                 ]);
             }
         }
+    }
+
+    /**
+     * REST exposure of a field: private fields never; typed schema where a kind has one.
+     *
+     * @return bool|array<string, mixed>
+     */
+    public static function restSchema(Field $field): bool|array
+    {
+        if ($field->isPrivate() || ($field->def['show_in_rest'] ?? true) === false) {
+            return false;
+        }
+        return match (true) {
+            $field->type === 'date' => ['schema' => ['pattern' => Field::DATE_PATTERN]],
+            $field->type === 'semver' => ['schema' => ['pattern' => Field::SEMVER_PATTERN]],
+            $field->options() !== [] => ['schema' => ['enum' => $field->options()]],
+            default => true,
+        };
     }
 
     /**
@@ -196,7 +210,18 @@ final class Data
                 );
                 continue;
             }
-            $step = $field->type === 'integer' ? '1' : '0.01';
+            if ($input === 'textarea') {
+                printf(
+                    '<p><label for="%1$s"><strong>%2$s</strong></label><br>'
+                        . '<textarea class="widefat" rows="3" id="%1$s" name="wpfasty_fields[%3$s]" placeholder="regular|Regular|49.00">%4$s</textarea></p>',
+                    esc_attr($id),
+                    esc_html($field->label),
+                    esc_attr($name),
+                    esc_textarea($value)
+                );
+                continue;
+            }
+            $step = in_array($field->type, ['integer', 'file', 'user'], true) ? '1' : '0.01';
             // money may be negative (Q9); integer / number stay >= 0
             $min = $field->type === 'money' ? '' : ' min="0"';
             $extra = $input === 'number' ? $min . ' step="' . esc_attr($step) . '"' : '';
