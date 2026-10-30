@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moduly.phpfasty.dev/schema/module-1.json",
+  "title": "ModulY module manifest (module.json) v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "version", "publisher", "license", "entry", "autoload"],
+  "properties": {
+    "$schema": { "const": "https://moduly.phpfasty.dev/schema/module-1.json" },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,40}$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "version": { "type": "string", "description": "SemVer 2.0" },
+    "publisher": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,63}$" },
+    "license": { "type": "string", "description": "SPDX expression" },
+    "description": { "type": "string" },
+    "requires": {
+      "type": "object",
+      "description": "core / php / host (wp, …): Composer-style constraints; modules: id => constraint",
+      "properties": {
+        "modules": { "type": "object", "additionalProperties": { "type": "string" } }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "provides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "features": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,40}$" } },
+        "types": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,40}$" } },
+        "capabilities": { "type": "array", "items": { "type": "string", "pattern": "^moduly_[a-z0-9_]{2,60}$" } }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          { "enum": ["http:none", "db:options", "db:postmeta", "db:custom-table", "cpt:register", "rest:public", "rest:admin", "cookie:write", "cron", "files:private", "mail:send", "users:read", "capabilities:add"] },
+          { "type": "string", "pattern": "^http:outbound:[a-z0-9.-]+$" }
+        ]
+      }
+    },
+    "entry": { "type": "string", "description": "FQCN implementing PhpFasty\\Moduly\\Contract\\ModuleInterface" },
+    "autoload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["psr-4"],
+      "properties": { "psr-4": { "type": "object", "additionalProperties": { "type": "string" } } }
+    },
+    "hooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "name", "method"],
+        "properties": {
+          "type": { "enum": ["action", "filter"] },
+          "name": { "type": "string" },
+          "method": { "type": "string" },
+          "priority": { "type": "integer" },
+          "args": { "type": "integer", "minimum": 0, "maximum": 10 }
+        }
+      }
+    },
+    "settings": { "type": "object", "description": "JSON Schema subset (type/enum/min/max/pattern/format); objects need additionalProperties: false" }
+  }
+}

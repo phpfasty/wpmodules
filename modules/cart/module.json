@@ -1,0 +1,22 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "cart",
+    "name": "Cart",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Signed-cookie cart for WP FastY shop themes: server-side prices in integer cents, no sessions, no WooCommerce.",
+    "requires": { "core": "^0.1", "php": ">=8.2", "wp": ">=6.4" },
+    "provides": { "features": ["cart"], "types": [], "capabilities": [] },
+    "permissions": ["http:none", "cookie:write", "rest:public"],
+    "entry": "PhpFasty\\Module\\Cart\\Module",
+    "autoload": { "psr-4": { "PhpFasty\\Module\\Cart\\": "src/" } },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "flat_shipping_cents": { "type": "integer", "minimum": 0, "default": 500 },
+            "free_shipping_cents": { "type": "integer", "minimum": 0, "default": 10000 }
+        }
+    }
+}

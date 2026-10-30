@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * Pricing and stock of any post type with the `purchasable` capability, read through the types registry
+ * that the theme / types layer announces on `wpfasty_types_loaded` (no direct dependency on theme classes).
+ *
+ * @package ModulY\Cart
+ */
+
+declare(strict_types=1);
+
+namespace PhpFasty\Module\Cart;
+
+final class Catalog
+{
+    private static ?object $registry = null;
+
+    public static function setRegistry(object $registry): void
+    {
+        self::$registry = $registry;
+    }
+
+    /** @return array<string, mixed> */
+    private static function capability(int $id): array
+    {
+        $type = self::$registry !== null && method_exists(self::$registry, 'get') ? self::$registry->get((string) get_post_type($id)) : null;
+        if (!is_object($type) || !method_exists($type, 'capability')) {
+            return [];
+        }
+        $cap = $type->capability('purchasable');
+        return is_array($cap) ? $cap : [];
+    }
+
+    private static function fieldValue(int $id, string $option): string
+    {
+        $field = (string) (self::capability($id)[$option] ?? '');
+        if ($field === '' || self::$registry === null || !method_exists(self::$registry, 'value')) {
+            return '';
+        }
+        return (string) self::$registry->value($id, $field);
+    }
+
+    public static function isPurchasable(int $id): bool
+    {
+        $p = get_post($id);
+        return $p instanceof \WP_Post
+            && self::capability($id) !== []
+            && $p->post_status === 'publish'
+            && self::price($id) > 0
+            && (self::stock($id) === null || self::stock($id) > 0);
+    }
+
+    /** Effective unit price in cents (sale wins when lower). */
+    public static function price(int $id): int
+    {
+        $regular = Money::cents(self::fieldValue($id, 'price_field'));
+        $sale = Money::cents(self::fieldValue($id, 'sale_field'));
+        return $sale > 0 && $sale < $regular ? $sale : $regular;
+    }
+
+    public static function regularPrice(int $id): int
+    {
+        return Money::cents(self::fieldValue($id, 'price_field'));
+    }
+
+    public static function stock(int $id): ?int
+    {
+        $raw = self::fieldValue($id, 'stock_field');
+        return $raw === '' ? null : max(0, (int) $raw);
+    }
+
+    public static function setStock(int $id, int $stock): void
+    {
+        $field = (string) (self::capability($id)['stock_field'] ?? '');
+        $type = self::$registry !== null && method_exists(self::$registry, 'get') ? self::$registry->get((string) get_post_type($id)) : null;
+        $fields = is_object($type) && property_exists($type, 'fields') && is_array($type->fields) ? $type->fields : [];
+        $def = $fields[$field] ?? null;
+        if ($field !== '' && is_object($def) && property_exists($def, 'metaKey') && is_string($def->metaKey)) {
+            update_post_meta($id, $def->metaKey, max(0, $stock));
+        }
+    }
+
+    /**
+     * Product view-model for the theme (`wpfasty_shop_product`). Keys match the theme views.
+     *
+     * @param array<string, mixed> $product
+     * @return array<string, mixed>
+     */
+    public static function product(array $product, int $id): array
+    {
+        $price = self::price($id);
+        $regular = self::regularPrice($id);
+        $stock = self::stock($id);
+        return array_merge($product, [
+            'price' => Money::format($price),
+            'regular' => $regular > $price ? Money::format($regular) : '',
+            'on_sale' => $regular > $price,
+            'stock' => $stock,
+            'in_stock' => $stock === null || $stock > 0,
+            'purchasable' => self::isPurchasable($id),
+            'price_cents' => $price,
+        ]);
+    }
+}

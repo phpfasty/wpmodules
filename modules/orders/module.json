@@ -1,0 +1,14 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "orders",
+    "name": "Orders",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "AGPL-3.0-or-later",
+    "description": "Checkout and private shop_order records (cash on delivery / bank transfer) for WP FastY shop themes.",
+    "requires": { "core": "^0.1", "php": ">=8.2", "wp": ">=6.4", "modules": { "cart": "^0.1" } },
+    "provides": { "features": ["orders", "checkout"], "types": ["shop_order"], "capabilities": [] },
+    "permissions": ["http:none", "cpt:register", "db:postmeta", "mail:send", "rest:public"],
+    "entry": "PhpFasty\\Module\\Orders\\Module",
+    "autoload": { "psr-4": { "PhpFasty\\Module\\Orders\\": "src/" } }
+}
