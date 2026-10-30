@@ -1,0 +1,65 @@
+name: Release zips
+# Signed release zips as public GitHub release assets (no extra token: GITHUB_TOKEN, contents: write).
+#   push to main → rolling pre-release "edge" (assets replaced in place; the tag is never moved, notes carry the commit)
+#   tag v*       → versioned release
+# Stable URLs (wp-fasty tools/playground-build.sh downloads them server-side):
+#   https://github.com/phpfasty/wpmodules/releases/download/edge/{moduly,cart,orders}.zip + SHA256SUMS
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: zip, sodium
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/phpunit
+      - name: Build signed zips
+        env:
+          MODULY_SIGNING_KEY: ${{ secrets.MODULY_SIGNING_KEY }}
+        run: |
+          test -n "$MODULY_SIGNING_KEY" || { echo "::error::MODULY_SIGNING_KEY missing"; exit 1; }
+          bash tools/build.sh
+      - name: Verify signatures with the embedded phpfasty key
+        run: |
+          KEY=$(sed -n "s/.*PHPFASTY = '\(.*\)';/\1/p" moduly/src/Keys.php)
+          php tools/moduly.php verify dist/modules/cart-*.zip phpfasty "$KEY"
+          php tools/moduly.php verify dist/modules/orders-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
+      - name: Stable asset names
+        run: |
+          mkdir out
+          cp dist/moduly-*.zip out/moduly.zip
+          for z in dist/modules/*.zip; do id=$(basename "$z" | sed 's/-[0-9][0-9.]*\.zip$//'); cp "$z" "out/$id.zip"; done
+          cp dist/moduly-*.zip dist/modules/*.zip out/
+          (cd out && sha256sum *.zip > SHA256SUMS && cat SHA256SUMS)
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            gh release create "$TAG" out/* --title "$TAG" --notes "Signed ModulY plugin and modules ($GITHUB_SHA)" --verify-tag
+          else
+            TAG=edge
+            gh release view edge >/dev/null 2>&1 || gh release create edge --prerelease --title "edge (main)" --notes "Rolling build of main" --target "$GITHUB_SHA"
+            gh release edit edge --notes "Rolling build of main at $GITHUB_SHA" --prerelease
+            gh release upload edge out/* --clobber
+          fi
+      - name: Public download check
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}; [[ "$GITHUB_REF" == refs/tags/* ]] || TAG=edge
+          for f in moduly.zip cart.zip orders.zip SHA256SUMS; do
+            curl -fsSLo /dev/null -w "$f %{http_code}\n" "https://github.com/phpfasty/wpmodules/releases/download/$TAG/$f"
+          done
