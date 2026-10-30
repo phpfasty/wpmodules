@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Downloads;
 
 // Namespaced WordPress stubs: Downloads/Storage resolve these before the global fallbacks.
-function wp_upload_dir($time = null, bool $create = true): array
+/** @return array{basedir: string} */
+function wp_upload_dir(?string $time = null, bool $create = true): array
 {
     return ['basedir' => $GLOBALS['moduly_dl_base']];
 }
