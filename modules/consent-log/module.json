@@ -4,7 +4,7 @@
     "name": "Consent log",
     "version": "0.1.1",
     "publisher": "phpfasty",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "description": "Checkout consents (offer, personal data, newsletter) with a proof log on the order (time, IP, document version) and WordPress privacy exporter/eraser.",
     "requires": {
         "core": "^0.1",

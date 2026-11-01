@@ -4,7 +4,7 @@
     "name": "Cart",
     "version": "0.2.0",
     "publisher": "phpfasty",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "description": "Signed-cookie cart for WP FastY shop themes: server-side prices in integer cents, no sessions, no WooCommerce.",
     "requires": {
         "core": "^0.1",

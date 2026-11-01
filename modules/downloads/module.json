@@ -4,7 +4,7 @@
     "name": "Downloads",
     "version": "0.1.1",
     "publisher": "phpfasty",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "description": "Digital delivery for paid orders: signed download links (HMAC, 24 h TTL, download limit), files in a private uploads directory.",
     "requires": {
         "core": "^0.1",

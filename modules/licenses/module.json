@@ -4,7 +4,7 @@
     "name": "Licenses",
     "version": "0.1.0",
     "publisher": "phpfasty",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "description": "License tiers for digital goods: the product `licenses` field (tier, label, price), the license picker on the product page and the comparison of what every tier allows. Prices stay server-side in the cart module.",
     "requires": {
         "core": "^0.1",

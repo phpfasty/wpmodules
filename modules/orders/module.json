@@ -4,7 +4,7 @@
     "name": "Orders",
     "version": "0.2.1",
     "publisher": "phpfasty",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "description": "Checkout and private shop_order records (cash on delivery / bank transfer) for WP FastY shop themes.",
     "requires": {
         "core": "^0.1",

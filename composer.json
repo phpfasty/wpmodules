@@ -2,7 +2,7 @@
     "name": "phpfasty/wpmodules",
     "description": "ModulY for WordPress: the plugin (moduly/) and its modules (modules/).",
     "type": "project",
-    "license": "AGPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "authors": [{ "name": "PHP FastY", "homepage": "https://github.com/phpfasty" }],
     "require": { "php": ">=8.2" },
     "require-dev": {

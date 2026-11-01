@@ -5,8 +5,8 @@ Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
 Stable tag: 0.1.2
-License: AGPL-3.0-or-later
-License URI: https://www.gnu.org/licenses/agpl-3.0.html
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Secure module loader: install signed modules (cart, orders, …) from a zip, enable, disable and update them safely.
 

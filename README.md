@@ -2,7 +2,7 @@
 
 Monorepo of the WordPress side of [phpfasty/moduly](https://github.com/phpfasty/moduly) (the CMS-agnostic core).
 
-- `moduly/` — the plugin **ModulY** (Author: PHP FastY, AGPL-3.0-or-later). Installs modules from a zip through the
+- `moduly/` — the plugin **ModulY** (Author: PHP FastY, GPL-2.0-or-later). Installs modules from a zip through the
   core's validated pipeline: quarantine folder → JSON Schema (`module.json`) → sha256 of every file + ed25519 publisher
   signature (`SIGNATURE`) → requirements/dependencies → static scan → atomic move. Enable/disable/rollback, audit log
   (`{prefix}moduly_audit`), safe mode (`MODULY_SAFE_MODE` or `?moduly_safe=<MODULY_SAFE_TOKEN>`), fatal attribution
