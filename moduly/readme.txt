@@ -4,7 +4,7 @@ Tags: modules, extensions, security, signatures, shop
 Requires at least: 6.5
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.1.2
+Stable tag: 0.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,6 +46,13 @@ and revoke keys with `MODULY_REVOKED_KEYS`.
 Yes: with `DISALLOW_FILE_MODS` uploads from wp-admin are disabled; WP-CLI still works for deployments.
 
 == Changelog ==
+
+= 0.2.0 =
+* Hooks renamed to moduly_* (admin-post moduly_cart / moduly_checkout, action moduly_order_created, filters moduly_shop_currency_symbol / moduly_shop_flat_shipping_cents / moduly_shop_free_shipping_cents); the latte_shop_* names keep working as deprecated aliases.
+* Typed value helpers for modules (Support\Value, Support\Hooks, Support\Db); prepared SQL with %i identifiers.
+* Downloads are counted after the whole file is sent; X-Accel-Redirect takes an internal URI (filter moduly_downloads_accel_uri).
+* Checkout form input is kept read-once for 2 minutes after a validation error.
+* Safe-mode token accepted in the X-Moduly-Safe header.
 
 = 0.1.2 =
 * Theme definitions: accept a base theme layer of the active theme (filter wpfasty_theme_dirs, inside the themes root).
