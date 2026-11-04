@@ -91,6 +91,8 @@ final class Reviews
             // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- one lookup per submitted review.
             'meta_query' => [['key' => '_order_email', 'value' => $email]],
         ]);
+        // one query for the meta of all orders (fields=ids does not prime the meta cache)
+        update_meta_cache('post', array_map('intval', $ids));
         $orders = array_map(static fn ($id): array => [
             'status' => (string) get_post_meta((int) $id, '_order_status', true),
             'items' => (array) get_post_meta((int) $id, '_order_items', true),
