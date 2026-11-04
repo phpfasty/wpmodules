@@ -1,0 +1,30 @@
+{
+    // Mutation testing of the pure, WordPress-free classes (blocking in CI, `composer infection`, needs pcov):
+    // value narrowing (Support\Value), signed download tokens, cart line codec + money formatting,
+    // the types model (field rules, post type definitions), review rating aggregation, license tiers.
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "moduly/src/Support",
+            "modules/downloads/src",
+            "modules/types/src/Model"
+            // Field.php (types field rules) joins once its escaped mutants are covered: see docs/audit
+        ],
+        "excludes": [
+            "Hooks.php",
+            "Db.php",
+            "Downloads.php",
+            "Slots.php",
+            "Storage.php",
+            "Module.php",
+            "Registry.php",
+            "Field.php"
+        ]
+    },
+    "phpUnit": { "configDir": "." },
+    "tmpDir": ".infection",
+    "logs": { "text": ".infection/infection.log", "summary": ".infection/summary.log" },
+    "mutators": { "@default": true },
+    "minMsi": 95,
+    "minCoveredMsi": 95
+}

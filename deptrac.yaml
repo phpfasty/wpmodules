@@ -1,0 +1,64 @@
+# Deptrac: architecture layers (blocking in CI, `composer deptrac`). Hexagonal direction:
+#   Core (CMS-agnostic kernel, ports/contracts, DTOs; vendored from phpfasty/moduly)  <- knows nothing else
+#   Support (WordPress-free value helpers of the plugin)                              <- Core only
+#   Host (WordPress adapter: the plugin)                                              <- Core, Support, WordPress
+#   Module\* (each module)                       <- Core contracts, Support, WordPress, and only the modules
+#                                                   it declares in module.json `requires.modules`
+# A module never reaches into another module's internals except through a declared dependency, and never
+# into the Host except through container services (wp.*), with the listed transitional exceptions.
+deptrac:
+  cache_file: .deptrac.cache
+  paths:
+    - ./moduly/lib/core/src
+    - ./moduly/src
+    - ./modules
+    - ./vendor/php-stubs/wordpress-stubs
+  exclude_files:
+    - '#/views/#'
+  layers:
+    - name: Core
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Moduly\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\.*' }
+    - name: Support
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\Support\\.*' }
+    - name: Host
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\Support\\.*' }
+            - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\(OptionLock|ThemeDefinitions)$' }
+    - name: HostServices
+      collectors:
+        # host services modules may receive through the container (`wp.option_lock`, `wp.theme_definitions`)
+        - { type: classLike, value: '^PhpFasty\\Moduly\\Wp\\(OptionLock|ThemeDefinitions)$' }
+    - name: WordPress
+      collectors:
+        - { type: classLike, value: '^(WP_|wpdb$|WP$|Walker)' }
+    - { name: Cart, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Cart\\.*' }] }
+    - { name: Orders, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }] }
+    - { name: Types, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }] }
+    - { name: Downloads, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }] }
+    - { name: ConsentLog, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\.*' }] }
+    - { name: CookieConsent, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\.*' }] }
+    - { name: Reviews, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }] }
+    - { name: Licenses, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Licenses\\.*' }] }
+  ruleset:
+    Core: ~
+    Support: [WordPress]
+    Host: [Core, Support, WordPress, HostServices]
+    HostServices: [Core, Support, WordPress]
+    Cart: [Core, Support, WordPress]
+    Orders: [Core, Support, WordPress, Cart]
+    Types: [Core, Support, WordPress, HostServices]
+    Downloads: [Core, Support, WordPress]
+    ConsentLog: [Core, Support, WordPress]
+    CookieConsent: [Core, Support, WordPress]
+    Reviews: [Core, Support, WordPress]
+    Licenses: [Core, Support, WordPress]

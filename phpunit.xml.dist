@@ -7,4 +7,13 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+            <directory>moduly/src</directory>
+            <directory>modules</directory>
+        </include>
+        <exclude>
+            <directory>modules/*/views</directory>
+        </exclude>
+    </source>
 </phpunit>

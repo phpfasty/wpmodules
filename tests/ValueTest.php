@@ -41,6 +41,7 @@ final class ValueTest extends TestCase
         yield 'int' => [7, 7];
         yield 'numeric string' => [' 42 ', 42];
         yield 'decimal string' => ['3.9', 3];
+        yield 'exponent string' => ['1e3', 1000];
         yield 'float' => [2.7, 2];
         yield 'inf' => [INF, 0];
         yield 'nan' => [NAN, 0];
@@ -59,6 +60,7 @@ final class ValueTest extends TestCase
     public function testFloat(): void
     {
         self::assertSame(1.25, Value::float('1.25'));
+        self::assertSame(2.5, Value::float(' 2.5 '));
         self::assertSame(2.0, Value::float(2));
         self::assertSame(1.0, Value::float(true));
         self::assertSame(0.5, Value::float(0.5));
@@ -72,6 +74,8 @@ final class ValueTest extends TestCase
         self::assertTrue(Value::bool('yes'));
         self::assertTrue(Value::bool(1));
         self::assertTrue(Value::bool(0.1));
+        self::assertTrue(Value::bool(1.0));
+        self::assertFalse(Value::bool(0.0));
         foreach (['', '0', 'false', 'No', ' off '] as $s) {
             self::assertFalse(Value::bool($s), $s);
         }

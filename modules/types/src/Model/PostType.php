@@ -22,7 +22,7 @@ final class PostType
     {
         $prefix = Value::str($def['meta_prefix'] ?? $name);
         $fields = [];
-        foreach ((array) ($def['fields'] ?? []) as $key => $field) {
+        foreach (Value::arr($def['fields'] ?? []) as $key => $field) {
             $fields[(string) $key] = Field::fromArray((string) $key, Value::map($field), $prefix);
         }
         $this->fields = $fields;

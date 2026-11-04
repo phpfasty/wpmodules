@@ -33,6 +33,13 @@ final class DownloadsTest extends TestCase
         $this->assertFalse(Token::valid(10, 0, $e + 86400, $s, self::SECRET, $now), 'extended expiry');
         $this->assertFalse(Token::valid(10, 0, $e, $s, 'other-secret', $now), 'other site');
         $this->assertFalse(Token::valid(10, 0, $e, '', self::SECRET, $now));
+        // the message format is part of the link contract: order|item|expires
+        $this->assertSame('974b52170958052de8c8dee9cd2947272c55535cbb0af19e6cac264374e36e93', Token::sign(12, 3, 1700000000, 'k'));
+        $this->assertNotSame(Token::sign(1, 23, 5, 'k'), Token::sign(12, 3, 5, 'k'));
+        $z = Token::sign(0, 0, $e, self::SECRET);
+        $this->assertFalse(Token::valid(0, 0, $e, $z, self::SECRET, $now), 'order 0');
+        $m = Token::sign(10, -1, $e, self::SECRET);
+        $this->assertFalse(Token::valid(10, -1, $e, $m, self::SECRET, $now), 'negative item');
     }
 
     public function testGate(): void

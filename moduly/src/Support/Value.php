@@ -31,7 +31,7 @@ final class Value
             is_int($value) => $value,
             is_bool($value) => (int) $value,
             is_float($value) => is_finite($value) ? (int) $value : 0,
-            is_string($value) && is_numeric(trim($value)) => (int) (float) trim($value),
+            is_string($value) && is_numeric($value) => (int) $value, // ' 42 ', '3.9', '1e3'
             default => 0,
         };
     }
@@ -41,7 +41,7 @@ final class Value
         return match (true) {
             is_float($value) => $value,
             is_int($value), is_bool($value) => (float) $value,
-            is_string($value) && is_numeric(trim($value)) => (float) trim($value),
+            is_string($value) && is_numeric($value) => (float) $value,
             default => 0.0,
         };
     }

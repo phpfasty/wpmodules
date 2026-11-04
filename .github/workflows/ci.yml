@@ -34,13 +34,33 @@ jobs:
       - name: PHPCS Symfony + WordPress.Security
         run: vendor/bin/phpcs -n
       - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - name: Deptrac (architecture layers, 0 violations)
+        run: vendor/bin/deptrac analyse --config-file=deptrac.yaml --no-progress
       - run: vendor/bin/phpunit
       - name: Vendored core is CMS-agnostic (no WordPress calls)
         run: "! grep -rnE '\\b(add_action|add_filter|get_option|wp_[a-z_]+)\\(' moduly/lib/core/src"
 
-  build:
+  mutation:
+    # Infection on the pure classes (infection.json5): MSI and covered MSI >= 95 %
     runs-on: ubuntu-latest
     needs: lint-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: zip, sodium
+          coverage: pcov
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: vendor/bin/infection --no-progress --threads=max --logger-github
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-test, mutation]
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
