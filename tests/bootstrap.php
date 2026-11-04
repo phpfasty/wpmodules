@@ -43,6 +43,13 @@ if (!function_exists('get_post_type')) {
         return PhpFasty\WpModules\Tests\Fake\TestState::$postTypes[$id] ?? 'product';
     }
 }
+if (!function_exists('get_userdata')) {
+    /** A user unless listed in \PhpFasty\WpModules\Tests\Fake\TestState::$missingUsers. */
+    function get_userdata(int $id): object|false
+    {
+        return in_array($id, PhpFasty\WpModules\Tests\Fake\TestState::$missingUsers, true) ? false : (object) ['ID' => $id];
+    }
+}
 if (!function_exists('wp_unslash')) {
     /**
      * @template T

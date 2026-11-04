@@ -74,6 +74,7 @@ final class ModuleDomainTest extends TestCase
             ['id' => 'regular', 'label' => 'R', 'price' => '10', 'default' => true],
             ['id' => 'ext-2', 'label' => 'ext-2', 'price' => '1.5', 'default' => false],
         ], Tier::normalize($rows));
+        $this->assertSame('a', Tier::normalize([['tier' => 'NO'], ['tier' => 'a', 'id' => 'b']])[0]['id']);
         $this->assertTrue(Tier::validId(str_repeat('a', 32)));
         $this->assertFalse(Tier::validId(''));
         $this->assertSame([['id' => 'a', 'label' => 'a', 'price' => '', 'default' => true]], Tier::normalize([['tier' => 'a', 'label' => [], 'price' => null]]));

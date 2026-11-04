@@ -17,4 +17,7 @@ final class TestState
 
     /** @var array<int, string> post id => post type (bootstrap stub, default "product") */
     public static array $postTypes = [];
+
+    /** @var list<int> user ids get_userdata() does not find (bootstrap stub) */
+    public static array $missingUsers = [];
 }
