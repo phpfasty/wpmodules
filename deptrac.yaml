@@ -45,6 +45,7 @@ deptrac:
     - name: ModuleDomain
       collectors:
         - { type: classLike, value: '^PhpFasty\\Module\\[A-Za-z]+\\Domain\\.*' }
+    # module adapters (WordPress side): everything of a module except its Domain\
     - name: Cart
       collectors:
         - type: bool
@@ -52,13 +53,55 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\Cart\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\Cart\\Domain\\.*' }
-    - { name: Orders, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }] }
-    - { name: Types, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }] }
-    - { name: Downloads, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }] }
-    - { name: ConsentLog, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\.*' }] }
-    - { name: CookieConsent, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\.*' }] }
-    - { name: Reviews, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }] }
-    - { name: Licenses, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Licenses\\.*' }] }
+    - name: Orders
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\Domain\\.*' }
+    - name: Types
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Types\\Domain\\.*' }
+    - name: Downloads
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\Domain\\.*' }
+    - name: ConsentLog
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\Domain\\.*' }
+    - name: CookieConsent
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\Domain\\.*' }
+    - name: Reviews
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\Domain\\.*' }
+    - name: Licenses
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Licenses\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Licenses\\Domain\\.*' }
   ruleset:
     Core: ~
     Support: [WordPress]
@@ -67,9 +110,9 @@ deptrac:
     ModuleDomain: [Core]
     Cart: [Core, Support, WordPress, ModuleDomain]
     Orders: [Core, Support, WordPress, Cart, ModuleDomain]
-    Types: [Core, Support, WordPress, HostServices]
-    Downloads: [Core, Support, WordPress]
-    ConsentLog: [Core, Support, WordPress]
-    CookieConsent: [Core, Support, WordPress]
-    Reviews: [Core, Support, WordPress]
-    Licenses: [Core, Support, WordPress]
+    Types: [Core, Support, WordPress, HostServices, ModuleDomain]
+    Downloads: [Core, Support, WordPress, ModuleDomain]
+    ConsentLog: [Core, Support, WordPress, ModuleDomain]
+    CookieConsent: [Core, Support, WordPress, ModuleDomain]
+    Reviews: [Core, Support, WordPress, ModuleDomain]
+    Licenses: [Core, Support, WordPress, ModuleDomain]

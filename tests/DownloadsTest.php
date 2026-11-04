@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
-use PhpFasty\Module\Downloads\Token;
+use PhpFasty\Module\Downloads\Domain\Token;
 use PhpFasty\Moduly\Wp\Support\Value;
 use PHPUnit\Framework\TestCase;
 

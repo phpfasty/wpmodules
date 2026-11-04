@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Downloads;
 
+use PhpFasty\Module\Downloads\Domain\Token;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the link is HMAC-signed (Token), no nonce by design.

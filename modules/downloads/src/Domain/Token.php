@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Signed download links: HMAC-SHA256 over order id, item index and expiry (no state needed to check a link).
+ * Download domain (no WordPress). Signed download links: HMAC-SHA256 over order id, item index and expiry (no state needed to check a link).
  */
 
 declare(strict_types=1);
 
-namespace PhpFasty\Module\Downloads;
+namespace PhpFasty\Module\Downloads\Domain;
 
 final class Token
 {

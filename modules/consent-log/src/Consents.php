@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\ConsentLog;
 
+use PhpFasty\Module\ConsentLog\Domain\ConsentPolicy;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 // phpcs:disable WordPress.Security.NonceVerification.Missing -- runs inside the orders checkout handler after its nonce check.
@@ -73,13 +74,7 @@ final class Consents
      */
     public static function validate(array $errors, array $ticked): array
     {
-        foreach (self::definitions() as $d) {
-            if ($d['required'] && empty($ticked[$d['name']])) {
-                $errors[] = $d['name'];
-            }
-        }
-
-        return $errors;
+        return array_merge($errors, ConsentPolicy::missing(self::definitions(), $ticked));
     }
 
     /** @return array<string, bool> */
@@ -102,14 +97,7 @@ final class Consents
      */
     public static function record(array $ticked, string $ip, string $time): array
     {
-        return [
-            'time' => $time,
-            'ip' => $ip,
-            'version' => self::version(),
-            'offer' => !empty($ticked['consent_offer']),
-            'personal_data' => !empty($ticked['consent_pd']),
-            'newsletter' => !empty($ticked['consent_news']),
-        ];
+        return ConsentPolicy::record($ticked, $ip, $time, self::version());
     }
 
     /**

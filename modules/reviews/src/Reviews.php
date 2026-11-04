@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Reviews;
 
+use PhpFasty\Module\Reviews\Domain\RatingPolicy;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 // phpcs:disable WordPress.Security.NonceVerification.Missing -- the core comment form (wp-comments-post.php) has no nonce for guests; we only read the rating.
@@ -20,7 +21,7 @@ use PhpFasty\Moduly\Wp\Support\Value;
 final class Reviews
 {
     public const META = 'rating';
-    public const PAID = ['paid', 'processing', 'completed'];
+    public const PAID = RatingPolicy::PAID;
 
     private static string $type = 'product';
     private static string $ratingField = 'rating';
@@ -42,45 +43,23 @@ final class Reviews
 
     public static function rating(mixed $raw): int
     {
-        $n = is_numeric($raw) ? (int) $raw : 0;
-
-        return $n >= 1 && $n <= 5 ? $n : 0;
+        return RatingPolicy::rating($raw);
     }
 
     /**
-     * Average (1 decimal) and count of ratings.
-     *
      * @param list<int> $ratings
      *
      * @return array{avg: float, count: int}
      */
     public static function aggregate(array $ratings): array
     {
-        $ratings = array_values(array_filter($ratings, static fn (int $r): bool => $r >= 1 && $r <= 5));
-        $count = count($ratings);
-
-        return ['avg' => 0 === $count ? 0.0 : round(array_sum($ratings) / $count, 1), 'count' => $count];
+        return RatingPolicy::aggregate($ratings);
     }
 
-    /**
-     * Did this email buy the product (paid order)?
-     *
-     * @param list<array{status: string, items: array<mixed>}> $orders
-     */
+    /** @param list<array{status: string, items: array<mixed>}> $orders */
     public static function bought(array $orders, int $productId): bool
     {
-        foreach ($orders as $o) {
-            if (!in_array($o['status'], self::PAID, true)) {
-                continue;
-            }
-            foreach ($o['items'] as $item) {
-                if (is_array($item) && Value::int($item['id'] ?? 0) === $productId) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return RatingPolicy::bought($orders, $productId);
     }
 
     public static function verifiedBuyer(string $email, int $productId): bool

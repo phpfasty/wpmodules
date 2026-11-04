@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Licenses;
 
+use PhpFasty\Module\Licenses\Domain\Tier;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Licenses
@@ -94,21 +95,14 @@ final class Licenses
     public static function tiers(array $product): array
     {
         $out = [];
-        foreach ((array) ($product['licenses'] ?? []) as $i => $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-            $id = Value::str($row['tier'] ?? $row['id'] ?? '');
-            if (1 !== preg_match('/^[a-z0-9_-]{1,32}$/', $id)) {
-                continue;
-            }
+        foreach (Tier::normalize((array) ($product['licenses'] ?? [])) as $tier) {
             $out[] = [
-                'id' => $id,
-                'label' => self::label($id, Value::str($row['label'] ?? $id)),
-                'summary' => self::summary($id),
-                'price' => Value::str($row['price'] ?? ''),
-                'terms' => self::terms($id),
-                'checked' => [] === $out,
+                'id' => $tier['id'],
+                'label' => self::label($tier['id'], $tier['label']),
+                'summary' => self::summary($tier['id']),
+                'price' => $tier['price'],
+                'terms' => self::terms($tier['id']),
+                'checked' => $tier['default'],
             ];
         }
 

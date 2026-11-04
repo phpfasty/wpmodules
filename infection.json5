@@ -7,7 +7,12 @@
         "directories": [
             "moduly/src/Support",
             "modules/cart/src/Domain",
-            "modules/downloads/src",
+            "modules/orders/src/Domain",
+            "modules/reviews/src/Domain",
+            "modules/licenses/src/Domain",
+            "modules/consent-log/src/Domain",
+            "modules/cookie-consent/src/Domain",
+            "modules/downloads/src/Domain",
             "modules/types/src/Model"
             // Field.php (types field rules) joins once its escaped mutants are covered: see docs/audit
         ],

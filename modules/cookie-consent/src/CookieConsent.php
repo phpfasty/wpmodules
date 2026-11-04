@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\CookieConsent;
 
+use PhpFasty\Module\CookieConsent\Domain\Choice;
+
 final class CookieConsent
 {
     public const COOKIE = 'wpfasty_cookie_consent';
@@ -51,7 +53,7 @@ final class CookieConsent
     {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared to a constant only.
 
-        return isset($_COOKIE[self::COOKIE]) && is_string($_COOKIE[self::COOKIE]) && 'all' === sanitize_key(wp_unslash($_COOKIE[self::COOKIE]));
+        return isset($_COOKIE[self::COOKIE]) && is_string($_COOKIE[self::COOKIE]) && Choice::allowsAnalytics(sanitize_key(wp_unslash($_COOKIE[self::COOKIE])));
     }
 
     /** Config + script inline in the footer (no file URL needed, no external request). */

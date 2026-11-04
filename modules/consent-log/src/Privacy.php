@@ -10,11 +10,12 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\ConsentLog;
 
+use PhpFasty\Module\ConsentLog\Domain\ConsentPolicy;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Privacy
 {
-    public const PERSONAL = ['name', 'phone', 'address', 'city', 'postcode', 'notes'];
+    public const PERSONAL = ConsentPolicy::PERSONAL;
 
     /**
      * @param array<string, array<string, mixed>> $exporters
@@ -88,7 +89,7 @@ final class Privacy
 
     public static function anonymous(string $field): string
     {
-        return 'name' === $field ? '[deleted]' : '';
+        return ConsentPolicy::anonymous($field);
     }
 
     /**
@@ -98,10 +99,7 @@ final class Privacy
      */
     public static function anonymizeLog(array $log): array
     {
-        $log['ip'] = '';
-        $log['anonymized'] = true;
-
-        return $log;
+        return ConsentPolicy::anonymizeLog($log);
     }
 
     /** @return list<int> */

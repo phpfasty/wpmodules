@@ -12,16 +12,17 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Orders;
 
 use PhpFasty\Module\Cart\CartApi;
+use PhpFasty\Module\Orders\Domain\OrderStatus;
 use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Orders
 {
-    public const STATUSES = ['pending', 'paid', 'processing', 'completed', 'cancelled'];
+    public const STATUSES = OrderStatus::ALL;
 
     /** Statuses after payment (downloads open, verified-buyer reviews allowed). */
-    public const PAID = ['paid', 'processing', 'completed'];
-    public const PAYMENT_METHODS = ['cod', 'bank'];
+    public const PAID = OrderStatus::PAID;
+    public const PAYMENT_METHODS = OrderStatus::PAYMENT_METHODS;
 
     private static CartApi $cart;
 
@@ -39,7 +40,7 @@ final class Orders
     {
         $ids = (array) apply_filters('wpfasty_shop_payment_methods', self::PAYMENT_METHODS);
 
-        return array_values(array_filter(array_map(Value::str(...), $ids), static fn (string $id): bool => 1 === preg_match('/^[a-z0-9_-]{1,32}$/', $id)));
+        return OrderStatus::paymentMethods(array_values(array_map(Value::str(...), $ids)));
     }
 
     /** Register the post type unless the active theme / types layer already declared it (same arguments). */
@@ -166,7 +167,7 @@ final class Orders
             'email' => Value::str(get_post_meta($id, '_order_email', true)),
             'payment' => Value::str(get_post_meta($id, '_order_payment', true)),
             'status' => Value::str(get_post_meta($id, '_order_status', true)),
-            'paid' => in_array(Value::str(get_post_meta($id, '_order_status', true)), self::PAID, true),
+            'paid' => OrderStatus::paid(Value::str(get_post_meta($id, '_order_status', true))),
             'key' => $key,
             'items' => array_map(
                 static fn (array $i): array => $i + ['line_display' => self::$cart->format(Value::int($i['line']))],
@@ -239,7 +240,7 @@ final class Orders
             return;
         }
         $status = isset($_POST['order_status']) && is_string($_POST['order_status']) ? sanitize_key(wp_unslash($_POST['order_status'])) : '';
-        if (in_array($status, self::STATUSES, true)) {
+        if (OrderStatus::valid($status)) {
             self::setStatus($postId, $status);
         }
     }
@@ -248,7 +249,7 @@ final class Orders
     public static function setStatus(int $postId, string $status): void
     {
         $old = Value::str(get_post_meta($postId, '_order_status', true));
-        if (!in_array($status, self::STATUSES, true) || $old === $status) {
+        if (!OrderStatus::valid($status) || $old === $status) {
             return;
         }
         update_post_meta($postId, '_order_status', $status);
