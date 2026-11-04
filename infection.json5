@@ -6,6 +6,7 @@
     "source": {
         "directories": [
             "moduly/src/Support",
+            "modules/cart/src/Domain",
             "modules/downloads/src",
             "modules/types/src/Model"
             // Field.php (types field rules) joins once its escaped mutants are covered: see docs/audit

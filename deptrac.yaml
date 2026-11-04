@@ -41,7 +41,17 @@ deptrac:
     - name: WordPress
       collectors:
         - { type: classLike, value: '^(WP_|wpdb$|WP$|Walker)' }
-    - { name: Cart, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Cart\\.*' }] }
+    # Domain of every module (pure DTOs, value objects, policies, codecs): no WordPress, no host, no Support
+    - name: ModuleDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\[A-Za-z]+\\Domain\\.*' }
+    - name: Cart
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Cart\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Cart\\Domain\\.*' }
     - { name: Orders, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }] }
     - { name: Types, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }] }
     - { name: Downloads, collectors: [{ type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }] }
@@ -54,8 +64,9 @@ deptrac:
     Support: [WordPress]
     Host: [Core, Support, WordPress, HostServices]
     HostServices: [Core, Support, WordPress]
-    Cart: [Core, Support, WordPress]
-    Orders: [Core, Support, WordPress, Cart]
+    ModuleDomain: [Core]
+    Cart: [Core, Support, WordPress, ModuleDomain]
+    Orders: [Core, Support, WordPress, Cart, ModuleDomain]
     Types: [Core, Support, WordPress, HostServices]
     Downloads: [Core, Support, WordPress]
     ConsentLog: [Core, Support, WordPress]
