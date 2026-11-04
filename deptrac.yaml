@@ -2,6 +2,7 @@
 #   Core (CMS-agnostic kernel, ports/contracts, DTOs; vendored from phpfasty/moduly)  <- knows nothing else
 #   Support (WordPress-free value helpers of the plugin)                              <- Core only
 #   Host (WordPress adapter: the plugin)                                              <- Core, Support, WordPress
+#   <Module>Domain / <Module> (generated from module.json by tools/deptrac-modules.php, checked in CI)
 #   Module\* (each module)                       <- Core contracts, Support, WordPress, and only the modules
 #                                                   it declares in module.json `requires.modules`
 # A module never reaches into another module's internals except through a declared dependency, and never
@@ -41,11 +42,11 @@ deptrac:
     - name: WordPress
       collectors:
         - { type: classLike, value: '^(WP_|wpdb$|WP$|Walker)' }
-    # Domain of every module (pure DTOs, value objects, policies, codecs): no WordPress, no host, no Support
-    - name: ModuleDomain
+    # Per module: <Module>Domain (pure DTOs / policies / codecs) and <Module> (WordPress adapter = the rest).
+    # BEGIN generated: module layers (tools/deptrac-modules.php)
+    - name: CartDomain
       collectors:
-        - { type: classLike, value: '^PhpFasty\\Module\\[A-Za-z]+\\Domain\\.*' }
-    # module adapters (WordPress side): everything of a module except its Domain\
+        - { type: classLike, value: '^PhpFasty\\Module\\Cart\\Domain\\.*' }
     - name: Cart
       collectors:
         - type: bool
@@ -53,27 +54,9 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\Cart\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\Cart\\Domain\\.*' }
-    - name: Orders
+    - name: ConsentLogDomain
       collectors:
-        - type: bool
-          must:
-            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }
-          must_not:
-            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\Domain\\.*' }
-    - name: Types
-      collectors:
-        - type: bool
-          must:
-            - { type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }
-          must_not:
-            - { type: classLike, value: '^PhpFasty\\Module\\Types\\Domain\\.*' }
-    - name: Downloads
-      collectors:
-        - type: bool
-          must:
-            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }
-          must_not:
-            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\Domain\\.*' }
+        - { type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\Domain\\.*' }
     - name: ConsentLog
       collectors:
         - type: bool
@@ -81,6 +64,9 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\ConsentLog\\Domain\\.*' }
+    - name: CookieConsentDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\Domain\\.*' }
     - name: CookieConsent
       collectors:
         - type: bool
@@ -88,13 +74,19 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\CookieConsent\\Domain\\.*' }
-    - name: Reviews
+    - name: DownloadsDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\Domain\\.*' }
+    - name: Downloads
       collectors:
         - type: bool
           must:
-            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }
+            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\.*' }
           must_not:
-            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\Domain\\.*' }
+            - { type: classLike, value: '^PhpFasty\\Module\\Downloads\\Domain\\.*' }
+    - name: LicensesDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\Licenses\\Domain\\.*' }
     - name: Licenses
       collectors:
         - type: bool
@@ -102,17 +94,57 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\Licenses\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\Licenses\\Domain\\.*' }
+    - name: OrdersDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\Orders\\Domain\\.*' }
+    - name: Orders
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Orders\\Domain\\.*' }
+    - name: ReviewsDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\Domain\\.*' }
+    - name: Reviews
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\Domain\\.*' }
+    - name: TypesDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\Types\\Domain\\.*' }
+    - name: Types
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\Types\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\Types\\Domain\\.*' }
+    # END generated: module layers
   ruleset:
     Core: ~
     Support: [WordPress]
     Host: [Core, Support, WordPress, HostServices]
     HostServices: [Core, Support, WordPress]
-    ModuleDomain: [Core]
-    Cart: [Core, Support, WordPress, ModuleDomain]
-    Orders: [Core, Support, WordPress, Cart, ModuleDomain]
-    Types: [Core, Support, WordPress, HostServices, ModuleDomain]
-    Downloads: [Core, Support, WordPress, ModuleDomain]
-    ConsentLog: [Core, Support, WordPress, ModuleDomain]
-    CookieConsent: [Core, Support, WordPress, ModuleDomain]
-    Reviews: [Core, Support, WordPress, ModuleDomain]
-    Licenses: [Core, Support, WordPress, ModuleDomain]
+    # BEGIN generated: module rules (tools/deptrac-modules.php)
+    CartDomain: [Core]
+    Cart: [Core, Support, WordPress, CartDomain]
+    ConsentLogDomain: [Core, OrdersDomain]
+    ConsentLog: [Core, Support, WordPress, ConsentLogDomain, Orders, OrdersDomain]
+    CookieConsentDomain: [Core]
+    CookieConsent: [Core, Support, WordPress, CookieConsentDomain]
+    DownloadsDomain: [Core, CartDomain, OrdersDomain]
+    Downloads: [Core, Support, WordPress, DownloadsDomain, Cart, CartDomain, Orders, OrdersDomain]
+    LicensesDomain: [Core, CartDomain]
+    Licenses: [Core, Support, WordPress, LicensesDomain, Cart, CartDomain]
+    OrdersDomain: [Core, CartDomain]
+    Orders: [Core, Support, WordPress, OrdersDomain, Cart, CartDomain]
+    ReviewsDomain: [Core, OrdersDomain]
+    Reviews: [Core, Support, WordPress, ReviewsDomain, Orders, OrdersDomain]
+    TypesDomain: [Core]
+    Types: [Core, Support, WordPress, HostServices, TypesDomain]
+    # END generated: module rules

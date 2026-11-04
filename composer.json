@@ -53,7 +53,7 @@
             "php-cs-fixer fix",
             "phpcbf"
         ],
-        "deptrac": "deptrac analyse --config-file=deptrac.yaml --no-progress",
+        "deptrac": ["@php tools/deptrac-modules.php --check", "deptrac analyse --config-file=deptrac.yaml --no-progress"],
         "infection": "infection --no-progress --threads=4",
         "qa": [
             "@cs",
