@@ -1,0 +1,49 @@
+{
+    "product": {
+        "product.after": [
+            {
+                "view": "moduly/downloads/details",
+                "data": {
+                    "rows": [
+                        {
+                            "label": "Version",
+                            "value": "1.1.0"
+                        },
+                        {
+                            "label": "PHP",
+                            "value": "8.2+"
+                        }
+                    ],
+                    "changelog": [],
+                    "preview_url": "",
+                    "labels": {
+                        "title": "Compatibility",
+                        "changelog": "Changelog",
+                        "preview": "Live preview"
+                    }
+                }
+            }
+        ]
+    },
+    "order": {
+        "checkout.order": [
+            {
+                "view": "moduly/downloads/links",
+                "data": {
+                    "links": [
+                        {
+                            "url": "u"
+                        }
+                    ],
+                    "labels": {
+                        "title": "Your downloads",
+                        "download": "Download",
+                        "left": "downloads left",
+                        "until": "link valid until",
+                        "pending": "Links appear here and in your email as soon as the payment is confirmed."
+                    }
+                }
+            }
+        ]
+    }
+}

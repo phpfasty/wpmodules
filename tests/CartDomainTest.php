@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
 
 final class CartDomainTest extends TestCase
 {
+    use SnapshotAssertions;
+
     public function testRoundTripAndFormat(): void
     {
         $c = self::codec();
@@ -91,6 +93,8 @@ final class CartDomainTest extends TestCase
         self::assertFalse($sum->digital());
         self::assertSame('2~pro', $sum->lines[1]->key());
         self::assertSame(300, $sum->lines[1]->total());
+
+        $this->assertSlotsSnapshot('cart-summary', $s);
 
         $d = CartSummary::of([self::line(2, 1, 300, true)], $p)->toArray();
         self::assertTrue($d['digital']);

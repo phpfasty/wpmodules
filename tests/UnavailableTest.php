@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 /** Disable scenario: declared endpoints of modules that are not running are answered (503), never a blank page. */
 final class UnavailableTest extends TestCase
 {
+    use SnapshotAssertions;
+
     public function testDisabledOrdersKeepsCheckoutAnswered(): void
     {
         $installed = ['cart' => self::manifest('cart'), 'orders' => self::manifest('orders')];
@@ -34,6 +36,7 @@ final class UnavailableTest extends TestCase
         $this->assertStringContainsString('href="https://example.com/shop/?a=1&amp;b=&quot;x&quot;"', $html);
         $this->assertStringNotContainsString('href=""', Unavailable::html('https://example.com/'));
         $this->assertStringContainsString('href=""', Unavailable::html('javascript:alert(1)'));
+        $this->assertMatchesSnapshot('unavailable.html', Unavailable::html('https://example.com/shop/?a=1&b="x"'));
     }
 
     /** Required by .cursor/rules: every admin-post action / REST namespace a module registers is declared. */

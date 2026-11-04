@@ -1,0 +1,25 @@
+{
+    "footer.links": [
+        {
+            "view": "moduly/cookie-consent/settings",
+            "data": {
+                "label": "Cookie settings"
+            }
+        }
+    ],
+    "footer": [
+        {
+            "view": "moduly/cookie-consent/banner",
+            "data": {
+                "policy_url": "",
+                "labels": {
+                    "text": "We use necessary cookies to run the store and, with your consent, analytics cookies.",
+                    "accept": "Accept all",
+                    "necessary": "Necessary only",
+                    "policy": "Cookie policy",
+                    "settings": "Cookie settings"
+                }
+            }
+        }
+    ]
+}

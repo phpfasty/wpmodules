@@ -1,0 +1,29 @@
+{
+    "checkout.consents": [
+        {
+            "view": "moduly/consent-log/consents",
+            "data": {
+                "items": [
+                    {
+                        "name": "consent_offer",
+                        "id": "co-consent-offer",
+                        "label": "I accept the public offer and license agreement",
+                        "url": "/oferta/",
+                        "link": "document",
+                        "required": true,
+                        "error": false
+                    },
+                    {
+                        "name": "consent_pd",
+                        "id": "co-consent-pd",
+                        "label": "I consent to the processing of my personal data",
+                        "url": "/consent/",
+                        "link": "document",
+                        "required": true,
+                        "error": true
+                    }
+                ]
+            }
+        }
+    ]
+}

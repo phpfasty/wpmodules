@@ -15,6 +15,8 @@ use PHPUnit\Framework\TestCase;
 /** Views the modules add to the latte-shop extension points (filter `wpfasty_slots`). */
 final class SlotsTest extends TestCase
 {
+    use SnapshotAssertions;
+
     private const VIEW = '#^moduly/[a-z0-9-]+/[a-z0-9_-]+$#';
 
     public function testLicenseTiersAreNormalisedFirstChecked(): void
@@ -30,6 +32,7 @@ final class SlotsTest extends TestCase
     public function testLicensePickerOnlyWhenPurchasable(): void
     {
         $slots = Licenses::slots([], $this->product());
+        $this->assertSlotsSnapshot('licenses-slots', $slots);
         $this->assertSame('moduly/licenses/picker', $slots['product.purchase'][0]['view']);
         $this->assertSame('moduly/licenses/compare', $slots['product.after'][0]['view']);
         $this->assertViewsShipped($slots);
@@ -63,6 +66,7 @@ final class SlotsTest extends TestCase
         $paid = DownloadSlots::slots([], ['order' => ['downloads_available' => true, 'downloads' => [['url' => 'u']]]]);
         $this->assertSame('moduly/downloads/links', $paid['checkout.order'][0]['view']);
         $this->assertViewsShipped($slots + $paid);
+        $this->assertSlotsSnapshot('downloads-slots', ['product' => $slots, 'order' => $paid]);
     }
 
     public function testConsentCheckboxesKeepErrors(): void
@@ -77,6 +81,7 @@ final class SlotsTest extends TestCase
         $this->assertSame([false, true], array_column($items, 'error'));
         $slots = ConsentSlots::slots([], $ctx);
         $this->assertViewsShipped($slots);
+        $this->assertSlotsSnapshot('consent-log-slots', $slots);
         $this->assertSame([], ConsentSlots::slots([], []));
     }
 
@@ -87,6 +92,7 @@ final class SlotsTest extends TestCase
         $this->assertSame('moduly/cookie-consent/settings', $slots['footer.links'][0]['view']);
         $this->assertNotSame('', Value::at(Value::at($slots['footer'][0]['data'], 'labels'), 'settings'));
         $this->assertViewsShipped($slots);
+        $this->assertSlotsSnapshot('cookie-consent-slots', $slots);
     }
 
     public function testReviewSummaryFallsBackToApprovedList(): void
@@ -103,6 +109,7 @@ final class SlotsTest extends TestCase
         $this->assertSame(['5', '4', '3', '2', '1'], array_column(Value::arr($vm['rating_options']), 'value'));
         $this->assertNull(ReviewSlots::viewModel(['page' => ['product' => []]]));
         $this->assertViewsShipped(ReviewSlots::slots([], $ctx));
+        $this->assertSlotsSnapshot('reviews-slots', ReviewSlots::slots([], $ctx));
     }
 
     /** @param array<string, list<array<string, mixed>>> $slots */

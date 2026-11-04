@@ -1,0 +1,65 @@
+{
+    "product.after": [
+        {
+            "view": "moduly/reviews/reviews",
+            "data": {
+                "post_id": 5,
+                "action": "",
+                "rating": "4.5",
+                "count": 2,
+                "reviews": [
+                    {
+                        "name": "A",
+                        "date": "",
+                        "text": "",
+                        "rating": 5,
+                        "stars": "★★★★★",
+                        "verified": false
+                    },
+                    {
+                        "name": "B",
+                        "date": "",
+                        "text": "",
+                        "rating": 4,
+                        "stars": "★★★★☆",
+                        "verified": false
+                    }
+                ],
+                "rating_options": [
+                    {
+                        "value": "5",
+                        "stars": "★★★★★"
+                    },
+                    {
+                        "value": "4",
+                        "stars": "★★★★"
+                    },
+                    {
+                        "value": "3",
+                        "stars": "★★★"
+                    },
+                    {
+                        "value": "2",
+                        "stars": "★★"
+                    },
+                    {
+                        "value": "1",
+                        "stars": "★"
+                    }
+                ],
+                "labels": {
+                    "title": "Reviews",
+                    "none": "No reviews yet.",
+                    "verified": "Verified buyer",
+                    "write": "Write a review",
+                    "note": "Only buyers can review: use the email of your paid order.",
+                    "name": "Your name",
+                    "email": "Order email",
+                    "rating": "Rating",
+                    "text": "Your review",
+                    "submit": "Send review"
+                }
+            }
+        }
+    ]
+}

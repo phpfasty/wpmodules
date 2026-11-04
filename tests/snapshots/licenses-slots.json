@@ -1,0 +1,79 @@
+{
+    "product.purchase": [
+        {
+            "view": "moduly/licenses/picker",
+            "data": {
+                "tiers": [
+                    {
+                        "id": "regular",
+                        "label": "Regular license",
+                        "summary": "One site, end users are not charged.",
+                        "price": "10 ₽",
+                        "terms": [
+                            "One end product (one site)",
+                            "End users are not charged",
+                            "Updates and 6 months of support"
+                        ],
+                        "checked": true
+                    },
+                    {
+                        "id": "extended",
+                        "label": "Extended license",
+                        "summary": "One site, end users may be charged.",
+                        "price": "50 ₽",
+                        "terms": [
+                            "One end product (one site)",
+                            "End users may be charged (SaaS, paid access)",
+                            "Updates and 12 months of support"
+                        ],
+                        "checked": false
+                    }
+                ],
+                "labels": {
+                    "license": "License",
+                    "compare": "What the licenses allow",
+                    "terms": "Full license terms"
+                }
+            }
+        }
+    ],
+    "product.after": [
+        {
+            "view": "moduly/licenses/compare",
+            "data": {
+                "tiers": [
+                    {
+                        "id": "regular",
+                        "label": "Regular license",
+                        "summary": "One site, end users are not charged.",
+                        "price": "10 ₽",
+                        "terms": [
+                            "One end product (one site)",
+                            "End users are not charged",
+                            "Updates and 6 months of support"
+                        ],
+                        "checked": true
+                    },
+                    {
+                        "id": "extended",
+                        "label": "Extended license",
+                        "summary": "One site, end users may be charged.",
+                        "price": "50 ₽",
+                        "terms": [
+                            "One end product (one site)",
+                            "End users may be charged (SaaS, paid access)",
+                            "Updates and 12 months of support"
+                        ],
+                        "checked": false
+                    }
+                ],
+                "labels": {
+                    "license": "License",
+                    "compare": "What the licenses allow",
+                    "terms": "Full license terms"
+                },
+                "terms_url": ""
+            }
+        }
+    ]
+}
