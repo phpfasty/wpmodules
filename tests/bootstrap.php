@@ -44,8 +44,17 @@ if (!function_exists('get_post_type')) {
     }
 }
 if (!function_exists('wp_unslash')) {
+    /**
+     * @template T
+     *
+     * @param T $value
+     *
+     * @return T
+     */
     function wp_unslash(mixed $value): mixed
     {
+        /** @var T */
+
         return is_string($value) ? stripslashes($value) : $value;
     }
 }

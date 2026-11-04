@@ -133,7 +133,7 @@ jobs:
         working-directory: site
         run: |
           wp eval '$s = apply_filters("wpfasty_shop_state", []); if (empty($s["enabled"])) { exit(1); } echo "shop enabled\n";'
-          wp eval 'foreach (["admin_post_nopriv_latte_shop_cart","admin_post_latte_shop_cart","admin_post_latte_shop_checkout"] as $h) { if (!has_action($h)) { echo "missing $h\n"; exit(1); } } echo "handlers ok\n";'
+          wp eval 'foreach (["admin_post_nopriv_moduly_cart","admin_post_moduly_cart","admin_post_moduly_checkout","admin_post_nopriv_latte_shop_cart","admin_post_latte_shop_cart","admin_post_latte_shop_checkout"] as $h) { if (!has_action($h)) { echo "missing $h\n"; exit(1); } } echo "handlers ok\n";'
       - name: Disable scenario — a disabled module's form answers 503, not a blank page
         working-directory: site
         run: |
@@ -150,7 +150,9 @@ jobs:
           DEPENDENTS=$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo implode(" ",array_column(array_filter($m,fn($r)=>$r["status"]==="enabled"&&in_array($r["id"],["consent-log","reviews"],true)),"id"));')
           for m in $DEPENDENTS; do wp moduly disable "$m"; done
           wp moduly disable orders
-          curl -s -D /tmp/h.txt -o /tmp/b.html -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php
+          curl -s -D /tmp/h.txt -o /tmp/b.html -d 'action=moduly_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php
+          # deprecated alias answers 503 as well
+          test "$(curl -s -o /dev/null -w '%{http_code}' -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php)" = "503"
           cat /tmp/h.txt
           grep -q '^HTTP/1.1 503' /tmp/h.txt
           grep -qi '^Retry-After: 300' /tmp/h.txt
@@ -161,7 +163,7 @@ jobs:
           for m in $DEPENDENTS; do wp moduly enable "$m"; done
           wp moduly enable downloads
           test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8080/wp-admin/admin-post.php?action=moduly_download&o=1&i=0&e=1&s=x')" = "403"
-          curl -s -o /dev/null -w '%{http_code}\n' -d 'action=latte_shop_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
+          curl -s -o /dev/null -w '%{http_code}\n' -d 'action=moduly_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
       - name: Types module — old schema → migrate → switch theme → back, disable/enable, prune (meta intact)
         working-directory: site
         env:

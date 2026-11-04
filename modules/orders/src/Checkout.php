@@ -1,7 +1,7 @@
 <?php
 
 /**
- * admin-post.php handler `latte_shop_checkout` + checkout / order data for the theme:
+ * admin-post.php handler `moduly_checkout` (deprecated alias `latte_shop_checkout`) + checkout / order data for the theme:
  *   wpfasty_shop_state    → checkout nonce
  *   wpfasty_shop_checkout (array $checkout)            → errors + kept values from the last attempt
  *   wpfasty_shop_order    (?array $order, int id, key) → order confirmation
@@ -20,6 +20,10 @@ use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Checkout
 {
+    public const ACTION = 'moduly_checkout';
+    /** @deprecated 0.2.0 use self::ACTION */
+    public const DEPRECATED_ACTION = 'latte_shop_checkout';
+
     private const FIELDS = ['name', 'email', 'phone', 'address', 'city', 'postcode', 'country', 'notes', 'payment'];
     private const REQUIRED = ['name', 'email', 'address', 'city', 'postcode', 'country'];
     private const ERRORS = ['name', 'email', 'address', 'city', 'postcode', 'country', 'payment', 'server'];
@@ -35,7 +39,7 @@ final class Checkout
 
     public static function handle(): void
     {
-        self::$cart->verify('latte_shop_checkout');
+        self::$cart->verify(self::ACTION, self::DEPRECATED_ACTION);
         $summary = self::$cart->summary();
         $back = self::$cart->pageUrl('checkout');
         if ([] === $summary['items']) {
@@ -72,7 +76,7 @@ final class Checkout
         if ([] !== $errors) {
             // Keep non-sensitive input across the redirect for 10 minutes, keyed by a random token.
             $token = strtolower(wp_generate_password(16, false));
-            set_transient('latte_shop_co_'.$token, $c, 10 * MINUTE_IN_SECONDS);
+            set_transient('moduly_co_'.$token, $c, 10 * MINUTE_IN_SECONDS);
             wp_safe_redirect(add_query_arg(['co_errors' => implode(',', array_unique($errors)), 'co' => $token], $back));
             exit;
         }
@@ -107,7 +111,8 @@ final class Checkout
      */
     public static function state(array $shop): array
     {
-        $shop['checkout_nonce'] = wp_create_nonce('latte_shop_checkout');
+        $shop['checkout_nonce'] = wp_create_nonce(self::ACTION);
+        $shop['checkout_action'] = self::ACTION;
         $shop['orders'] = true;
         $shop['checkout_available'] = true;
 
@@ -128,7 +133,7 @@ final class Checkout
             ))
             : [];
         $token = isset($_GET['co']) && is_string($_GET['co']) ? sanitize_key(wp_unslash($_GET['co'])) : '';
-        $old = '' !== $token ? get_transient('latte_shop_co_'.$token) : false;
+        $old = '' !== $token ? get_transient('moduly_co_'.$token) : false;
         if (is_array($old)) {
             $checkout['values'] = $old;
         }

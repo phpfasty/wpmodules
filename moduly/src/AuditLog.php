@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Kernel\AuditLogInterface;
+use PhpFasty\Moduly\Wp\Support\Db;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -16,16 +17,14 @@ final class AuditLog implements AuditLogInterface
 
     public static function table(): string
     {
-        global $wpdb;
+        $wpdb = Db::wpdb();
 
-        /* @var \wpdb $wpdb */
         return $wpdb->prefix.'moduly_audit';
     }
 
     public static function install(): void
     {
-        global $wpdb;
-        /** @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         require_once ABSPATH.'wp-admin/includes/upgrade.php';
         $charset = $wpdb->get_charset_collate();
         $table = self::table();
@@ -47,8 +46,7 @@ final class AuditLog implements AuditLogInterface
 
     public function record(string $action, string $moduleId, string $version, string $result, array $context = []): void
     {
-        global $wpdb;
-        /** @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         $row = [
             'ts' => gmdate('Y-m-d H:i:s'),
             'user_id' => get_current_user_id(),
@@ -72,8 +70,7 @@ final class AuditLog implements AuditLogInterface
      */
     public static function latest(int $limit = 20): array
     {
-        global $wpdb;
-        /* @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         if (self::DB_VERSION !== get_option('moduly_audit_db')) {
             return [];
         }
@@ -87,8 +84,7 @@ final class AuditLog implements AuditLogInterface
     /** Daily retention (MODULY_AUDIT_DAYS, default 180). Audit rows are operational logs, not user content. */
     public static function prune(): void
     {
-        global $wpdb;
-        /* @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         if (self::DB_VERSION !== get_option('moduly_audit_db')) {
             return;
         }

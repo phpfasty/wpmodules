@@ -18,7 +18,7 @@ final class Module implements ModuleInterface
         Consents::configure($context->settings);
         $host = $context->host;
         $host->on('filter', 'wpfasty_shop_checkout_errors', [Consents::class, 'onValidate']);
-        $host->on('action', 'latte_shop_order_created', [Consents::class, 'onOrderCreated']);
+        $host->on('action', 'moduly_order_created', [Consents::class, 'onOrderCreated']);
         $host->on('filter', 'wpfasty_shop_checkout', [Consents::class, 'checkout'], 20);
         $views = $context->path.'/views';
         $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));

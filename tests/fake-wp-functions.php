@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 // WordPress function stand-ins backed by Fake\FakeWp (phpunit only; excluded from phpstan).
 
+if (!class_exists('wpdb')) {
+    // phpcs:ignore -- empty base of the FakeWpdb test double (the real class is not loaded in unit tests)
+    class wpdb
+    {
+    }
+}
+
 $GLOBALS['wpdb'] = new PhpFasty\WpModules\Tests\Fake\FakeWpdb();
 
 if (!function_exists('get_option')) {

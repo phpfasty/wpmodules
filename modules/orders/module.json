@@ -39,6 +39,7 @@
     },
     "endpoints": {
         "actions": [
+            "moduly_checkout",
             "latte_shop_checkout"
         ],
         "rest": []

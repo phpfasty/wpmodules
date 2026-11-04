@@ -14,8 +14,8 @@ final class UnavailableTest extends TestCase
     public function testDisabledOrdersKeepsCheckoutAnswered(): void
     {
         $installed = ['cart' => self::manifest('cart'), 'orders' => self::manifest('orders')];
-        $this->assertSame(['actions' => ['latte_shop_checkout'], 'rest' => []], Unavailable::collect($installed, ['cart']));
-        $this->assertSame(['actions' => ['latte_shop_cart', 'latte_shop_checkout'], 'rest' => []], Unavailable::collect($installed, []));
+        $this->assertSame(['actions' => ['moduly_checkout', 'latte_shop_checkout'], 'rest' => []], Unavailable::collect($installed, ['cart']));
+        $this->assertSame(['actions' => ['moduly_cart', 'latte_shop_cart', 'moduly_checkout', 'latte_shop_checkout'], 'rest' => []], Unavailable::collect($installed, []));
         $this->assertSame(['actions' => [], 'rest' => []], Unavailable::collect($installed, ['cart', 'orders']));
     }
 

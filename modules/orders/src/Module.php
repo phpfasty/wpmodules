@@ -25,7 +25,8 @@ final class Module implements ModuleInterface
         $host = $context->host;
         $host->on('action', 'init', [Orders::class, 'registerType'], 11);
         $host->on('action', 'admin_init', [Orders::class, 'registerAdmin']);
-        foreach (['admin_post_latte_shop_checkout', 'admin_post_nopriv_latte_shop_checkout'] as $hook) {
+        // latte_shop_checkout: deprecated alias of moduly_checkout (forms rendered before the rename)
+        foreach (['admin_post_moduly_checkout', 'admin_post_nopriv_moduly_checkout', 'admin_post_latte_shop_checkout', 'admin_post_nopriv_latte_shop_checkout'] as $hook) {
             $host->on('action', $hook, [Checkout::class, 'handle']);
         }
         $host->on('filter', 'wpfasty_shop_state', [Checkout::class, 'state'], 11);

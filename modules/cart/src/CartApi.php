@@ -48,8 +48,9 @@ final class CartApi
         return Pages::url($slug);
     }
 
-    public function verify(string $action): void
+    /** Nonce (of the action or its deprecated alias), POST method and rate limit; dies otherwise. */
+    public function verify(string $action, ?string $deprecated = null): void
     {
-        Handlers::verify($action);
+        Handlers::verify($action, $deprecated);
     }
 }

@@ -6,6 +6,7 @@ namespace PhpFasty\Module\Types\Migrations;
 
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Migration\MigrationInterface;
+use PhpFasty\Moduly\Wp\Support\Db;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -29,8 +30,7 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
 
     public function up(int $batchSize): bool
     {
-        global $wpdb;
-        /** @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         $cursor = (array) get_option(self::CURSOR, []);
         $budget = max(1, $batchSize);
         foreach ($this->types->all() as $type) {

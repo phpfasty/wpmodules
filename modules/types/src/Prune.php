@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Types;
 
 use PhpFasty\Module\Types\Model\Registry;
+use PhpFasty\Moduly\Wp\Support\Db;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -27,8 +28,7 @@ final class Prune
     /** @return list<array{post_id: int, post_type: string, key: string, value: string}> */
     public function candidates(int $limit = 0): array
     {
-        global $wpdb;
-        /** @var \wpdb $wpdb */
+        $wpdb = Db::wpdb();
         $rows = [];
         foreach ($this->types->all() as $type) {
             $known = [];

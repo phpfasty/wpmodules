@@ -12,10 +12,12 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
+use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Cart
 {
+    /** Kept as is (data compatibility): renaming would empty every visitor's cart. */
     public const COOKIE = 'latte_shop_cart';
     public const MAX_QTY = 99;
     public const MAX_LINES = 50;
@@ -165,7 +167,7 @@ final class Cart
 
     public static function freeShippingCents(): int
     {
-        return Value::int(apply_filters('latte_shop_free_shipping_cents', self::$shipping['free']));
+        return Value::int(Hooks::filter('moduly_shop_free_shipping_cents', 'latte_shop_free_shipping_cents', self::$shipping['free']));
     }
 
     /** Shipping of physical goods (a cart with downloads only never pays shipping, see summary()). */
@@ -175,7 +177,7 @@ final class Cart
             return 0;
         }
         $free = self::freeShippingCents();
-        $flat = Value::int(apply_filters('latte_shop_flat_shipping_cents', self::$shipping['flat']));
+        $flat = Value::int(Hooks::filter('moduly_shop_flat_shipping_cents', 'latte_shop_flat_shipping_cents', self::$shipping['flat']));
 
         return 0 === $subtotal || $subtotal >= $free ? 0 : $flat;
     }

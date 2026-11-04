@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Orders;
 
 use PhpFasty\Module\Cart\CartApi;
+use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Orders
@@ -131,7 +132,7 @@ final class Orders
             }
         }
 
-        do_action('latte_shop_order_created', $id);
+        Hooks::action('moduly_order_created', 'latte_shop_order_created', $id);
         wp_mail(
             Value::str(get_option('admin_email')),
             sprintf(/* translators: %d order id */ __('New order #%d', 'moduly'), $id),
@@ -180,7 +181,7 @@ final class Orders
 
     public static function metaBoxes(): void
     {
-        add_meta_box('latte-shop-order', __('Order details', 'moduly'), static function (\WP_Post $post): void {
+        add_meta_box('moduly-order', __('Order details', 'moduly'), static function (\WP_Post $post): void {
             $id = $post->ID;
             echo '<table class="widefat striped"><thead><tr>'
                 .'<th>'.esc_html__('Item', 'moduly').'</th>'
@@ -195,7 +196,7 @@ final class Orders
                 printf(
                     '<tr><td>%s</td><td>%d</td><td>%s</td></tr>',
                     esc_html(Value::str($item['title'] ?? '').('' !== $tier ? ' — '.$tier : '')),
-                    absint($item['qty'] ?? 0),
+                    Value::int($item['qty'] ?? 0), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- int for %d
                     esc_html(self::$cart->format(Value::int($item['line'] ?? 0)))
                 );
             }
@@ -213,8 +214,8 @@ final class Orders
             );
         }, 'shop_order', 'normal', 'high');
 
-        add_meta_box('latte-shop-order-status', __('Status', 'moduly'), static function (\WP_Post $post): void {
-            wp_nonce_field('latte_shop_order_status', 'latte_shop_order_nonce');
+        add_meta_box('moduly-order-status', __('Status', 'moduly'), static function (\WP_Post $post): void {
+            wp_nonce_field('moduly_order_status', 'moduly_order_nonce');
             $current = Value::str(get_post_meta($post->ID, '_order_status', true));
             echo '<select name="order_status" class="widefat">';
             foreach (self::STATUSES as $s) {
@@ -231,10 +232,10 @@ final class Orders
 
     public static function saveStatus(int $postId): void
     {
-        $nonce = isset($_POST['latte_shop_order_nonce'])
-            ? sanitize_text_field(wp_unslash($_POST['latte_shop_order_nonce']))
+        $nonce = isset($_POST['moduly_order_nonce']) && is_string($_POST['moduly_order_nonce'])
+            ? sanitize_text_field(wp_unslash($_POST['moduly_order_nonce']))
             : '';
-        if (!wp_verify_nonce($nonce, 'latte_shop_order_status') || !current_user_can('edit_post', $postId)) {
+        if (!wp_verify_nonce($nonce, 'moduly_order_status') || !current_user_can('edit_post', $postId)) {
             return;
         }
         $status = isset($_POST['order_status']) && is_string($_POST['order_status']) ? sanitize_key(wp_unslash($_POST['order_status'])) : '';

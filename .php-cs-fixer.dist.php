@@ -22,6 +22,7 @@ return (new PhpCsFixer\Config())
         // Migration_NNNN_<Name> (ADR-002) and WordPress method names on test doubles (get_col)
         'php_unit_method_casing' => false,
         'phpdoc_summary' => false,
+        'phpdoc_to_comment' => ['ignored_tags' => ['var']],
         'phpdoc_no_package' => false,
     ])
     ->setCacheFile(__DIR__.'/.php-cs-fixer.cache')
