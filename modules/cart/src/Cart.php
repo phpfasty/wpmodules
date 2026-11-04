@@ -129,6 +129,7 @@ final class Cart
     public static function summary(): array
     {
         $lines = [];
+        self::prime(array_map(static fn (int|string $key): int => self::parse((string) $key)[0], array_keys(self::lines())));
         foreach (self::lines() as $key => $qty) {
             [$id, $tier] = self::parse($key);
             if (!Catalog::isPurchasable($id) || Catalog::tier($id, $tier) !== $tier) {
@@ -201,6 +202,24 @@ final class Cart
     public static function decode(string $raw): array
     {
         return self::codec()->decode($raw);
+    }
+
+    /**
+     * One query for the posts + one for their meta (and the same for the thumbnails) instead of two per cart line.
+     *
+     * @param list<int> $ids
+     */
+    private static function prime(array $ids): void
+    {
+        $ids = array_values(array_unique(array_filter($ids)));
+        if ([] === $ids || !function_exists('_prime_post_caches')) {
+            return;
+        }
+        _prime_post_caches($ids, false, true);
+        $thumbs = array_values(array_filter(array_map(static fn (int $id): int => (int) get_post_thumbnail_id($id), $ids)));
+        if ([] !== $thumbs) {
+            _prime_post_caches($thumbs, false, true);
+        }
     }
 
     private static function codec(): LineCodec

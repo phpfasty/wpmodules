@@ -170,7 +170,12 @@ final class Reviews
             return $product;
         }
         $list = [];
-        foreach (Value::list(get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment', 'number' => 20])) as $c) {
+        // The list is shown on the product page only: cards of a listing (archive, related) skip the query (no
+        // N+1), and so does a product without comments (comment_count of the already loaded post).
+        $comments = self::detail($postId) && (int) get_comments_number($postId) > 0
+            ? get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment', 'number' => 20])
+            : [];
+        foreach (Value::list($comments) as $c) {
             if (!$c instanceof \WP_Comment) {
                 continue;
             }
@@ -187,6 +192,16 @@ final class Reviews
         $product['review_action'] = site_url('/wp-comments-post.php');
 
         return $product;
+    }
+
+    /** Is this the product of the current singular view (or no main query, e.g. CLI / REST)? */
+    private static function detail(int $postId): bool
+    {
+        if (!function_exists('is_singular') || !did_action('wp')) {
+            return true;
+        }
+
+        return is_singular() && get_queried_object_id() === $postId;
     }
 
     private static function write(int $postId, string $field, int|float $value): void
