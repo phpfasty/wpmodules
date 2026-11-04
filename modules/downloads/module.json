@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "downloads",
     "name": "Downloads",
-    "version": "0.2.2",
+    "version": "0.3.0",
     "publisher": "phpfasty",
     "license": "GPL-2.0-or-later",
     "description": "Digital delivery for paid orders: signed download links (HMAC, 24 h TTL, download limit), files in a private uploads directory.",
@@ -11,8 +11,8 @@
         "php": ">=8.2",
         "wp": ">=6.4",
         "modules": {
-            "cart": "^0.3",
-            "orders": "^0.3"
+            "cart": "^0.4",
+            "orders": "^0.4"
         }
     },
     "provides": {

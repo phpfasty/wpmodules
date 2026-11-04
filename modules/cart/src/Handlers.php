@@ -1,7 +1,7 @@
 <?php
 
 /**
- * admin-post.php handler `moduly_cart` (deprecated alias `latte_shop_cart`) (add / update / remove). Nonce, POST only, rate limit,
+ * admin-post.php handler `moduly_cart` (add / update / remove). Nonce, POST only, rate limit,
  * server-side pricing, safe redirect. Action and nonce names are unchanged from the theme forms.
  *
  * @moduly-request-handler reads the cart form.
@@ -18,8 +18,6 @@ use PhpFasty\Moduly\Wp\Support\Value;
 final class Handlers
 {
     public const CART = 'moduly_cart';
-    /** @deprecated 0.2.0 use self::CART */
-    public const DEPRECATED_CART = 'latte_shop_cart';
 
     /** @var (callable(string): bool)|null */
     private static $limiter;
@@ -31,7 +29,7 @@ final class Handlers
 
     public static function cart(): void
     {
-        self::verify(self::CART, self::DEPRECATED_CART);
+        self::verify(self::CART);
         $op = isset($_POST['op']) && is_string($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '';
         $id = isset($_POST['product_id']) && is_string($_POST['product_id']) ? absint(wp_unslash($_POST['product_id'])) : 0;
         $qty = isset($_POST['qty']) && is_string($_POST['qty']) ? absint(wp_unslash($_POST['qty'])) : 1;
@@ -68,13 +66,13 @@ final class Handlers
 
     /** Nonce + POST + rate limit (shared with the orders module). */
     /**
-     * Accepts a nonce of the action or of its deprecated alias (forms rendered before the rename).
+     * Accepts a nonce of the action only.
      */
-    public static function verify(string $action, ?string $deprecated = null): void
+    public static function verify(string $action): void
     {
         $nonce = isset($_POST['_wpnonce']) && is_string($_POST['_wpnonce']) ? sanitize_text_field(wp_unslash($_POST['_wpnonce'])) : '';
         $method = isset($_SERVER['REQUEST_METHOD']) && is_string($_SERVER['REQUEST_METHOD']) ? sanitize_key(wp_unslash($_SERVER['REQUEST_METHOD'])) : '';
-        $valid = false !== wp_verify_nonce($nonce, $action) || (null !== $deprecated && false !== wp_verify_nonce($nonce, $deprecated));
+        $valid = false !== wp_verify_nonce($nonce, $action);
         if ('post' !== $method || !$valid) {
             wp_die(
                 esc_html__('Your session expired. Please go back and try again.', 'moduly'),

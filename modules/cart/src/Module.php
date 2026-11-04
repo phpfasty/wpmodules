@@ -25,8 +25,7 @@ final class Module implements ModuleInterface
         }
         $host = $context->host;
         $host->on('action', 'wpfasty_types_loaded', [Catalog::class, 'setRegistry'], 5);
-        // latte_shop_cart: deprecated alias of moduly_cart (forms rendered before the rename)
-        foreach (['admin_post_moduly_cart', 'admin_post_nopriv_moduly_cart', 'admin_post_latte_shop_cart', 'admin_post_nopriv_latte_shop_cart'] as $hook) {
+        foreach (['admin_post_moduly_cart', 'admin_post_nopriv_moduly_cart'] as $hook) {
             $host->on('action', $hook, [Handlers::class, 'cart']);
         }
         $host->on('filter', 'wpfasty_shop_state', [Shop::class, 'state']);

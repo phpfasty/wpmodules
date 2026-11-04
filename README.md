@@ -10,7 +10,7 @@ Monorepo of the WordPress side of [phpfasty/moduly](https://github.com/phpfasty/
   WP-CLI `wp moduly list|install|enable|disable|rollback|remove|status`.
   The core is vendored in `moduly/lib/core` (`tools/sync-core.sh <ref>`; `VERSION` records the commit).
 - `modules/cart`, `modules/orders` — the shop logic extracted from the latte-shop theme (alexy-os/wp-fasty): signed
-  cookie cart `latte_shop_cart`, money in integer cents, private `shop_order` posts with the same `_order_*` meta keys.
+  cookie cart `moduly_cart`, money in integer cents, private `shop_order` posts with the same `_order_*` meta keys.
   Themes keep presentation only and read `wpfasty_shop_{state,cart,product,checkout,order}` filters.
 - `modules/types` — declarative post types (`types/*.php` of the active theme): the theme's
   `WPFasty\Types\{Registry,Field,PostType}` are `class_alias`ed to the module on `plugins_loaded` (before the theme's

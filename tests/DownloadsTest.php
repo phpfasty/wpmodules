@@ -59,10 +59,8 @@ final class DownloadsTest extends TestCase
         $this->assertContains('files:private', Value::arr(Value::at($m, 'permissions')));
     }
 
-    public function testDeprecatedTokenAlias(): void
+    public function testTokenAliasRemoved(): void
     {
-        $alias = 'PhpFasty\\Module\\Downloads\\Token';
-        $this->assertTrue(class_exists($alias));
-        $this->assertSame(Token::sign(1, 0, 9, 'k'), $alias::sign(1, 0, 9, 'k'));
+        $this->assertFalse(class_exists('PhpFasty\Module\Downloads\Token'));
     }
 }

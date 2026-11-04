@@ -16,7 +16,6 @@ use PhpFasty\Module\Cart\Domain\CartLine;
 use PhpFasty\Module\Cart\Domain\CartSummary;
 use PhpFasty\Module\Cart\Domain\LineCodec;
 use PhpFasty\Module\Cart\Domain\ShippingPolicy;
-use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -25,8 +24,8 @@ use PhpFasty\Moduly\Wp\Support\Value;
  */
 final class Cart
 {
-    /** Kept as is (data compatibility): renaming would empty every visitor's cart. */
-    public const COOKIE = 'latte_shop_cart';
+    /** Signed cart cookie (0.4.0: renamed from latte_shop_cart; carts in the old cookie are not read). */
+    public const COOKIE = 'moduly_cart';
     public const MAX_QTY = LineCodec::MAX_QTY;
     public const MAX_LINES = LineCodec::MAX_LINES;
 
@@ -158,7 +157,7 @@ final class Cart
 
     public static function freeShippingCents(): int
     {
-        return Value::int(Hooks::filter('moduly_shop_free_shipping_cents', 'latte_shop_free_shipping_cents', self::$shipping['free']));
+        return Value::int(apply_filters('moduly_shop_free_shipping_cents', self::$shipping['free']));
     }
 
     /** Shipping of physical goods (a cart with downloads only never pays shipping, see summary()). */
@@ -170,7 +169,7 @@ final class Cart
     public static function policy(): ShippingPolicy
     {
         return new ShippingPolicy(
-            Value::int(Hooks::filter('moduly_shop_flat_shipping_cents', 'latte_shop_flat_shipping_cents', self::$shipping['flat'])),
+            Value::int(apply_filters('moduly_shop_flat_shipping_cents', self::$shipping['flat'])),
             self::freeShippingCents(),
             self::digitalOnly(),
         );

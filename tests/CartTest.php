@@ -23,7 +23,7 @@ final class CartTest extends TestCase
 
     public function testCookieNameIsUnchanged(): void
     {
-        $this->assertSame('latte_shop_cart', Cart::COOKIE);
+        $this->assertSame('moduly_cart', Cart::COOKIE);
     }
 
     public function testCartCookieRoundTripsWhenSigned(): void

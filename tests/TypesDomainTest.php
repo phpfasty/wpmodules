@@ -10,7 +10,7 @@ use PhpFasty\Module\Types\Domain\Scalar;
 use PhpFasty\Module\Types\WpSanitizer;
 use PHPUnit\Framework\TestCase;
 
-/** Types domain without WordPress: the pure-PHP sanitizer, value narrowing, deprecated Model aliases. */
+/** Types domain without WordPress: the pure-PHP sanitizer, value narrowing. */
 final class TypesDomainTest extends TestCase
 {
     public function testPlainSanitizer(): void
@@ -65,12 +65,10 @@ final class TypesDomainTest extends TestCase
         $this->assertSame(['a' => 1], Scalar::map(['a' => 1, 0 => 2]));
     }
 
-    public function testDeprecatedModelAliases(): void
+    public function testModelAliasesRemoved(): void
     {
-        $this->assertTrue(class_exists('PhpFasty\Module\Types\Model\Field'));
-        $this->assertTrue(class_exists('PhpFasty\Module\Types\Model\PostType'));
-        $alias = 'PhpFasty\\Module\\Types\\Model\\Field';
-        $this->assertTrue(is_a(Field::fromArray('f', [], 'x'), $alias));
+        $this->assertFalse(class_exists('PhpFasty\Module\Types\Model\Field'));
+        $this->assertFalse(class_exists('PhpFasty\Module\Types\Model\PostType'));
     }
 
     protected function tearDown(): void

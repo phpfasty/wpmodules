@@ -8,7 +8,6 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
-use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Money
@@ -39,7 +38,7 @@ final class Money
         $symbols = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'RUB' => '₽', 'JPY' => '¥'];
         $currency = self::currency();
         $fallback = $symbols[$currency] ?? $currency.' ';
-        $symbol = function_exists('apply_filters') ? Value::str(Hooks::filter('moduly_shop_currency_symbol', 'latte_shop_currency_symbol', $fallback, $currency)) : $fallback;
+        $symbol = function_exists('apply_filters') ? Value::str(apply_filters('moduly_shop_currency_symbol', $fallback, $currency)) : $fallback;
         $value = function_exists('number_format_i18n')
             ? number_format_i18n($cents / 100, 2)
             : number_format($cents / 100, 2);

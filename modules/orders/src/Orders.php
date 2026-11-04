@@ -13,7 +13,6 @@ namespace PhpFasty\Module\Orders;
 
 use PhpFasty\Module\Cart\CartApi;
 use PhpFasty\Module\Orders\Domain\OrderStatus;
-use PhpFasty\Moduly\Wp\Support\Hooks;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Orders
@@ -133,7 +132,7 @@ final class Orders
             }
         }
 
-        Hooks::action('moduly_order_created', 'latte_shop_order_created', $id);
+        do_action('moduly_order_created', $id);
         wp_mail(
             Value::str(get_option('admin_email')),
             sprintf(/* translators: %d order id */ __('New order #%d', 'moduly'), $id),

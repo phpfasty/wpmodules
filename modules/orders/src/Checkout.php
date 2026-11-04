@@ -1,7 +1,7 @@
 <?php
 
 /**
- * admin-post.php handler `moduly_checkout` (deprecated alias `latte_shop_checkout`) + checkout / order data for the theme:
+ * admin-post.php handler `moduly_checkout` + checkout / order data for the theme:
  *   wpfasty_shop_state    → checkout nonce
  *   wpfasty_shop_checkout (array $checkout)            → errors + kept values from the last attempt
  *   wpfasty_shop_order    (?array $order, int id, key) → order confirmation
@@ -22,8 +22,6 @@ use PhpFasty\Moduly\Wp\Support\Value;
 final class Checkout
 {
     public const ACTION = 'moduly_checkout';
-    /** @deprecated 0.2.0 use self::ACTION */
-    public const DEPRECATED_ACTION = 'latte_shop_checkout';
 
     /** @var array<string, array<array-key, mixed>> form input restored in this request, by token (read-once) */
     private static array $restored = [];
@@ -37,7 +35,7 @@ final class Checkout
 
     public static function handle(): void
     {
-        self::$cart->verify(self::ACTION, self::DEPRECATED_ACTION);
+        self::$cart->verify(self::ACTION);
         $summary = self::$cart->summary();
         $back = self::$cart->pageUrl('checkout');
         if ([] === $summary['items']) {

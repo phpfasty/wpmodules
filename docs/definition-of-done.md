@@ -9,7 +9,7 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 |---|---|---|---|
 | Core has no WordPress | Deptrac `Core: ~` + CI grep of WP calls in `moduly/lib/core/src` | 0 violations | ✅ |
 | Hexagonal layers | `composer deptrac`: Core ← Support ← Host; per module `<Module>Domain` (Core + Domains of required modules) and `<Module>` adapter, generated from `module.json` `requires.modules` by `tools/deptrac-modules.php` (`--check` in CI) | 0 violations | ✅ |
-| Module domain split (ports/DTO) | `modules/*/src/Domain` (WordPress-free) in all 8 modules; types through the `Domain\SanitizerInterface` port (`PlainSanitizer` default, `Types\WpSanitizer` adapter); old class names kept as deprecated `class_alias` (types `Model\Field`/`PostType`, `Downloads\Token`) | 8 of 8 | ✅ |
+| Module domain split (ports/DTO) | `modules/*/src/Domain` (WordPress-free) in all 8 modules; types through the `Domain\SanitizerInterface` port (`PlainSanitizer` default, `Types\WpSanitizer` adapter) | 8 of 8 | ✅ |
 | PHPStan max, no baseline | `composer phpstan` (core included) | 0 errors, no baseline, 2 targeted ignores | ✅ |
 | PHPCS Symfony + WordPress.Security, PHP-CS-Fixer @Symfony | `composer cs` | 0 | ✅ |
 | strict_types, camelCase, `*Exception` | PHPCS (camelCase sniff from wp-fasty), core exceptions | all files | ✅ |
@@ -21,7 +21,7 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 | opcache | CI WordPress job: `php -S` with opcache on PHP 8.5 (off on 8.2, chaosbun#120) | green | ✅ |
 | WordPress ≥ 7.1.4 | CI downloads `WP_VERSION=7.1.4` and fails below it (CVE-2026-119977) | 7.1.4 | ✅ |
 | `composer audit` | CI, `composer.lock` committed (platform 8.2.35) | 0 advisories | ✅ |
-| Deprecated aliases for renamed hooks | `Support\Hooks` (`apply_filters_deprecated` / `do_action_deprecated`), both admin-post names registered, CI checks both | `latte_shop_*` → `moduly_*` | ✅ |
+| Old names removed (0.3.0) | no `latte_shop_*` hook / action / filter / cookie, no `class_alias` shims (types `Model\Field`/`PostType`, `Downloads\Token`); CI asserts the old admin-post hooks are not registered | 0 references | ✅ |
 | Signed modules, Plugin Check | CI build (ed25519 verify), Plugin Check 0 errors | green | ✅ |
 | License | `GPL-2.0-or-later` (composer.json, plugin header, every module.json) | — | ✅ |
 
@@ -53,7 +53,7 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 - `tests/snapshots/*` — golden files; `UPDATE_SNAPSHOTS=1 vendor/bin/phpunit` rewrites them, the diff is reviewed.
 - CI WordPress job (PHP 8.2 and 8.5, WordPress 7.1.4, MariaDB 11): install plugin + signed modules through the
   validated installer, handlers of new and deprecated names, disable scenario (503 for disabled modules' forms,
-  including the deprecated `latte_shop_checkout`), types schema round trip (themes from the wp-fasty `playground`
+  ), types schema round trip (themes from the wp-fasty `playground`
   release), query budget (N+1 guard), tampered package rejected, Plugin Check.
 
 ## 4. Security and release
@@ -64,5 +64,5 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 
 ## Left
 
-- Remove the deprecated aliases in 1.0 (types `Model\\Field` / `Model\\PostType`, `Downloads\\Token`, `latte_shop_*` hooks).
-- `Model\\Registry` (types) stays a WordPress adapter: registering post types / meta needs WordPress.
+- Nothing from the refactor list. `Model\\Registry` (types) stays a WordPress adapter by design (post type / meta
+  registration needs WordPress).
