@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "licenses",
     "name": "Licenses",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "publisher": "phpfasty",
     "license": "GPL-2.0-or-later",
     "description": "License tiers for digital goods: the product `licenses` field (tier, label, price), the license picker on the product page and the comparison of what every tier allows. Prices stay server-side in the cart module.",

@@ -2,7 +2,7 @@
     "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
     "id": "cart",
     "name": "Cart",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "publisher": "phpfasty",
     "license": "GPL-2.0-or-later",
     "description": "Signed-cookie cart for WP FastY shop themes: server-side prices in integer cents, no sessions, no WooCommerce.",

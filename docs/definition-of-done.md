@@ -9,14 +9,14 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 |---|---|---|---|
 | Core has no WordPress | Deptrac `Core: ~` + CI grep of WP calls in `moduly/lib/core/src` | 0 violations | ✅ |
 | Hexagonal layers | `composer deptrac` (Core ← Support ← Host; per-module rules; `ModuleDomain` → Core only) | 0 violations, 401 allowed | ✅ |
-| Module domain split (ports/DTO) | cart: `Domain\LineCodec`, `ShippingPolicy`, `CartLine`/`CartSummary` (view/v1 `toArray()`) | cart done; other modules: see "Left" | 🟡 |
+| Module domain split (ports/DTO) | `modules/*/src/Domain` (WordPress-free): cart `LineCodec`/`ShippingPolicy`/`CartLine`/`CartSummary`; orders `OrderStatus`/`CheckoutPolicy`; reviews `RatingPolicy`; licenses `Tier`; downloads `Token`; consent-log `ConsentPolicy`; cookie-consent `Choice`. Deptrac: every module layer excludes its `Domain\` | 7 of 8 modules (types: `Model\` keeps WordPress fallbacks, see "Left") | ✅ |
 | PHPStan max, no baseline | `composer phpstan` (core included) | 0 errors, no baseline, 2 targeted ignores | ✅ |
 | PHPCS Symfony + WordPress.Security, PHP-CS-Fixer @Symfony | `composer cs` | 0 | ✅ |
 | strict_types, camelCase, `*Exception` | PHPCS (camelCase sniff from wp-fasty), core exceptions | all files | ✅ |
-| PHPUnit | `composer test` | 116 tests, 445 assertions | ✅ |
+| PHPUnit | `composer test` | 133 tests, 594 assertions | ✅ |
 | Golden snapshots | `tests/snapshots/` (slot view data of every module, cart summary, 503 page HTML) | 7 snapshots, 0 differ | ✅ |
-| Infection MSI ≥ 95 % | `composer infection`, CI job `mutation` (pcov) | 265 mutants, 257 killed, covered MSI 96 % | ✅ |
-| N+1 | `Reviews::verifiedBuyer` primes the meta cache (`update_meta_cache`) | fixed; no query-count guard in CI yet | 🟡 |
+| Infection MSI ≥ 95 % | `composer infection`, CI job `mutation` (pcov); scope: Support\Value, every module `Domain`, types `Model` incl. `Field.php` | 741 mutants, covered MSI 96 % | ✅ |
+| N+1 | `tests/wp/query-budget.sh` in the CI WordPress job: `/shop/` 2→12 products, product page, `/cart/` and `/checkout/` 1→6 lines within +3 queries | +0 on every page (fixed: review list per card, cart lines not primed) | ✅ |
 | PHP 8.5 primary + 8.2 floor, CVE floor | CI matrix 8.2 / 8.5, step "PHP security floor" (8.5 ≥ 8.5.12, 8.2 ≥ 8.2.35) | green | ✅ |
 | opcache | CI WordPress job: `php -S` with opcache on PHP 8.5 (off on 8.2, chaosbun#120) | green | ✅ |
 | WordPress ≥ 7.1.4 | CI downloads `WP_VERSION=7.1.4` and fails below it (CVE-2026-119977) | 7.1.4 | ✅ |
@@ -53,7 +53,8 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 - `tests/snapshots/*` — golden files; `UPDATE_SNAPSHOTS=1 vendor/bin/phpunit` rewrites them, the diff is reviewed.
 - CI WordPress job (PHP 8.2 and 8.5, WordPress 7.1.4, MariaDB 11): install plugin + signed modules through the
   validated installer, handlers of new and deprecated names, disable scenario (503 for disabled modules' forms,
-  including the deprecated `latte_shop_checkout`), types schema round trip, tampered package rejected, Plugin Check.
+  including the deprecated `latte_shop_checkout`), types schema round trip (themes from the wp-fasty `playground`
+  release), query budget (N+1 guard), tampered package rejected, Plugin Check.
 
 ## 4. Security and release
 
@@ -63,9 +64,8 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 
 ## Left
 
-- Domain/port split of orders, downloads, reviews, licenses, consent-log, types (cart done; the pattern is in
-  `modules/cart/src/Domain`).
-- Infection: `modules/types/src/Model/Field.php` (field rules) has escaped mutants and is outside the gate.
-- Query-count guard in CI for the reviews N+1 fix.
-- wp-fasty themes still post `latte_shop_*` actions (served by the deprecated aliases): switch to `cart_action` /
-  `checkout_action` from the shop state.
+- types: `Model\Field` / `PostType` still call WordPress sanitizers when loaded (with plain-PHP fallbacks) and use
+  `Support\Value`; a `Domain\` move needs a sanitizer port.
+- `ModuleDomain` is one layer: a module could use another module's `Domain` without declaring it (not used today).
+- wp-fasty themes post `cart_action` / `checkout_action` from the shop state (`moduly_*` with modules ≥ 0.3); the theme
+  default stays `latte_shop_*` until older modules are gone.
