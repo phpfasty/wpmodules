@@ -47,6 +47,10 @@ Yes: with `DISALLOW_FILE_MODS` uploads from wp-admin are disabled; WP-CLI still 
 
 == Changelog ==
 
+= Modules 2026-11-04 (2) =
+* types 0.4.0: WordPress-free Domain (Field, PostType) with a SanitizerInterface port (PlainSanitizer default, WordPress adapter WpSanitizer at boot). Model\Field / Model\PostType remain as deprecated aliases until 1.0.
+* downloads 0.2.2: Downloads\Token remains as a deprecated alias of Downloads\Domain\Token until 1.0.
+
 = Modules 2026-11-04 =
 * cart 0.3.1, orders 0.3.1, reviews / licenses / downloads / consent-log / cookie-consent 0.2.1: WordPress-free Domain classes; cart summary primes posts, meta and thumbnails in one go; the review list is loaded on the product page only (no N+1 on listings).
 

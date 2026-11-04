@@ -8,14 +8,14 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 | Item | Check | Measured | Status |
 |---|---|---|---|
 | Core has no WordPress | Deptrac `Core: ~` + CI grep of WP calls in `moduly/lib/core/src` | 0 violations | ✅ |
-| Hexagonal layers | `composer deptrac` (Core ← Support ← Host; per-module rules; `ModuleDomain` → Core only) | 0 violations, 401 allowed | ✅ |
-| Module domain split (ports/DTO) | `modules/*/src/Domain` (WordPress-free): cart `LineCodec`/`ShippingPolicy`/`CartLine`/`CartSummary`; orders `OrderStatus`/`CheckoutPolicy`; reviews `RatingPolicy`; licenses `Tier`; downloads `Token`; consent-log `ConsentPolicy`; cookie-consent `Choice`. Deptrac: every module layer excludes its `Domain\` | 7 of 8 modules (types: `Model\` keeps WordPress fallbacks, see "Left") | ✅ |
+| Hexagonal layers | `composer deptrac`: Core ← Support ← Host; per module `<Module>Domain` (Core + Domains of required modules) and `<Module>` adapter, generated from `module.json` `requires.modules` by `tools/deptrac-modules.php` (`--check` in CI) | 0 violations | ✅ |
+| Module domain split (ports/DTO) | `modules/*/src/Domain` (WordPress-free) in all 8 modules; types through the `Domain\SanitizerInterface` port (`PlainSanitizer` default, `Types\WpSanitizer` adapter); old class names kept as deprecated `class_alias` (types `Model\Field`/`PostType`, `Downloads\Token`) | 8 of 8 | ✅ |
 | PHPStan max, no baseline | `composer phpstan` (core included) | 0 errors, no baseline, 2 targeted ignores | ✅ |
 | PHPCS Symfony + WordPress.Security, PHP-CS-Fixer @Symfony | `composer cs` | 0 | ✅ |
 | strict_types, camelCase, `*Exception` | PHPCS (camelCase sniff from wp-fasty), core exceptions | all files | ✅ |
-| PHPUnit | `composer test` | 133 tests, 594 assertions | ✅ |
+| PHPUnit | `composer test` | 138 tests, 638 assertions | ✅ |
 | Golden snapshots | `tests/snapshots/` (slot view data of every module, cart summary, 503 page HTML) | 7 snapshots, 0 differ | ✅ |
-| Infection MSI ≥ 95 % | `composer infection`, CI job `mutation` (pcov); scope: Support\Value, every module `Domain`, types `Model` incl. `Field.php` | 741 mutants, covered MSI 96 % | ✅ |
+| Infection MSI ≥ 95 % | `composer infection`, CI job `mutation` (pcov); scope: Support\Value, every module `Domain`, types `Domain` incl. `Field.php` | 741 mutants, covered MSI 96 % | ✅ |
 | N+1 | `tests/wp/query-budget.sh` in the CI WordPress job: `/shop/` 2→12 products, product page, `/cart/` and `/checkout/` 1→6 lines within +3 queries | +0 on every page (fixed: review list per card, cart lines not primed) | ✅ |
 | PHP 8.5 primary + 8.2 floor, CVE floor | CI matrix 8.2 / 8.5, step "PHP security floor" (8.5 ≥ 8.5.12, 8.2 ≥ 8.2.35) | green | ✅ |
 | opcache | CI WordPress job: `php -S` with opcache on PHP 8.5 (off on 8.2, chaosbun#120) | green | ✅ |
@@ -64,8 +64,5 @@ An item is done when its check runs in CI (or the stated script) and passes. Mea
 
 ## Left
 
-- types: `Model\Field` / `PostType` still call WordPress sanitizers when loaded (with plain-PHP fallbacks) and use
-  `Support\Value`; a `Domain\` move needs a sanitizer port.
-- `ModuleDomain` is one layer: a module could use another module's `Domain` without declaring it (not used today).
-- wp-fasty themes post `cart_action` / `checkout_action` from the shop state (`moduly_*` with modules ≥ 0.3); the theme
-  default stays `latte_shop_*` until older modules are gone.
+- Remove the deprecated aliases in 1.0 (types `Model\\Field` / `Model\\PostType`, `Downloads\\Token`, `latte_shop_*` hooks).
+- `Model\\Registry` (types) stays a WordPress adapter: registering post types / meta needs WordPress.
