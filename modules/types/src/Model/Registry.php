@@ -13,16 +13,14 @@
  * view-models. Registration of post types/taxonomies/meta and the admin metabox lives in
  * the companion plugin `plugins/wpfasty-types` (wordpress.org: plugin territory, ADR-001 §3a),
  * which receives this registry via the `wpfasty_types_loaded` action.
- *
- * @package Latte
  */
 
 declare(strict_types=1);
 
 namespace PhpFasty\Module\Types\Model;
 
-use WPFasty\Core\BootableServiceInterface;
 use PhpFasty\Moduly\Wp\Support\Value;
+use WPFasty\Core\BootableServiceInterface;
 
 final class Registry implements BootableServiceInterface
 {
@@ -32,19 +30,19 @@ final class Registry implements BootableServiceInterface
     private bool $loaded = false;
 
     /** @var (callable(list<string>): list<array<mixed>>)|null */
-    private static $definitions = null;
-
-    /** @param callable(list<string>): list<array<mixed>> $reader */
-    public static function setDefinitions(callable $reader): void
-    {
-        self::$definitions = $reader;
-    }
+    private static $definitions;
 
     /**
      * @param list<string> $dirs Directories scanned for `*.php` modules.
      */
     public function __construct(private array $dirs = [])
     {
+    }
+
+    /** @param callable(list<string>): list<array<mixed>> $reader */
+    public static function setDefinitions(callable $reader): void
+    {
+        self::$definitions = $reader;
     }
 
     public function boot(): void
@@ -68,7 +66,7 @@ final class Registry implements BootableServiceInterface
         $dirs = function_exists('apply_filters')
             ? (array) apply_filters('wpfasty_type_dirs', $this->dirs)
             : $this->dirs;
-        $defs = self::$definitions !== null
+        $defs = null !== self::$definitions
             ? (self::$definitions)(array_values(array_unique(Value::strings($dirs))))
             : [];
         if (function_exists('apply_filters')) {
@@ -94,6 +92,7 @@ final class Registry implements BootableServiceInterface
     public function get(string $name): ?PostType
     {
         $this->load();
+
         return $this->types[$name] ?? null;
     }
 
@@ -101,6 +100,7 @@ final class Registry implements BootableServiceInterface
     public function all(): array
     {
         $this->load();
+
         return $this->types;
     }
 
@@ -113,6 +113,7 @@ final class Registry implements BootableServiceInterface
     {
         $type = $this->get((string) get_post_type($postId));
         $def = $type?->fields[$field] ?? null;
+
         return $def ? self::read($postId, $def) : '';
     }
 
@@ -131,6 +132,7 @@ final class Registry implements BootableServiceInterface
                 if (!metadata_exists('post', $postId, $key)) {
                     return null;
                 }
+
                 return Value::str(get_post_meta($postId, $key, true));
             },
             $keys,
@@ -140,6 +142,7 @@ final class Registry implements BootableServiceInterface
                 do_action('moduly_types_invalid_value', $postId, $field->name, $ctx['key'] ?? '', $message);
             },
         );
+
         return Value::str($value);
     }
 
@@ -147,14 +150,14 @@ final class Registry implements BootableServiceInterface
     public static function valid(Field $field, string $raw): bool
     {
         return match ($field->type) {
-            'integer', 'money' => preg_match('/^-?\d+$/', $raw) === 1,
+            'integer', 'money' => 1 === preg_match('/^-?\d+$/', $raw),
             'number' => is_numeric($raw),
             'boolean' => in_array($raw, ['0', '1', ''], true),
-            'date' => preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) === 1,
-            'file', 'user' => preg_match('/^\d*$/', $raw) === 1,
-            'semver' => $raw === '' || Field::semver($raw) === $raw,
-            'enum' => $raw === '' || in_array($raw, $field->options(), true),
-            'license_tiers' => $raw === '' || Field::tiers($raw) !== [],
+            'date' => 1 === preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw),
+            'file', 'user' => 1 === preg_match('/^\d*$/', $raw),
+            'semver' => '' === $raw || Field::semver($raw) === $raw,
+            'enum' => '' === $raw || in_array($raw, $field->options(), true),
+            'license_tiers' => '' === $raw || [] !== Field::tiers($raw),
             default => true,
         };
     }
@@ -166,13 +169,14 @@ final class Registry implements BootableServiceInterface
      * The `context` callable receives the same object the filter got.
      *
      * @param array<string, mixed> $data
+     *
      * @return array<string, mixed>
      */
     public function postData(array $data, object $post): array
     {
         [$postId, $kind] = self::identity($post);
-        $type = $kind === '' ? null : $this->get($kind);
-        if ($type === null || $postId <= 0) {
+        $type = '' === $kind ? null : $this->get($kind);
+        if (null === $type || $postId <= 0) {
             return $data;
         }
         $data['fields'] = [];
@@ -195,6 +199,7 @@ final class Registry implements BootableServiceInterface
             }
         }
         $context = $type->def['context'] ?? null;
+
         return is_callable($context) ? Value::map($context($data, $post, $type)) : $data;
     }
 
@@ -211,6 +216,7 @@ final class Registry implements BootableServiceInterface
         $vars = get_object_vars($post);
         $id = $vars['id'] ?? 0;
         $kind = $vars['kind'] ?? '';
+
         return [is_numeric($id) ? (int) $id : 0, is_string($kind) ? $kind : ''];
     }
 
@@ -220,7 +226,7 @@ final class Registry implements BootableServiceInterface
             $archive = $type->view('archive');
             if ($archive) {
                 $taxonomies = array_keys($type->taxonomies());
-                if (is_post_type_archive($type->name) || ($taxonomies !== [] && is_tax($taxonomies))) {
+                if (is_post_type_archive($type->name) || ([] !== $taxonomies && is_tax($taxonomies))) {
                     return $archive;
                 }
             }
@@ -229,6 +235,7 @@ final class Registry implements BootableServiceInterface
                 return $single;
             }
         }
+
         return $view;
     }
 
@@ -239,7 +246,7 @@ final class Registry implements BootableServiceInterface
         }
         foreach ($this->all() as $type) {
             $taxonomies = array_keys($type->taxonomies());
-            if (!$query->is_post_type_archive($type->name) && ($taxonomies === [] || !$query->is_tax($taxonomies))) {
+            if (!$query->is_post_type_archive($type->name) && ([] === $taxonomies || !$query->is_tax($taxonomies))) {
                 continue;
             }
             $archive = $type->archive();
@@ -256,7 +263,8 @@ final class Registry implements BootableServiceInterface
     public function archiveTitle(string $title, string $postType): string
     {
         $custom = $this->get($postType)?->archive()['title'] ?? null;
-        return is_string($custom) && $custom !== '' ? $custom : $title;
+
+        return is_string($custom) && '' !== $custom ? $custom : $title;
     }
 
     /** Module `archive.prefix` => false drops "Archives:"/"Category:" prefixes on its archives. */
@@ -267,10 +275,11 @@ final class Registry implements BootableServiceInterface
                 continue;
             }
             $taxonomies = array_keys($type->taxonomies());
-            if (is_post_type_archive($type->name) || ($taxonomies !== [] && is_tax($taxonomies))) {
+            if (is_post_type_archive($type->name) || ([] !== $taxonomies && is_tax($taxonomies))) {
                 return '';
             }
         }
+
         return $prefix;
     }
 
@@ -282,7 +291,7 @@ final class Registry implements BootableServiceInterface
     public function latest(string $postType, int $count): array
     {
         $type = $this->get($postType);
-        if ($type === null) {
+        if (null === $type) {
             return [];
         }
         $orderby = $type->archive()['orderby'] ?? null;
@@ -291,6 +300,7 @@ final class Registry implements BootableServiceInterface
             'numberposts' => $count,
             'orderby' => is_string($orderby) ? $orderby : (is_array($orderby) ? array_map(Value::str(...), Value::map($orderby)) : ['date' => 'DESC']),
         ]);
+
         return array_values($posts);
     }
 
@@ -307,6 +317,7 @@ final class Registry implements BootableServiceInterface
             $items[] = ['name' => $term->name, 'slug' => $term->slug, 'url' => Value::str(get_term_link($term))];
         }
         $current = is_tax($taxonomy) ? get_queried_object() : null;
+
         return ['items' => $items, 'current' => $current instanceof \WP_Term ? $current->slug : ''];
     }
 }

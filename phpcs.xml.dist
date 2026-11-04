@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <ruleset name="wpmodules">
-    <description>PSR-12 code style plus WordPress security sniffs (escaping, nonces, sanitized input, prepared SQL).</description>
+    <description>Symfony coding standard (escapestudios/symfony2-coding-standard on PSR-12, aligned with PHP-CS-Fixer @Symfony) plus WordPress security sniffs (escaping, nonces, sanitized input, prepared SQL). Same canon as wp-fasty.</description>
     <file>moduly/moduly.php</file>
     <file>moduly/autoload.php</file>
     <file>moduly/src</file>
@@ -11,6 +11,40 @@
     <rule ref="PSR12">
         <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
     </rule>
+    <rule ref="Symfony">
+        <!-- as in wp-fasty: aligned with PHP-CS-Fixer @Symfony (concat without spaces, typed signatures without
+             redundant docblocks); layout sniffs owned by PHP-CS-Fixer are off -->
+        <exclude name="PSR12.Operators.OperatorSpacing"/>
+        <exclude name="Symfony.Commenting.FunctionComment.Missing"/>
+        <exclude name="Symfony.Commenting.FunctionComment.MissingParamTag"/>
+        <exclude name="Symfony.Commenting.FunctionComment.MissingReturn"/>
+        <exclude name="Symfony.Commenting.ClassComment.Missing"/>
+        <exclude name="PSR12.Files.FileHeader.SpacingAfterBlock"/>
+        <exclude name="PSR12.ControlStructures.ControlStructureSpacing"/>
+        <exclude name="Symfony.Arrays.MultiLineArrayComma"/>
+        <exclude name="PEAR.Functions.FunctionCallSignature.Indent"/>
+        <exclude name="PSR2.Methods.FunctionCallSignature.Indent"/>
+        <exclude name="PSR12.Classes.AnonClassDeclaration.SpaceAfterKeyword"/>
+        <exclude name="Symfony.Objects.ObjectInstantiation"/>
+        <exclude name="Symfony.Functions.Arguments"/>
+        <exclude name="Symfony.Classes.PropertyDeclaration"/>
+        <exclude name="Symfony.Commenting.FunctionComment.ParamNameNoMatch"/>
+        <!-- WordPress file naming (moduly.php, kebab-case module dirs) -->
+        <exclude name="Symfony.Files.AlphanumericFilename"/>
+        <!-- replaced by WPFasty.NamingConventions.ValidVariableName (WordPress globals / fields allowed) -->
+        <exclude name="Zend.NamingConventions.ValidVariableName"/>
+        <!-- GPL-2.0-or-later, not Symfony's MIT header -->
+        <exclude name="Symfony.Commenting.License"/>
+    </rule>
+    <rule ref="PSR12.Operators.OperatorSpacing">
+        <severity>0</severity>
+    </rule>
+    <!-- camelCase for our variables, parameters and properties; WordPress globals and fields of WP objects stay -->
+    <rule ref="./.phpcs/WPFasty/Sniffs/NamingConventions/ValidVariableNameSniff.php"/>
+    <!-- strict comparison is required -->
+    <rule ref="Symfony.ControlStructure.IdenticalComparison">
+        <type>error</type>
+    </rule>
     <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
         <!-- ADR-002 names migrations Migration_NNNN_<Name> -->
         <exclude-pattern>*/Migrations/Migration_*</exclude-pattern>
@@ -20,7 +54,7 @@
         <exclude-pattern>*/modules/types/src/ThemeContract.php</exclude-pattern>
     </rule>
     <rule ref="Generic.Files.LineLength">
-        <properties><property name="lineLimit" value="140"/></properties>
+        <properties><property name="lineLimit" value="120"/><property name="absoluteLineLimit" value="0"/></properties>
     </rule>
     <rule ref="WordPress.Security"/>
     <rule ref="WordPress.DB.PreparedSQL"/>

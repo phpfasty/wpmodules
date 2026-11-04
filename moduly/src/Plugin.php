@@ -9,7 +9,6 @@ use PhpFasty\Moduly\Kernel\Kernel;
 use PhpFasty\Moduly\Kernel\ModuleRecord;
 use PhpFasty\Moduly\Manifest\DependencyResolver;
 use PhpFasty\Moduly\Moduly;
-use Throwable;
 
 /**
  * Bootstrap of the WordPress adapter: boots enabled modules on plugins_loaded:5 (before themes and init),
@@ -55,10 +54,10 @@ final class Plugin
 
     public static function load(): void
     {
-        if (self::$instance !== null) {
+        if (null !== self::$instance) {
             return;
         }
-        if (get_option('moduly_audit_db') !== AuditLog::DB_VERSION) {
+        if (AuditLog::DB_VERSION !== get_option('moduly_audit_db')) {
             AuditLog::install();
         }
         $state = new OptionState();
@@ -79,9 +78,9 @@ final class Plugin
 
         // Settings schemas for Host::settings() (read from module.json of enabled modules).
         foreach ($state->load() as $rec) {
-            if ($rec->status === ModuleRecord::ENABLED) {
+            if (ModuleRecord::ENABLED === $rec->status) {
                 $m = $modules->manifest($rec);
-                if ($m !== null) {
+                if (null !== $m) {
                     $host->setSchema($m->id, $m->settings);
                 }
             }
@@ -93,7 +92,7 @@ final class Plugin
         $installed = [];
         foreach ($state->load() as $rec) {
             $m = $modules->manifest($rec);
-            if ($m !== null) {
+            if (null !== $m) {
                 $installed[$m->id] = $m;
             }
         }
@@ -123,14 +122,14 @@ final class Plugin
     public function onShutdown(): void
     {
         $e = error_get_last();
-        if ($e === null || !in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
+        if (null === $e || !in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
             return;
         }
         $id = $this->kernel->booting() ?? $this->kernel->moduleForFile($e['file']);
-        if ($id !== null) {
+        if (null !== $id) {
             try {
-                $this->kernel->markFailed([$id => 'Fatal error: ' . wp_basename($e['file']) . ':' . $e['line']]);
-            } catch (Throwable) {
+                $this->kernel->markFailed([$id => 'Fatal error: '.wp_basename($e['file']).':'.$e['line']]);
+            } catch (\Throwable) {
                 // Shutdown: nothing else to do.
                 return;
             }
@@ -142,6 +141,7 @@ final class Plugin
      * moduly_manage → activate_plugins.
      *
      * @param list<string> $caps
+     *
      * @return list<string>
      */
     public static function mapCaps(array $caps, string $cap): array
@@ -157,7 +157,7 @@ final class Plugin
     public function runPendingActivations(): void
     {
         $pending = get_option('moduly_pending_activate', []);
-        if (!is_array($pending) || $pending === [] || $this->safe) {
+        if (!is_array($pending) || [] === $pending || $this->safe) {
             return;
         }
         delete_option('moduly_pending_activate');
@@ -165,7 +165,7 @@ final class Plugin
             if (is_string($id) && in_array($id, $this->boot['booted'], true)) {
                 try {
                     $this->kernel->enable($id);
-                } catch (Throwable $e) {
+                } catch (\Throwable $e) {
                     $this->kernel->markFailed([$id => $e->getMessage()]);
                 }
             }

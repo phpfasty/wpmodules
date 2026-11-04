@@ -8,8 +8,6 @@
  * Digital-goods kinds (types 0.2): enum (closed `options`), semver (`1`, `1.2`, `1.2.3`, `1.2.3-beta.1`),
  * file (attachment id; private: never in REST nor in the public view-model), user (author id),
  * license_tiers (JSON list of {tier, label, price} with price in integer minor units; admin form: `tier|Label|12.50`).
- *
- * @package Latte
  */
 
 declare(strict_types=1);
@@ -49,18 +47,19 @@ final class Field
      */
     public static function fromArray(string $name, array $def, string $prefix): self
     {
-        $type = Value::str(($def['type'] ?? 'string'));
+        $type = Value::str($def['type'] ?? 'string');
         if (!in_array($type, self::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Unknown field type "%s" for "%s"', $type, $name));
         }
-        if ($type === 'enum' && ($def['options'] ?? []) === []) {
+        if ('enum' === $type && ($def['options'] ?? []) === []) {
             throw new \InvalidArgumentException(sprintf('Field "%s" of type enum needs options', $name));
         }
+
         return new self(
             $name,
             $type,
-            Value::str(($def['label'] ?? $name)),
-            Value::str(($def['meta_key'] ?? '_' . $prefix . '_' . $name)),
+            Value::str($def['label'] ?? $name),
+            Value::str($def['meta_key'] ?? '_'.$prefix.'_'.$name),
             $def['sanitize'] ?? null,
             $def,
         );
@@ -72,13 +71,14 @@ final class Field
             return Value::str(call_user_func($this->sanitize, $raw));
         }
         $raw = is_scalar($raw) ? trim((string) $raw) : '';
+
         return match ($this->type) {
             'text' => function_exists('sanitize_textarea_field') ? sanitize_textarea_field($raw) : wp_strip_all_tags($raw),
             'url' => self::url($raw),
             'email' => function_exists('sanitize_email')
                 ? sanitize_email($raw)
                 : (string) filter_var($raw, FILTER_SANITIZE_EMAIL),
-            'integer' => $raw === '' || !is_numeric($raw) ? '' : (string) (int) $raw,
+            'integer' => '' === $raw || !is_numeric($raw) ? '' : (string) (int) $raw,
             'number' => self::number($raw),
             'money' => self::number($raw, true),
             'boolean' => in_array(strtolower($raw), ['1', 'on', 'yes', 'true'], true) ? '1' : '',
@@ -104,12 +104,6 @@ final class Field
         return array_values(array_map(Value::str(...), (array) ($this->def['options'] ?? [])));
     }
 
-    /** @param list<string> $options */
-    private static function option(string $value, array $options): string
-    {
-        return $options === [] || in_array($value, $options, true) ? $value : '';
-    }
-
     /** register_post_meta() type for this field. */
     public function metaType(): string
     {
@@ -125,12 +119,13 @@ final class Field
     public function fromInput(mixed $raw): int|float|bool|string|null
     {
         $clean = $this->sanitize($raw);
-        if ($this->type === 'boolean') {
-            return $clean === '1';
+        if ('boolean' === $this->type) {
+            return '1' === $clean;
         }
-        if ($clean === '') {
+        if ('' === $clean) {
             return null;
         }
+
         return match ($this->type) {
             'money' => (int) round(((float) $clean) * 100),
             'integer', 'file', 'user' => (int) $clean,
@@ -147,6 +142,7 @@ final class Field
     public function toStorage(mixed $value): int|float|bool|string|null
     {
         $num = is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value)));
+
         return match ($this->type) {
             'money' => $num ? (int) round((float) $value) : null,
             'integer' => $num ? max(0, (int) round((float) $value)) : null,
@@ -162,14 +158,15 @@ final class Field
     /** Stored value → admin form value (money cents → decimal string). */
     public function toInput(mixed $stored): string
     {
-        if ($stored === '' || $stored === null) {
+        if ('' === $stored || null === $stored) {
             return '';
         }
+
         return match ($this->type) {
-            'money' => number_format((Value::int($stored)) / 100, 2, '.', ''),
+            'money' => number_format(Value::int($stored) / 100, 2, '.', ''),
             'boolean' => $stored ? '1' : '',
             'license_tiers' => implode("\n", array_map(
-                static fn (array $t): string => $t['tier'] . '|' . $t['label'] . '|' . number_format($t['price'] / 100, 2, '.', ''),
+                static fn (array $t): string => $t['tier'].'|'.$t['label'].'|'.number_format($t['price'] / 100, 2, '.', ''),
                 self::tiers($stored, false)
             )),
             default => Value::str($stored),
@@ -179,40 +176,15 @@ final class Field
     /** Private fields (default: every `file`) never reach REST or the public view-model. */
     public function isPrivate(): bool
     {
-        return (bool) ($this->def['private'] ?? $this->type === 'file');
+        return (bool) ($this->def['private'] ?? 'file' === $this->type);
     }
 
     /** Version `1`, `1.2`, `1.2.3`, optional pre-release `-beta.1`; '' otherwise. */
     public static function semver(string $raw): string
     {
         $raw = ltrim(trim($raw), 'vV');
-        return preg_match('/' . self::SEMVER_PATTERN . '/', $raw) === 1 && strlen($raw) <= 64 ? $raw : '';
-    }
 
-    /** Attachment id (an existing attachment when WordPress is loaded); '' otherwise. */
-    private static function attachment(string $raw): string
-    {
-        $id = ctype_digit($raw) ? (int) $raw : 0;
-        if ($id <= 0) {
-            return '';
-        }
-        if (function_exists('get_post_type') && get_post_type($id) !== 'attachment') {
-            return '';
-        }
-        return (string) $id;
-    }
-
-    /** User id (an existing user when WordPress is loaded); '' otherwise. */
-    private static function user(string $raw): string
-    {
-        $id = ctype_digit($raw) ? (int) $raw : 0;
-        if ($id <= 0) {
-            return '';
-        }
-        if (function_exists('get_userdata') && get_userdata($id) === false) {
-            return '';
-        }
-        return (string) $id;
+        return 1 === preg_match('/'.self::SEMVER_PATTERN.'/', $raw) && strlen($raw) <= 64 ? $raw : '';
     }
 
     /**
@@ -224,14 +196,14 @@ final class Field
     public static function tiers(mixed $raw, bool $decimal = false): array
     {
         $rows = [];
-        if (is_string($raw) && $raw !== '' && $raw[0] === '[') {
+        if (is_string($raw) && '' !== $raw && '[' === $raw[0]) {
             $decoded = json_decode($raw, true);
             $rows = is_array($decoded) ? $decoded : [];
             $decimal = false;
         } elseif (is_string($raw)) {
             foreach (preg_split('/\R/', $raw) ?: [] as $line) {
                 $parts = array_map('trim', explode('|', $line));
-                if (count($parts) === 3) {
+                if (3 === count($parts)) {
                     $rows[] = ['tier' => $parts[0], 'label' => $parts[1], 'price' => $parts[2]];
                 }
             }
@@ -243,31 +215,27 @@ final class Field
             if (!is_array($row) || count($out) >= self::MAX_TIERS) {
                 continue;
             }
-            $tier = strtolower(Value::str(preg_replace('/[^a-z0-9_-]/i', '', Value::str(($row['tier'] ?? '')))));
-            $label = trim(function_exists('wp_strip_all_tags') ? wp_strip_all_tags(Value::str(($row['label'] ?? ''))) : strip_tags(Value::str(($row['label'] ?? ''))));
+            $tier = strtolower(Value::str(preg_replace('/[^a-z0-9_-]/i', '', Value::str($row['tier'] ?? ''))));
+            $label = trim(function_exists('wp_strip_all_tags') ? wp_strip_all_tags(Value::str($row['label'] ?? '')) : strip_tags(Value::str($row['label'] ?? '')));
             $price = $row['price'] ?? '';
             $cents = $decimal
-                ? (self::number(is_scalar($price) ? Value::str($price) : '') === '' ? -1 : (int) round((float) self::number(Value::str($price)) * 100))
+                ? ('' === self::number(is_scalar($price) ? Value::str($price) : '') ? -1 : (int) round((float) self::number(Value::str($price)) * 100))
                 : (is_numeric($price) ? (int) round((float) $price) : -1);
-            if ($tier === '' || $cents <= 0 || isset($out[$tier])) {
+            if ('' === $tier || $cents <= 0 || isset($out[$tier])) {
                 continue;
             }
-            $out[$tier] = ['tier' => $tier, 'label' => $label === '' ? ucfirst($tier) : $label, 'price' => $cents];
+            $out[$tier] = ['tier' => $tier, 'label' => '' === $label ? ucfirst($tier) : $label, 'price' => $cents];
         }
-        return array_values($out);
-    }
 
-    /** @param list<array{tier: string, label: string, price: int}> $tiers */
-    private static function tiersJson(array $tiers): string
-    {
-        return $tiers === [] ? '' : (string) json_encode($tiers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return array_values($out);
     }
 
     public function inputType(): string
     {
-        if ($this->options() !== []) {
+        if ([] !== $this->options()) {
             return 'select';
         }
+
         return match ($this->type) {
             'url' => 'url',
             'email' => 'email',
@@ -282,10 +250,63 @@ final class Field
     /** Valid calendar date `YYYY-MM-DD` (a leading date of a longer ISO string is accepted); '' otherwise. */
     public static function date(string $raw): string
     {
-        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/', $raw, $m) !== 1) {
+        if (1 !== preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/', $raw, $m)) {
             return '';
         }
+
         return checkdate((int) $m[2], (int) $m[3], (int) $m[1]) ? "{$m[1]}-{$m[2]}-{$m[3]}" : '';
+    }
+
+    /** Decimal with max 2 places, comma accepted; non-negative unless $signed (money); '' when empty/invalid. */
+    public static function number(string $raw, bool $signed = false): string
+    {
+        $raw = str_replace(',', '.', $raw);
+        if ('' === $raw || !is_numeric($raw)) {
+            return '';
+        }
+        $n = round((float) $raw, 2);
+
+        return (string) ($signed ? $n : max(0, $n));
+    }
+
+    /** @param list<string> $options */
+    private static function option(string $value, array $options): string
+    {
+        return [] === $options || in_array($value, $options, true) ? $value : '';
+    }
+
+    /** Attachment id (an existing attachment when WordPress is loaded); '' otherwise. */
+    private static function attachment(string $raw): string
+    {
+        $id = ctype_digit($raw) ? (int) $raw : 0;
+        if ($id <= 0) {
+            return '';
+        }
+        if (function_exists('get_post_type') && 'attachment' !== get_post_type($id)) {
+            return '';
+        }
+
+        return (string) $id;
+    }
+
+    /** User id (an existing user when WordPress is loaded); '' otherwise. */
+    private static function user(string $raw): string
+    {
+        $id = ctype_digit($raw) ? (int) $raw : 0;
+        if ($id <= 0) {
+            return '';
+        }
+        if (function_exists('get_userdata') && false === get_userdata($id)) {
+            return '';
+        }
+
+        return (string) $id;
+    }
+
+    /** @param list<array{tier: string, label: string, price: int}> $tiers */
+    private static function tiersJson(array $tiers): string
+    {
+        return [] === $tiers ? '' : (string) json_encode($tiers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     private static function url(string $raw): string
@@ -293,17 +314,7 @@ final class Field
         if (function_exists('esc_url_raw')) {
             return esc_url_raw($raw);
         }
-        return filter_var($raw, FILTER_VALIDATE_URL) ? $raw : '';
-    }
 
-    /** Decimal with max 2 places, comma accepted; non-negative unless $signed (money); '' when empty/invalid. */
-    public static function number(string $raw, bool $signed = false): string
-    {
-        $raw = str_replace(',', '.', $raw);
-        if ($raw === '' || !is_numeric($raw)) {
-            return '';
-        }
-        $n = round((float) $raw, 2);
-        return (string) ($signed ? $n : max(0, $n));
+        return filter_var($raw, FILTER_VALIDATE_URL) ? $raw : '';
     }
 }

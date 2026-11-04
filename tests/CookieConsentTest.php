@@ -9,11 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class CookieConsentTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        unset($_COOKIE[CookieConsent::COOKIE]);
-    }
-
     public function testAnalyticsOnlyAfterAcceptAll(): void
     {
         $this->assertFalse(CookieConsent::analyticsAllowed());
@@ -25,7 +20,7 @@ final class CookieConsentTest extends TestCase
 
     public function testScriptMakesNoExternalRequests(): void
     {
-        $js = (string) file_get_contents(dirname(__DIR__) . '/modules/cookie-consent/assets/cookie-consent.js');
+        $js = (string) file_get_contents(dirname(__DIR__).'/modules/cookie-consent/assets/cookie-consent.js');
         $this->assertDoesNotMatchRegularExpression('#https?://|fetch\(|XMLHttpRequest|\.src\s*=#', $js);
         $this->assertStringContainsString("value !== 'all' && value !== 'necessary'", $js);
     }
@@ -36,5 +31,10 @@ final class CookieConsentTest extends TestCase
         $state = CookieConsent::state([]);
         $this->assertTrue($state['enabled']);
         $this->assertSame(CookieConsent::COOKIE, $state['cookie']);
+    }
+
+    protected function tearDown(): void
+    {
+        unset($_COOKIE[CookieConsent::COOKIE]);
     }
 }

@@ -5,7 +5,6 @@
  * served by admin-post.php?action=moduly_download (GET, signed). Only paid orders, 24 h links, download limit.
  *
  * @moduly-request-handler reads the signed download link parameters.
- * @package ModulY\Downloads
  */
 
 declare(strict_types=1);
@@ -31,7 +30,7 @@ final class Downloads
     {
         self::$ttl = is_int($settings['ttl_hours'] ?? null) ? max(1, $settings['ttl_hours']) : 24;
         self::$limit = is_int($settings['limit'] ?? null) ? max(1, $settings['limit']) : 5;
-        self::$field = is_string($settings['file_field'] ?? null) && $settings['file_field'] !== '' ? $settings['file_field'] : 'download_file';
+        self::$field = is_string($settings['file_field'] ?? null) && '' !== $settings['file_field'] ? $settings['file_field'] : 'download_file';
     }
 
     public static function setRegistry(object $registry): void
@@ -39,30 +38,14 @@ final class Downloads
         self::$registry = $registry;
     }
 
-    private static function secret(): string
-    {
-        return wp_salt('auth') . 'moduly_download';
-    }
-
     /** Attachment id of a product's download file (private `file` field, read via the types registry). */
     public static function attachment(int $productId): int
     {
-        if (self::$registry === null || !method_exists(self::$registry, 'value')) {
+        if (null === self::$registry || !method_exists(self::$registry, 'value')) {
             return 0;
         }
+
         return Value::int(self::$registry->value($productId, self::$field));
-    }
-
-    /** @return array<int, int> item index => downloads used */
-    private static function counts(int $orderId): array
-    {
-        $raw = get_post_meta($orderId, self::COUNT_META, true);
-        return is_array($raw) ? array_map(Value::int(...), array_filter($raw, 'is_int', ARRAY_FILTER_USE_KEY)) : [];
-    }
-
-    private static function paid(int $orderId): bool
-    {
-        return in_array(Value::str(get_post_meta($orderId, '_order_status', true)), ['paid', 'processing', 'completed'], true);
     }
 
     /**
@@ -79,7 +62,7 @@ final class Downloads
         $counts = self::counts($orderId);
         $out = [];
         foreach ((array) get_post_meta($orderId, '_order_items', true) as $i => $item) {
-            if (!is_array($item) || self::attachment(Value::int(($item['id'] ?? 0))) <= 0) {
+            if (!is_array($item) || self::attachment(Value::int($item['id'] ?? 0)) <= 0) {
                 continue;
             }
             $i = (int) $i;
@@ -90,14 +73,15 @@ final class Downloads
                 'e' => $expires,
                 's' => Token::sign($orderId, $i, $expires, self::secret()),
             ], admin_url('admin-post.php'));
-            $tier = Value::str(($item['tier_label'] ?? ''));
+            $tier = Value::str($item['tier_label'] ?? '');
             $out[] = [
-                'title' => Value::str(($item['title'] ?? '')) . ($tier !== '' ? ' — ' . $tier : ''),
+                'title' => Value::str($item['title'] ?? '').('' !== $tier ? ' — '.$tier : ''),
                 'url' => $url,
                 'remaining' => max(0, self::$limit - ($counts[$i] ?? 0)),
-                'expires' => (string) wp_date(Value::str(get_option('date_format')) . ' ' . Value::str(get_option('time_format')), $expires),
+                'expires' => (string) wp_date(Value::str(get_option('date_format')).' '.Value::str(get_option('time_format')), $expires),
             ];
         }
+
         return $out;
     }
 
@@ -105,15 +89,17 @@ final class Downloads
      * Order confirmation view-model: adds `downloads` (list) when the order is paid.
      *
      * @param array<string, mixed>|null $order
+     *
      * @return array<string, mixed>|null
      */
     public static function order(?array $order): ?array
     {
-        if (!is_array($order) || Value::int(($order['id'] ?? 0)) <= 0) {
+        if (!is_array($order) || Value::int($order['id'] ?? 0) <= 0) {
             return $order;
         }
         $order['downloads'] = self::links(Value::int($order['id']));
         $order['downloads_available'] = true;
+
         return $order;
     }
 
@@ -125,17 +111,17 @@ final class Downloads
         }
         foreach ((array) get_post_meta($orderId, '_order_items', true) as $item) {
             if (is_array($item)) {
-                self::protectProduct(Value::int(($item['id'] ?? 0))); // a file uploaded before the module ran
+                self::protectProduct(Value::int($item['id'] ?? 0)); // a file uploaded before the module ran
             }
         }
         $links = self::links($orderId);
         $email = Value::str(get_post_meta($orderId, '_order_email', true));
-        if ($links === [] || !is_email($email)) {
+        if ([] === $links || !is_email($email)) {
             return;
         }
-        $body = sprintf(/* translators: %d: order id */ __('Your order #%d is paid. Download links (valid 24 hours):', 'moduly'), $orderId) . "\n\n";
+        $body = sprintf(/* translators: %d: order id */ __('Your order #%d is paid. Download links (valid 24 hours):', 'moduly'), $orderId)."\n\n";
         foreach ($links as $l) {
-            $body .= $l['title'] . "\n" . $l['url'] . "\n\n";
+            $body .= $l['title']."\n".$l['url']."\n\n";
         }
         wp_mail($email, sprintf(/* translators: %d: order id */ __('Downloads for order #%d', 'moduly'), $orderId), $body);
     }
@@ -154,7 +140,7 @@ final class Downloads
     /** added/updated_post_meta: the file field was set after the save (WP-CLI, importers, demo scripts). */
     public static function onMeta(int $metaId, int $postId, string $key): void
     {
-        if ($key !== '' && str_ends_with($key, '_' . self::$field)) {
+        if ('' !== $key && str_ends_with($key, '_'.self::$field)) {
             self::protectProduct($postId);
         }
     }
@@ -162,30 +148,31 @@ final class Downloads
     /** True when a file was moved (or already private). */
     public static function protectProduct(int $postId): bool
     {
-        if (get_post_type($postId) !== 'product') {
+        if ('product' !== get_post_type($postId)) {
             return false;
         }
         $id = self::attachment($postId);
-        if ($id <= 0 || get_post_type($id) !== 'attachment') {
+        if ($id <= 0 || 'attachment' !== get_post_type($id)) {
             return false;
         }
-        return Storage::protect($id) !== '';
+
+        return '' !== Storage::protect($id);
     }
 
     /** admin-post.php?action=moduly_download — serve or 403. */
     public static function serve(): void
     {
-        $o = isset($_GET['o']) ? absint(Value::str(wp_unslash($_GET['o']))) : 0;
-        $i = isset($_GET['i']) ? absint(Value::str(wp_unslash($_GET['i']))) : -1;
-        $e = isset($_GET['e']) ? absint(Value::str(wp_unslash($_GET['e']))) : 0;
-        $s = isset($_GET['s']) ? sanitize_text_field(Value::str(wp_unslash($_GET['s']))) : '';
+        $o = isset($_GET['o']) && is_string($_GET['o']) ? absint(wp_unslash($_GET['o'])) : 0;
+        $i = isset($_GET['i']) && is_string($_GET['i']) ? absint(wp_unslash($_GET['i'])) : -1;
+        $e = isset($_GET['e']) && is_string($_GET['e']) ? absint(wp_unslash($_GET['e'])) : 0;
+        $s = isset($_GET['s']) && is_string($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
         $valid = Token::valid($o, $i, $e, $s, self::secret(), time())
-            && get_post_type($o) === 'shop_order';
+            && 'shop_order' === get_post_type($o);
         $items = $valid ? (array) get_post_meta($o, '_order_items', true) : [];
         $item = $items[$i] ?? null;
         $path = '';
         if (is_array($item)) {
-            $att = self::attachment(Value::int(($item['id'] ?? 0)));
+            $att = self::attachment(Value::int($item['id'] ?? 0));
             $path = $att > 0 ? Storage::protect($att) : '';
         }
         $counts = $valid ? self::counts($o) : [];
@@ -194,10 +181,10 @@ final class Downloads
             'paid' => $valid && self::paid($o),
             'count' => $counts[$i] ?? 0,
             'limit' => self::$limit,
-            'file' => $path !== '' && Storage::isPrivate($path),
+            'file' => '' !== $path && Storage::isPrivate($path),
         ]);
         nocache_headers();
-        if ($reason !== '') {
+        if ('' !== $reason) {
             $messages = [
                 'invalid' => __('This download link is invalid or has expired. Open your order page for a fresh link.', 'moduly'),
                 'unpaid' => __('Downloads open after the order is paid.', 'moduly'),
@@ -210,16 +197,34 @@ final class Downloads
         update_post_meta($o, self::COUNT_META, $counts);
         $name = sanitize_file_name((string) preg_replace('/^\d+-[0-9a-f]{16}-/', '', basename($path)));
         header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . $name . '"');
-        header('Content-Length: ' . (string) filesize($path));
+        header('Content-Disposition: attachment; filename="'.$name.'"');
+        header('Content-Length: '.(string) filesize($path));
         header('X-Content-Type-Options: nosniff');
         $sendfile = Value::str(apply_filters('moduly_downloads_sendfile_header', ''));
         if (in_array($sendfile, ['X-Sendfile', 'X-Accel-Redirect'], true)) {
-            header($sendfile . ': ' . $path);
+            header($sendfile.': '.$path);
             exit;
         }
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streaming a private file.
         readfile($path);
         exit;
+    }
+
+    private static function secret(): string
+    {
+        return wp_salt('auth').'moduly_download';
+    }
+
+    /** @return array<int, int> item index => downloads used */
+    private static function counts(int $orderId): array
+    {
+        $raw = get_post_meta($orderId, self::COUNT_META, true);
+
+        return is_array($raw) ? array_map(Value::int(...), array_filter($raw, 'is_int', ARRAY_FILTER_USE_KEY)) : [];
+    }
+
+    private static function paid(int $orderId): bool
+    {
+        return in_array(Value::str(get_post_meta($orderId, '_order_status', true)), ['paid', 'processing', 'completed'], true);
     }
 }

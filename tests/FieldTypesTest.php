@@ -11,12 +11,6 @@ use PHPUnit\Framework\TestCase;
 /** Module `types` 0.2: digital-goods field kinds (enum, semver, file, user, license_tiers). */
 final class FieldTypesTest extends TestCase
 {
-    /** @param array<string, mixed> $def */
-    private static function field(string $type, array $def = []): Field
-    {
-        return Field::fromArray('f', ['type' => $type] + $def, 'shop');
-    }
-
     public function testEnumNeedsOptionsAndKeepsTheClosedSet(): void
     {
         $f = self::field('enum', ['options' => ['gpl', 'commercial']]);
@@ -40,7 +34,7 @@ final class FieldTypesTest extends TestCase
 
     public function testFileIsPrivateIntegerAndNeverInRest(): void
     {
-        \PhpFasty\WpModules\Tests\Fake\TestState::$postTypes[42] = 'attachment';
+        Fake\TestState::$postTypes[42] = 'attachment';
         $f = self::field('file');
         $this->assertTrue($f->isPrivate());
         $this->assertSame('integer', $f->metaType());
@@ -70,5 +64,11 @@ final class FieldTypesTest extends TestCase
         $this->assertNull($f->toStorage('[{"tier":"x","price":-5}]'));
         $this->assertSame('textarea', $f->inputType());
         $this->assertCount(Field::MAX_TIERS, Field::tiers(json_encode(array_map(static fn (int $i): array => ['tier' => "t$i", 'price' => 1], range(1, 9)))));
+    }
+
+    /** @param array<string, mixed> $def */
+    private static function field(string $type, array $def = []): Field
+    {
+        return Field::fromArray('f', ['type' => $type] + $def, 'shop');
     }
 }

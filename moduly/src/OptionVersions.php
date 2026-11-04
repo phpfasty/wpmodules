@@ -15,6 +15,7 @@ final class OptionVersions implements SchemaVersionStoreInterface
     public function get(string $scope): int
     {
         $all = get_option(self::OPTION, []);
+
         return is_array($all) && isset($all[$scope]) ? Value::int($all[$scope]) : 0;
     }
 

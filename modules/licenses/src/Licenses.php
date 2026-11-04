@@ -2,8 +2,6 @@
 
 /**
  * License tiers: product field, picker view-model and the tier comparison (what each license allows).
- *
- * @package ModulY\Licenses
  */
 
 declare(strict_types=1);
@@ -20,8 +18,8 @@ final class Licenses
     /** @param array<string, mixed> $settings */
     public static function configure(array $settings): void
     {
-        self::$field = Value::str(($settings['field'] ?? 'licenses'));
-        self::$termsPage = Value::str(($settings['terms_page'] ?? 'oferta'));
+        self::$field = Value::str($settings['field'] ?? 'licenses');
+        self::$termsPage = Value::str($settings['terms_page'] ?? 'oferta');
     }
 
     public static function field(): string
@@ -33,6 +31,7 @@ final class Licenses
     public static function t(string $en, string $ru): string
     {
         $locale = function_exists('determine_locale') ? (string) determine_locale() : 'en_US';
+
         return str_starts_with($locale, 'ru') ? $ru : $en;
     }
 
@@ -72,6 +71,7 @@ final class Licenses
      * Product field declared on the latte-shop product type.
      *
      * @param array<string, mixed> $fields
+     *
      * @return array<string, mixed>
      */
     public static function fields(array $fields): array
@@ -80,6 +80,7 @@ final class Licenses
             'type' => 'license_tiers',
             'label' => self::t('License tiers (first = default)', 'Лицензии (первая — по умолчанию)'),
         ];
+
         return $fields;
     }
 
@@ -87,6 +88,7 @@ final class Licenses
      * Tiers of a product view-model (`product.licenses` from the cart module), normalised for the views.
      *
      * @param array<string, mixed> $product
+     *
      * @return list<array{id: string, label: string, summary: string, price: string, terms: list<string>, checked: bool}>
      */
     public static function tiers(array $product): array
@@ -96,36 +98,29 @@ final class Licenses
             if (!is_array($row)) {
                 continue;
             }
-            $id = Value::str(($row['tier'] ?? $row['id'] ?? ''));
-            if (preg_match('/^[a-z0-9_-]{1,32}$/', $id) !== 1) {
+            $id = Value::str($row['tier'] ?? $row['id'] ?? '');
+            if (1 !== preg_match('/^[a-z0-9_-]{1,32}$/', $id)) {
                 continue;
             }
             $out[] = [
                 'id' => $id,
-                'label' => self::label($id, Value::str(($row['label'] ?? $id))),
+                'label' => self::label($id, Value::str($row['label'] ?? $id)),
                 'summary' => self::summary($id),
-                'price' => Value::str(($row['price'] ?? '')),
+                'price' => Value::str($row['price'] ?? ''),
                 'terms' => self::terms($id),
-                'checked' => $out === [],
+                'checked' => [] === $out,
             ];
         }
-        return $out;
-    }
 
-    private static function label(string $id, string $fallback): string
-    {
-        return match ($id) {
-            'regular' => self::t('Regular license', 'Обычная лицензия'),
-            'extended' => self::t('Extended license', 'Расширенная лицензия'),
-            default => $fallback,
-        };
+        return $out;
     }
 
     /**
      * Extension points of the shop templates: picker inside the add-to-cart form, comparison below the product.
      *
      * @param array<string, list<array<string, mixed>>> $slots
-     * @param array<string, mixed> $context
+     * @param array<string, mixed>                      $context
+     *
      * @return array<string, list<array<string, mixed>>>
      */
     public static function slots(array $slots, array $context): array
@@ -133,7 +128,7 @@ final class Licenses
         $page = (array) ($context['page'] ?? []);
         $product = Value::map($page['product'] ?? []);
         $tiers = self::tiers($product);
-        if ($tiers === []) {
+        if ([] === $tiers) {
             return $slots;
         }
         $labels = [
@@ -156,6 +151,16 @@ final class Licenses
             'view' => 'moduly/licenses/compare',
             'data' => ['tiers' => $tiers, 'labels' => $labels, 'terms_url' => $termsUrl],
         ];
+
         return $slots;
+    }
+
+    private static function label(string $id, string $fallback): string
+    {
+        return match ($id) {
+            'regular' => self::t('Regular license', 'Обычная лицензия'),
+            'extended' => self::t('Extended license', 'Расширенная лицензия'),
+            default => $fallback,
+        };
     }
 }

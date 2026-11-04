@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Types\Migrations;
 
-use PhpFasty\Moduly\Wp\Support\Value;
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Migration\MigrationInterface;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * Records the field schema (post type → field → meta key, kind, aliases) the data was written with, so later
@@ -27,13 +27,14 @@ final class Migration_0001_SchemaSnapshot implements MigrationInterface
 
     public function up(int $batchSize): bool
     {
-        if (get_option(self::OPTION, null) !== null) {
+        if (null !== get_option(self::OPTION, null)) {
             return true; // idempotent: an existing snapshot is never rewritten
         }
         add_option(self::OPTION, [
             'current' => self::snapshot($this->types),
             'previous' => (array) get_option('wpfasty_types_schema', []),
         ], '', false);
+
         return true;
     }
 
@@ -50,6 +51,7 @@ final class Migration_0001_SchemaSnapshot implements MigrationInterface
                 ];
             }
         }
+
         return $out;
     }
 }

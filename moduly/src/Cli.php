@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Exception\ModulyException;
-use Throwable;
 use WP_CLI;
 
 /**
@@ -25,7 +24,7 @@ final class Cli
      * [--format=<format>]
      * : table, json, csv, yaml. Default: table.
      *
-     * @param list<string> $args
+     * @param list<string>          $args
      * @param array<string, string> $assoc
      */
     public function list(array $args, array $assoc): void
@@ -51,16 +50,16 @@ final class Cli
      * [--force]
      * : Allow a downgrade.
      *
-     * @param list<string> $args
+     * @param list<string>               $args
      * @param array<string, string|bool> $assoc
      */
     public function install(array $args, array $assoc): void
     {
         try {
             $m = $this->plugin->modules->install($args[0], isset($assoc['enable']), isset($assoc['force']));
-            WP_CLI::success(sprintf('Installed %s %s%s.', $m->id, (string) $m->version, isset($assoc['enable']) ? ' and enabled' : ''));
+            \WP_CLI::success(sprintf('Installed %s %s%s.', $m->id, (string) $m->version, isset($assoc['enable']) ? ' and enabled' : ''));
         } catch (ModulyException $e) {
-            WP_CLI::error(sprintf('[%s] %s', $e->reason, $e->getMessage()));
+            \WP_CLI::error(sprintf('[%s] %s', $e->reason, $e->getMessage()));
         }
     }
 
@@ -121,9 +120,9 @@ final class Cli
      */
     public function status(): void
     {
-        WP_CLI::line('core ' . Modules::coreVersion() . ', safe mode ' . ($this->plugin->safe ? 'ON' : 'off'));
+        \WP_CLI::line('core '.Modules::coreVersion().', safe mode '.($this->plugin->safe ? 'ON' : 'off'));
         foreach ($this->plugin->bootResult()['failed'] as $id => $error) {
-            WP_CLI::warning("{$id}: {$error}");
+            \WP_CLI::warning("{$id}: {$error}");
         }
     }
 
@@ -131,9 +130,9 @@ final class Cli
     {
         try {
             $op();
-            WP_CLI::success($message);
-        } catch (Throwable $e) {
-            WP_CLI::error($e->getMessage());
+            \WP_CLI::success($message);
+        } catch (\Throwable $e) {
+            \WP_CLI::error($e->getMessage());
         }
     }
 }

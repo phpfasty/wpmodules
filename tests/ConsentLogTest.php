@@ -10,11 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ConsentLogTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Consents::configure(['legal_version' => '2026-10-30']);
-    }
-
     public function testOfferAndPersonalDataAreRequiredNewsletterIsNot(): void
     {
         $this->assertSame(['consent_offer', 'consent_pd'], Consents::validate([], []));
@@ -36,5 +31,10 @@ final class ConsentLogTest extends TestCase
         $this->assertTrue($log['anonymized']);
         $this->assertSame('[deleted]', Privacy::anonymous('name'));
         $this->assertSame('', Privacy::anonymous('phone'));
+    }
+
+    protected function setUp(): void
+    {
+        Consents::configure(['legal_version' => '2026-10-30']);
     }
 }

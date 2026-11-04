@@ -2,8 +2,6 @@
 
 /**
  * Cart module entry.
- *
- * @package ModulY\Cart
  */
 
 declare(strict_types=1);

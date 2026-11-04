@@ -25,7 +25,7 @@ if (!defined('ABSPATH')) {
 define('MODULY_PLUGIN_FILE', __FILE__);
 define('MODULY_PLUGIN_VERSION', '0.1.2');
 
-require_once __DIR__ . '/autoload.php';
+require_once __DIR__.'/autoload.php';
 
 register_activation_hook(__FILE__, [PhpFasty\Moduly\Wp\Plugin::class, 'activate']);
 PhpFasty\Moduly\Wp\Plugin::boot();

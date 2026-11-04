@@ -20,7 +20,8 @@ final class Unavailable
      * Endpoints of installed modules that did not boot in this request.
      *
      * @param array<string, Manifest> $installed id → manifest of every installed module
-     * @param list<string> $booted ids running in this request
+     * @param list<string>            $booted    ids running in this request
+     *
      * @return array{actions: list<string>, rest: list<string>}
      */
     public static function collect(array $installed, array $booted): array
@@ -31,7 +32,7 @@ final class Unavailable
             $bucket = in_array($id, $booted, true) ? 'live' : 'out';
             foreach (['actions', 'rest'] as $kind) {
                 foreach ($m->endpoints[$kind] as $name) {
-                    if ($bucket === 'live') {
+                    if ('live' === $bucket) {
                         $live[$kind][] = $name;
                     } else {
                         $out[$kind][] = $name;
@@ -39,6 +40,7 @@ final class Unavailable
                 }
             }
         }
+
         // An endpoint also served by a running module is not unavailable.
         return [
             'actions' => array_values(array_unique(array_diff($out['actions'], $live['actions']))),
@@ -49,13 +51,14 @@ final class Unavailable
     /** @param list<string> $prefixes */
     public static function restMatches(string $route, array $prefixes): bool
     {
-        $route = '/' . ltrim($route, '/');
+        $route = '/'.ltrim($route, '/');
         foreach ($prefixes as $p) {
-            $p = '/' . trim($p, '/');
-            if ($route === $p || str_starts_with($route, $p . '/')) {
+            $p = '/'.trim($p, '/');
+            if ($route === $p || str_starts_with($route, $p.'/')) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -63,21 +66,23 @@ final class Unavailable
     public static function register(array $endpoints): void
     {
         foreach ($endpoints['actions'] as $action) {
-            add_action('admin_post_' . $action, [self::class, 'page'], 0);
-            add_action('admin_post_nopriv_' . $action, [self::class, 'page'], 0);
+            add_action('admin_post_'.$action, [self::class, 'page'], 0);
+            add_action('admin_post_nopriv_'.$action, [self::class, 'page'], 0);
         }
-        if ($endpoints['rest'] !== []) {
+        if ([] !== $endpoints['rest']) {
             $prefixes = $endpoints['rest'];
             add_filter('rest_pre_dispatch', static function (mixed $result, mixed $server, \WP_REST_Request $request) use ($prefixes): mixed {
-                if ($result !== null || !self::restMatches($request->get_route(), $prefixes)) {
+                if (null !== $result || !self::restMatches($request->get_route(), $prefixes)) {
                     return $result;
                 }
-                return new WP_Error('moduly_unavailable', __('This feature is temporarily unavailable. Please try again later.', 'moduly'), ['status' => 503]);
+
+                return new \WP_Error('moduly_unavailable', __('This feature is temporarily unavailable. Please try again later.', 'moduly'), ['status' => 503]);
             }, 0, 3);
             add_filter('rest_post_dispatch', static function (mixed $response, mixed $server, \WP_REST_Request $request) use ($prefixes): mixed {
-                if ($response instanceof \WP_REST_Response && $response->get_status() === 503 && self::restMatches($request->get_route(), $prefixes)) {
+                if ($response instanceof \WP_REST_Response && 503 === $response->get_status() && self::restMatches($request->get_route(), $prefixes)) {
                     $response->header('Retry-After', (string) self::RETRY_AFTER);
                 }
+
                 return $response;
             }, 10, 3);
         }
@@ -88,14 +93,15 @@ final class Unavailable
     {
         $home = home_url('/');
         $ref = wp_get_referer();
-        return $ref !== false ? wp_validate_redirect($ref, $home) : $home;
+
+        return false !== $ref ? wp_validate_redirect($ref, $home) : $home;
     }
 
     public static function html(string $backUrl): string
     {
-        return '<h1>' . esc_html__('Temporarily unavailable', 'moduly') . '</h1>'
-            . '<p>' . esc_html__('This feature is temporarily unavailable. Please try again later.', 'moduly') . '</p>'
-            . '<p><a href="' . esc_url($backUrl) . '">' . esc_html__('Back to site', 'moduly') . '</a></p>';
+        return '<h1>'.esc_html__('Temporarily unavailable', 'moduly').'</h1>'
+            .'<p>'.esc_html__('This feature is temporarily unavailable. Please try again later.', 'moduly').'</p>'
+            .'<p><a href="'.esc_url($backUrl).'">'.esc_html__('Back to site', 'moduly').'</a></p>';
     }
 
     /** admin-post handler of a disabled module's action. */
@@ -103,7 +109,7 @@ final class Unavailable
     {
         nocache_headers();
         if (!headers_sent()) {
-            header('Retry-After: ' . self::RETRY_AFTER);
+            header('Retry-After: '.self::RETRY_AFTER);
         }
         wp_die(
             self::html(self::backUrl()), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_html__/esc_url above.

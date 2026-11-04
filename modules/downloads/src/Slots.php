@@ -3,8 +3,6 @@
 /**
  * Downloads UI for the shop templates: product details of the deliverable (version, compatibility, changelog,
  * live preview — slot product.after) and the signed download links of a paid order (slot checkout.order).
- *
- * @package ModulY\Downloads
  */
 
 declare(strict_types=1);
@@ -18,6 +16,7 @@ final class Slots
     public static function t(string $en, string $ru): string
     {
         $locale = function_exists('determine_locale') ? (string) determine_locale() : 'en_US';
+
         return str_starts_with($locale, 'ru') ? $ru : $en;
     }
 
@@ -25,6 +24,7 @@ final class Slots
      * Product fields of the deliverable, declared on the latte-shop product type.
      *
      * @param array<string, mixed> $fields
+     *
      * @return array<string, mixed>
      */
     public static function fields(array $fields): array
@@ -49,23 +49,26 @@ final class Slots
 
     /**
      * @param array<string, mixed> $fields
+     *
      * @return list<array{version: string, date: string, notes: string}>
      */
     public static function changelog(array $fields): array
     {
         $out = [];
-        foreach (preg_split('/\R/', Value::str(($fields['changelog'] ?? ''))) ?: [] as $line) {
+        foreach (preg_split('/\R/', Value::str($fields['changelog'] ?? '')) ?: [] as $line) {
             $parts = array_map('trim', explode('|', $line, 3));
-            if (count($parts) === 3 && $parts[0] !== '') {
+            if (3 === count($parts) && '' !== $parts[0]) {
                 $out[] = ['version' => $parts[0], 'date' => $parts[1], 'notes' => $parts[2]];
             }
         }
+
         return $out;
     }
 
     /**
      * @param array<string, list<array<string, mixed>>> $slots
-     * @param array<string, mixed> $context
+     * @param array<string, mixed>                      $context
+     *
      * @return array<string, list<array<string, mixed>>>
      */
     public static function slots(array $slots, array $context): array
@@ -74,20 +77,19 @@ final class Slots
         $fields = Value::map($page['fields'] ?? []);
         if (isset($page['product']) && is_array($page['product'])) {
             $rows = [];
-            foreach (
-                [
-                [self::t('Version', 'Версия'), Value::str(($fields['version'] ?? ''))],
-                ['WordPress', Value::str($fields['requires_wp'] ?? '') !== '' ? Value::str($fields['requires_wp']) . '+' : ''],
-                ['PHP', Value::str($fields['requires_php'] ?? '') !== '' ? Value::str($fields['requires_php']) . '+' : ''],
-                ] as [$k, $v]
+            foreach ([
+                [self::t('Version', 'Версия'), Value::str($fields['version'] ?? '')],
+                ['WordPress', '' !== Value::str($fields['requires_wp'] ?? '') ? Value::str($fields['requires_wp']).'+' : ''],
+                ['PHP', '' !== Value::str($fields['requires_php'] ?? '') ? Value::str($fields['requires_php']).'+' : ''],
+            ] as [$k, $v]
             ) {
-                if ((string) $v !== '') {
+                if ('' !== (string) $v) {
                     $rows[] = ['label' => $k, 'value' => (string) $v];
                 }
             }
             $log = self::changelog($fields);
-            $preview = Value::str(($fields['preview_url'] ?? ''));
-            if ($rows !== [] || $log !== [] || $preview !== '') {
+            $preview = Value::str($fields['preview_url'] ?? '');
+            if ([] !== $rows || [] !== $log || '' !== $preview) {
                 $slots['product.after'][] = [
                     'view' => 'moduly/downloads/details',
                     'data' => [
@@ -122,6 +124,7 @@ final class Slots
                 ],
             ];
         }
+
         return $slots;
     }
 }

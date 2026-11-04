@@ -10,7 +10,7 @@ final class PluginHeaderTest extends TestCase
 {
     public function testHeaderNamesModulYByPhpFastY(): void
     {
-        $head = (string) file_get_contents(dirname(__DIR__) . '/moduly/moduly.php', false, null, 0, 4096);
+        $head = (string) file_get_contents(dirname(__DIR__).'/moduly/moduly.php', false, null, 0, 4096);
         $this->assertMatchesRegularExpression('/^ \* Plugin Name: +ModulY$/m', $head);
         $this->assertMatchesRegularExpression('/^ \* Author: +PHP FastY$/m', $head);
         $this->assertMatchesRegularExpression('/^ \* License: +GPL-2.0-or-later$/m', $head);
@@ -19,7 +19,7 @@ final class PluginHeaderTest extends TestCase
 
     public function testVendoredCoreMatchesPluginVersion(): void
     {
-        $this->assertFileExists(dirname(__DIR__) . '/moduly/lib/core/VERSION');
-        $this->assertFileExists(dirname(__DIR__) . '/moduly/lib/core/schema/module-1.json');
+        $this->assertFileExists(dirname(__DIR__).'/moduly/lib/core/VERSION');
+        $this->assertFileExists(dirname(__DIR__).'/moduly/lib/core/schema/module-1.json');
     }
 }

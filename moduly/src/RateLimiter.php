@@ -14,12 +14,13 @@ final class RateLimiter
     /** @return bool true when the request is allowed */
     public function hit(string $bucket, int $perMinute = 30): bool
     {
-        $key = 'moduly_rl_' . md5($bucket . '|' . AuditLog::ipHash() . '|' . (string) floor(time() / 60));
+        $key = 'moduly_rl_'.md5($bucket.'|'.AuditLog::ipHash().'|'.(string) floor(time() / 60));
         $count = Value::int(get_transient($key));
         if ($count >= $perMinute) {
             return false;
         }
         set_transient($key, $count + 1, 70);
+
         return true;
     }
 

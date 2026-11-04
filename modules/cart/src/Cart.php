@@ -6,7 +6,6 @@
  * Cookie name and format are unchanged from the latte-shop theme (carts survive the move to the module).
  *
  * @moduly-request-handler reads the signed cart cookie.
- * @package ModulY\Cart
  */
 
 declare(strict_types=1);
@@ -52,31 +51,33 @@ final class Cart
 
     public static function key(int $id, string $tier = ''): string
     {
-        return $tier === '' ? (string) $id : $id . '~' . $tier;
+        return '' === $tier ? (string) $id : $id.'~'.$tier;
     }
 
     /** @return array{0: int, 1: string} product id, tier */
     public static function parse(int|string $key): array
     {
         $parts = explode('~', (string) $key, 2);
+
         return [(int) $parts[0], $parts[1] ?? ''];
     }
 
     /** @return array<int|string, int> */
     public static function lines(): array
     {
-        if (self::$lines !== null) {
+        if (null !== self::$lines) {
             return self::$lines;
         }
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- HMAC-verified in decode().
-        self::$lines = self::decode(isset($_COOKIE[self::COOKIE]) ? Value::str(wp_unslash($_COOKIE[self::COOKIE])) : '');
+        self::$lines = self::decode(isset($_COOKIE[self::COOKIE]) && is_string($_COOKIE[self::COOKIE]) ? sanitize_text_field(wp_unslash($_COOKIE[self::COOKIE])) : '');
+
         return self::$lines;
     }
 
     public static function add(int $id, int $qty, string $tier = ''): bool
     {
         $tier = Catalog::tier($id, $tier);
-        if (!Catalog::isPurchasable($id) || $tier === null) {
+        if (!Catalog::isPurchasable($id) || null === $tier) {
             return false; // unknown license tier = tampered form
         }
         $key = self::key($id, $tier);
@@ -86,6 +87,7 @@ final class Cart
         }
         $lines[$key] = ($lines[$key] ?? 0) + max(1, $qty);
         self::$lines = self::clamp($lines);
+
         return true;
     }
 
@@ -150,8 +152,9 @@ final class Cart
             ];
         }
         $shipping = $physical ? self::shipping($subtotal) : 0;
+
         return [
-            'digital' => $items !== [] && !$physical,
+            'digital' => [] !== $items && !$physical,
             'items' => $items,
             'count' => array_sum(array_column($items, 'qty')),
             'subtotal' => $subtotal,
@@ -173,7 +176,8 @@ final class Cart
         }
         $free = self::freeShippingCents();
         $flat = Value::int(apply_filters('latte_shop_flat_shipping_cents', self::$shipping['flat']));
-        return $subtotal === 0 || $subtotal >= $free ? 0 : $flat;
+
+        return 0 === $subtotal || $subtotal >= $free ? 0 : $flat;
     }
 
     /** Persist current lines to the signed cookie (call before redirect). */
@@ -181,7 +185,7 @@ final class Cart
     {
         $value = self::encode(self::lines());
         $opts = [
-            'expires' => $value === '' ? time() - 3600 : time() + 30 * DAY_IN_SECONDS,
+            'expires' => '' === $value ? time() - 3600 : time() + 30 * DAY_IN_SECONDS,
             'path' => COOKIEPATH ?: '/',
             'domain' => COOKIE_DOMAIN ?: '',
             'secure' => is_ssl(),
@@ -196,26 +200,27 @@ final class Cart
     public static function encode(array $lines): string
     {
         $lines = self::clamp($lines);
-        if ($lines === []) {
+        if ([] === $lines) {
             return '';
         }
         $payload = implode(',', array_map(
-            static fn (int|string $key, int $qty): string => $key . ':' . $qty,
+            static fn (int|string $key, int $qty): string => $key.':'.$qty,
             array_keys($lines),
             $lines
         ));
-        return $payload . '.' . self::sign($payload);
+
+        return $payload.'.'.self::sign($payload);
     }
 
     /** @return array<int|string, int> */
     public static function decode(string $raw): array
     {
         $parts = explode('.', $raw, 2);
-        if (count($parts) !== 2 || !hash_equals(self::sign($parts[0]), $parts[1])) {
+        if (2 !== count($parts) || !hash_equals(self::sign($parts[0]), $parts[1])) {
             return [];
         }
         $line = '\d+(?:~[a-z0-9_-]{1,32})?:\d+';
-        if (!preg_match('/^' . $line . '(?:,' . $line . ')*$/', $parts[0])) {
+        if (!preg_match('/^'.$line.'(?:,'.$line.')*$/', $parts[0])) {
             return [];
         }
         $lines = [];
@@ -223,16 +228,18 @@ final class Cart
             [$key, $qty] = explode(':', $pair, 2);
             $lines[ctype_digit($key) ? (int) $key : $key] = (int) $qty;
         }
+
         return self::clamp($lines);
     }
 
     private static function sign(string $payload): string
     {
-        return hash_hmac('sha256', $payload, wp_salt('auth') . self::COOKIE);
+        return hash_hmac('sha256', $payload, wp_salt('auth').self::COOKIE);
     }
 
     /**
      * @param array<int|string, int> $lines
+     *
      * @return array<int|string, int>
      */
     private static function clamp(array $lines): array
@@ -241,12 +248,12 @@ final class Cart
         foreach ($lines as $key => $qty) {
             [$id, $tier] = self::parse($key);
             $qty = min(self::MAX_QTY, (int) $qty);
-            if ($id <= 0 || $qty <= 0 || preg_match('/^[a-z0-9_-]{0,32}$/', $tier) !== 1) {
+            if ($id <= 0 || $qty <= 0 || 1 !== preg_match('/^[a-z0-9_-]{0,32}$/', $tier)) {
                 continue;
             }
-            $key = $tier === '' ? $id : self::key($id, $tier);
+            $key = '' === $tier ? $id : self::key($id, $tier);
             $stock = function_exists('get_post_meta') ? Catalog::stock($id) : null;
-            $out[$key] = $stock === null ? $qty : min($qty, $stock);
+            $out[$key] = null === $stock ? $qty : min($qty, $stock);
             if ($out[$key] <= 0) {
                 unset($out[$key]);
             }
@@ -254,6 +261,7 @@ final class Cart
                 break;
             }
         }
+
         return $out;
     }
 }

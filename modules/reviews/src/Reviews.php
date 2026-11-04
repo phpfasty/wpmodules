@@ -5,9 +5,8 @@
  * when the author's email has a paid order with the product. The aggregate of approved ratings is written to the
  * product's rating / reviews fields (types registry meta keys).
  * Reads the comment form rating:
- * @moduly-request-handler
  *
- * @package ModulY\Reviews
+ * @moduly-request-handler
  */
 
 declare(strict_types=1);
@@ -44,6 +43,7 @@ final class Reviews
     public static function rating(mixed $raw): int
     {
         $n = is_numeric($raw) ? (int) $raw : 0;
+
         return $n >= 1 && $n <= 5 ? $n : 0;
     }
 
@@ -51,13 +51,15 @@ final class Reviews
      * Average (1 decimal) and count of ratings.
      *
      * @param list<int> $ratings
+     *
      * @return array{avg: float, count: int}
      */
     public static function aggregate(array $ratings): array
     {
         $ratings = array_values(array_filter($ratings, static fn (int $r): bool => $r >= 1 && $r <= 5));
         $count = count($ratings);
-        return ['avg' => $count === 0 ? 0.0 : round(array_sum($ratings) / $count, 1), 'count' => $count];
+
+        return ['avg' => 0 === $count ? 0.0 : round(array_sum($ratings) / $count, 1), 'count' => $count];
     }
 
     /**
@@ -72,17 +74,18 @@ final class Reviews
                 continue;
             }
             foreach ($o['items'] as $item) {
-                if (is_array($item) && Value::int(($item['id'] ?? 0)) === $productId) {
+                if (is_array($item) && Value::int($item['id'] ?? 0) === $productId) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 
     public static function verifiedBuyer(string $email, int $productId): bool
     {
-        if ($email === '' || $productId <= 0) {
+        if ('' === $email || $productId <= 0) {
             return false;
         }
         $ids = get_posts([
@@ -99,6 +102,7 @@ final class Reviews
             'status' => Value::str(get_post_meta((int) $id, '_order_status', true)),
             'items' => Value::arr(get_post_meta((int) $id, '_order_items', true)),
         ], $ids));
+
         return self::bought($orders, $productId);
     }
 
@@ -117,22 +121,24 @@ final class Reviews
      * Reject reviews from non-buyers and without a valid rating (before the comment is stored).
      *
      * @param array<string, mixed> $data
+     *
      * @return array<string, mixed>
      */
     public static function preprocess(array $data): array
     {
-        $postId = Value::int(($data['comment_post_ID'] ?? 0));
+        $postId = Value::int($data['comment_post_ID'] ?? 0);
         if (!self::supports($postId) || ($data['comment_type'] ?? 'comment') !== 'comment' || !empty($data['comment_parent'])) {
             return $data;
         }
-        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(Value::str(wp_unslash($_POST['rating']))) : '');
-        $email = strtolower(Value::str(($data['comment_author_email'] ?? '')));
-        if ($rating === 0) {
+        $rating = self::rating(isset($_POST['rating']) && is_string($_POST['rating']) ? sanitize_text_field(wp_unslash($_POST['rating'])) : '');
+        $email = strtolower(Value::str($data['comment_author_email'] ?? ''));
+        if (0 === $rating) {
             wp_die(esc_html__('Please choose a rating from 1 to 5.', 'moduly'), esc_html__('Review not saved', 'moduly'), ['response' => 400, 'back_link' => true]);
         }
         if (!self::verifiedBuyer($email, $postId)) {
             wp_die(esc_html__('Only buyers with a paid order can review this product. Use the email of your order.', 'moduly'), esc_html__('Review not saved', 'moduly'), ['response' => 403, 'back_link' => true]);
         }
+
         return $data;
     }
 
@@ -142,7 +148,7 @@ final class Reviews
         if (!$c instanceof \WP_Comment || !self::supports((int) $c->comment_post_ID)) {
             return;
         }
-        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(Value::str(wp_unslash($_POST['rating']))) : '');
+        $rating = self::rating(isset($_POST['rating']) && is_string($_POST['rating']) ? sanitize_text_field(wp_unslash($_POST['rating'])) : '');
         if ($rating > 0) {
             update_comment_meta($commentId, self::META, $rating);
             update_comment_meta($commentId, 'verified', 1);
@@ -172,20 +178,11 @@ final class Reviews
         self::write($postId, self::$countField, $agg['count']);
     }
 
-    private static function write(int $postId, string $field, int|float $value): void
-    {
-        $type = self::$registry !== null && method_exists(self::$registry, 'get') ? self::$registry->get(self::$type) : null;
-        $fields = is_object($type) && property_exists($type, 'fields') && is_array($type->fields) ? $type->fields : [];
-        $def = $fields[$field] ?? null;
-        if (is_object($def) && property_exists($def, 'metaKey') && is_string($def->metaKey)) {
-            update_post_meta($postId, $def->metaKey, $value);
-        }
-    }
-
     /**
      * Product view-model: approved reviews + the form flags.
      *
      * @param array<string, mixed> $product
+     *
      * @return array<string, mixed>
      */
     public static function product(array $product, int $postId): array
@@ -209,6 +206,17 @@ final class Reviews
         $product['reviews_available'] = true;
         $product['reviews_list'] = $list;
         $product['review_action'] = site_url('/wp-comments-post.php');
+
         return $product;
+    }
+
+    private static function write(int $postId, string $field, int|float $value): void
+    {
+        $type = null !== self::$registry && method_exists(self::$registry, 'get') ? self::$registry->get(self::$type) : null;
+        $fields = is_object($type) && property_exists($type, 'fields') && is_array($type->fields) ? $type->fields : [];
+        $def = $fields[$field] ?? null;
+        if (is_object($def) && property_exists($def, 'metaKey') && is_string($def->metaKey)) {
+            update_post_meta($postId, $def->metaKey, $value);
+        }
     }
 }

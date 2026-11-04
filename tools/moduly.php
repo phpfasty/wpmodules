@@ -8,14 +8,14 @@ declare(strict_types=1);
 
 spl_autoload_register(static function (string $class): void {
     if (str_starts_with($class, 'PhpFasty\\Moduly\\')) {
-        $file = __DIR__ . '/../moduly/lib/core/src/' . str_replace('\\', '/', substr($class, 16)) . '.php';
+        $file = __DIR__.'/../moduly/lib/core/src/'.str_replace('\\', '/', substr($class, 16)).'.php';
         if (is_file($file)) {
             require $file;
         }
     }
 });
-if (!function_exists('sodium_crypto_sign_detached') && is_file(__DIR__ . '/../vendor/autoload.php')) {
-    require __DIR__ . '/../vendor/autoload.php';
+if (!function_exists('sodium_crypto_sign_detached') && is_file(__DIR__.'/../vendor/autoload.php')) {
+    require __DIR__.'/../vendor/autoload.php';
 }
 
 use PhpFasty\Moduly\Manifest\DependencyResolver;
@@ -32,7 +32,7 @@ try {
     switch ($cmd) {
         case 'sign':
             $key = getenv('MODULY_SIGNING_KEY');
-            $sig = Signer::sign(rtrim($argv[2] ?? '', '/'), $key === false || $key === '' ? null : $key);
+            $sig = Signer::sign(rtrim($argv[2] ?? '', '/'), false === $key || '' === $key ? null : $key);
             fwrite(STDERR, sprintf("%s: %s, %d files\n", basename($argv[2] ?? ''), $sig->alg, count($sig->files)));
             break;
         case 'pack':
@@ -44,17 +44,17 @@ try {
             $zip = new ZipArchive();
             $zip->open($argv[3] ?? '', ZipArchive::CREATE | ZipArchive::OVERWRITE);
             foreach (Fs::files($dir) as $rel) {
-                $name = basename($dir) . '/' . $rel;
-                $zip->addFile($dir . '/' . $rel, $name);
+                $name = basename($dir).'/'.$rel;
+                $zip->addFile($dir.'/'.$rel, $name);
                 $zip->setMtimeName($name, 315532800);
                 $zip->setExternalAttributesName($name, ZipArchive::OPSYS_UNIX, 0100644 << 16);
             }
             $zip->close();
             break;
         case 'verify':
-            $tmp = sys_get_temp_dir() . '/moduly-verify-' . bin2hex(random_bytes(4));
+            $tmp = sys_get_temp_dir().'/moduly-verify-'.bin2hex(random_bytes(4));
             $installed = [];
-            $installer = new Installer($tmp . '/m', $tmp . '/q', new Verifier(new Keyring([$argv[3] ?? '' => [$argv[4] ?? '']])), new DependencyResolver(Moduly::VERSION, PHP_VERSION, ['wp' => '99.0.0']));
+            $installer = new Installer($tmp.'/m', $tmp.'/q', new Verifier(new Keyring([$argv[3] ?? '' => [$argv[4] ?? '']])), new DependencyResolver(Moduly::VERSION, PHP_VERSION, ['wp' => '99.0.0']));
             $byId = static fn (array $list): array => array_column(array_map(static fn ($m) => [$m->id, $m], $list), 1, 0);
             foreach (array_slice($argv, 5) as $dep) {
                 // Each dependency is checked against the ones listed before it (cart before orders).
@@ -69,6 +69,6 @@ try {
             exit(2);
     }
 } catch (Throwable $e) {
-    fwrite(STDERR, 'Error: ' . $e->getMessage() . "\n");
+    fwrite(STDERR, 'Error: '.$e->getMessage()."\n");
     exit(1);
 }

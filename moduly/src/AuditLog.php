@@ -17,15 +17,16 @@ final class AuditLog implements AuditLogInterface
     public static function table(): string
     {
         global $wpdb;
-        /** @var \wpdb $wpdb */
-        return $wpdb->prefix . 'moduly_audit';
+
+        /* @var \wpdb $wpdb */
+        return $wpdb->prefix.'moduly_audit';
     }
 
     public static function install(): void
     {
         global $wpdb;
         /** @var \wpdb $wpdb */
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        require_once ABSPATH.'wp-admin/includes/upgrade.php';
         $charset = $wpdb->get_charset_collate();
         $table = self::table();
         dbDelta("CREATE TABLE {$table} (
@@ -58,7 +59,7 @@ final class AuditLog implements AuditLogInterface
             'result' => substr($result, 0, 32),
             'context' => (string) wp_json_encode($context),
         ];
-        if (get_option('moduly_audit_db') === self::DB_VERSION) {
+        if (self::DB_VERSION === get_option('moduly_audit_db')) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- append-only audit table owned by this plugin.
             $wpdb->insert(self::table(), $row);
         }
@@ -72,13 +73,14 @@ final class AuditLog implements AuditLogInterface
     public static function latest(int $limit = 20): array
     {
         global $wpdb;
-        /** @var \wpdb $wpdb */
-        if (get_option('moduly_audit_db') !== self::DB_VERSION) {
+        /* @var \wpdb $wpdb */
+        if (self::DB_VERSION !== get_option('moduly_audit_db')) {
             return [];
         }
         $table = self::table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- own table, admin screen only.
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT ts, user_id, action, module_id, version, result FROM %i ORDER BY id DESC LIMIT %d", $table, $limit), ARRAY_A);
+        $rows = $wpdb->get_results($wpdb->prepare('SELECT ts, user_id, action, module_id, version, result FROM %i ORDER BY id DESC LIMIT %d', $table, $limit), ARRAY_A);
+
         return array_map(Value::map(...), Value::list($rows));
     }
 
@@ -86,14 +88,14 @@ final class AuditLog implements AuditLogInterface
     public static function prune(): void
     {
         global $wpdb;
-        /** @var \wpdb $wpdb */
-        if (get_option('moduly_audit_db') !== self::DB_VERSION) {
+        /* @var \wpdb $wpdb */
+        if (self::DB_VERSION !== get_option('moduly_audit_db')) {
             return;
         }
         $days = defined('MODULY_AUDIT_DAYS') ? max(1, Value::int(constant('MODULY_AUDIT_DAYS'))) : 180;
         $table = self::table();
         $sql = $wpdb->prepare('DELETE FROM %i WHERE ts < %s', $table, gmdate('Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS));
-        if ($sql !== null) {
+        if (null !== $sql) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- own table, prepared above.
             $wpdb->query($sql);
         }
@@ -102,7 +104,8 @@ final class AuditLog implements AuditLogInterface
     public static function ipHash(): string
     {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- only hashed, never stored raw.
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(Value::str(wp_unslash(Value::str($_SERVER['REMOTE_ADDR'])))) : '';
-        return $ip === '' ? '' : hash('sha256', $ip . wp_salt('auth'));
+        $ip = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+
+        return '' === $ip ? '' : hash('sha256', $ip.wp_salt('auth'));
     }
 }

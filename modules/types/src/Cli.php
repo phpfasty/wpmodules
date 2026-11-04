@@ -2,8 +2,6 @@
 
 /**
  * Types module: Cli.
- *
- * @package ModulY\Types
  */
 
 declare(strict_types=1);
@@ -34,25 +32,28 @@ final class Cli
      * [--format=<format>]
      * : table|json. Default table.
      *
-     * @param list<string> $args
+     * @param list<string>               $args
      * @param array<string, string|bool> $assoc
      */
     public function prune(array $args, array $assoc): void
     {
         $registry = Data::registry();
-        if ($registry === null) {
+        if (null === $registry) {
             \WP_CLI::error('No types registry: the active theme declares no types (or the module is not active).');
+
             return;
         }
         $rows = (new Prune($registry))->candidates();
         $format = (string) ($assoc['format'] ?? 'table');
-        if ($rows === []) {
+        if ([] === $rows) {
             \WP_CLI::success('Nothing to prune.');
+
             return;
         }
         \WP_CLI\Utils\format_items($format, $rows, ['post_id', 'post_type', 'key', 'value']);
         if (empty($assoc['yes']) || !empty($assoc['dry-run'])) {
             \WP_CLI::log(sprintf('Dry run: %d row(s) would be deleted. Re-run with --yes to back up and delete.', count($rows)));
+
             return;
         }
         $lock = new OptionLock();
@@ -60,8 +61,8 @@ final class Cli
             \WP_CLI::error('Another prune is running.');
         }
         try {
-            $file = Prune::backup($rows, WP_CONTENT_DIR . '/moduly/backups');
-            \WP_CLI::log('Backup: ' . $file);
+            $file = Prune::backup($rows, WP_CONTENT_DIR.'/moduly/backups');
+            \WP_CLI::log('Backup: '.$file);
             $n = Prune::delete($rows, (int) ($assoc['batch'] ?? 200), static function (int $done): void {
                 \WP_CLI::log("deleted {$done}");
             });

@@ -2,8 +2,6 @@
 
 /**
  * Checkout consent ticks for the shop templates (slot checkout.consents).
- *
- * @package ModulY\ConsentLog
  */
 
 declare(strict_types=1);
@@ -17,6 +15,7 @@ final class Slots
     public static function t(string $en, string $ru): string
     {
         $locale = function_exists('determine_locale') ? (string) determine_locale() : 'en_US';
+
         return str_starts_with($locale, 'ru') ? $ru : $en;
     }
 
@@ -32,6 +31,7 @@ final class Slots
 
     /**
      * @param array<string, mixed> $context
+     *
      * @return list<array{name: string, id: string, label: string, url: string, link: string, required: bool, error: bool}>
      */
     public static function items(array $context): array
@@ -40,34 +40,37 @@ final class Slots
         $errors = array_map(Value::str(...), (array) ($checkout['errors'] ?? []));
         $out = [];
         foreach ((array) ($checkout['consents'] ?? []) as $c) {
-            $name = Value::str((Value::at($c, 'name') ?? ''));
-            if (preg_match('/^[a-z0-9_]{1,40}$/', $name) !== 1) {
+            $name = Value::str(Value::at($c, 'name') ?? '');
+            if (1 !== preg_match('/^[a-z0-9_]{1,40}$/', $name)) {
                 continue;
             }
             $out[] = [
                 'name' => $name,
-                'id' => 'co-' . str_replace('_', '-', $name),
+                'id' => 'co-'.str_replace('_', '-', $name),
                 'label' => self::label($name),
-                'url' => Value::str((Value::at($c, 'url') ?? '')),
+                'url' => Value::str(Value::at($c, 'url') ?? ''),
                 'link' => self::t('document', 'документ'),
                 'required' => !empty(Value::at($c, 'required')),
                 'error' => in_array($name, $errors, true),
             ];
         }
+
         return $out;
     }
 
     /**
      * @param array<string, list<array<string, mixed>>> $slots
-     * @param array<string, mixed> $context
+     * @param array<string, mixed>                      $context
+     *
      * @return array<string, list<array<string, mixed>>>
      */
     public static function slots(array $slots, array $context): array
     {
         $items = self::items($context);
-        if ($items !== []) {
+        if ([] !== $items) {
             $slots['checkout.consents'][] = ['view' => 'moduly/consent-log/consents', 'data' => ['items' => $items]];
         }
+
         return $slots;
     }
 }

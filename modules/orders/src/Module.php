@@ -2,8 +2,6 @@
 
 /**
  * Orders module entry.
- *
- * @package ModulY\Orders
  */
 
 declare(strict_types=1);

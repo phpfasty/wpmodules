@@ -6,7 +6,6 @@ namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Exception\ModulyException;
 use PhpFasty\Moduly\Kernel\ModuleRecord;
-use Throwable;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -28,7 +27,7 @@ final class AdminPage
         add_action('admin_post_moduly_action', [$this, 'action']);
         add_action('admin_notices', [$this, 'notices']);
         add_action('network_admin_notices', [$this, 'notices']);
-        add_filter('plugin_action_links_' . plugin_basename(MODULY_PLUGIN_FILE), [$this, 'links']);
+        add_filter('plugin_action_links_'.plugin_basename(MODULY_PLUGIN_FILE), [$this, 'links']);
     }
 
     public function menu(): void
@@ -38,11 +37,13 @@ final class AdminPage
 
     /**
      * @param array<string, string> $links
+     *
      * @return array<string, string>
      */
     public function links(array $links): array
     {
         $links['moduly'] = sprintf('<a href="%s">%s</a>', esc_url(self::url()), esc_html__('Modules', 'moduly'));
+
         return $links;
     }
 
@@ -50,6 +51,7 @@ final class AdminPage
     public static function url(array $args = []): string
     {
         $base = is_multisite() ? network_admin_url('plugins.php') : admin_url('plugins.php');
+
         return add_query_arg(['page' => self::SLUG] + $args, $base);
     }
 
@@ -62,7 +64,7 @@ final class AdminPage
             printf('<div class="notice notice-warning"><p>%s</p></div>', esc_html__('ModulY safe mode is on: no modules are loaded on this request.', 'moduly'));
         }
         foreach ($this->plugin->modules->records() as $rec) {
-            if ($rec->status === ModuleRecord::FAILED) {
+            if (ModuleRecord::FAILED === $rec->status) {
                 printf(
                     '<div class="notice notice-error is-dismissible"><p>%s <a href="%s">%s</a></p></div>',
                     esc_html(sprintf(
@@ -85,15 +87,15 @@ final class AdminPage
         $file = isset($_FILES['package']) && is_array($_FILES['package']) ? $_FILES['package'] : [];
         $tmp = isset($file['tmp_name']) && is_string($file['tmp_name']) ? $file['tmp_name'] : '';
         $error = isset($file['error']) ? Value::int($file['error']) : UPLOAD_ERR_NO_FILE;
-        if ($error !== UPLOAD_ERR_OK || $tmp === '' || !is_uploaded_file($tmp)) {
+        if (UPLOAD_ERR_OK !== $error || '' === $tmp || !is_uploaded_file($tmp)) {
             $this->back(['moduly_error' => 'upload']);
         }
-        $enable = isset($_POST['enable']) && sanitize_key(Value::str(wp_unslash(Value::str($_POST['enable'])))) === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in guard().
+        $enable = isset($_POST['enable']) && is_string($_POST['enable']) && '1' === sanitize_key(wp_unslash($_POST['enable'])); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in guard().
         try {
             $m = $this->plugin->modules->install($tmp, $enable);
             $this->back(['moduly_done' => $enable ? 'installed_enabled' : 'installed', 'module' => $m->id]);
         } catch (ModulyException $e) {
-            set_transient('moduly_msg_' . get_current_user_id(), $e->getMessage(), 120);
+            set_transient('moduly_msg_'.get_current_user_id(), $e->getMessage(), 120);
             $this->back(['moduly_error' => $e->reason]);
         } finally {
             if (is_file($tmp)) {
@@ -106,10 +108,10 @@ final class AdminPage
     {
         $this->guard('moduly_manage', 'moduly_action');
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in guard().
-        $op = isset($_POST['op']) ? sanitize_key(Value::str(wp_unslash(Value::str($_POST['op'])))) : '';
-        $id = isset($_POST['module']) ? sanitize_key(Value::str(wp_unslash(Value::str($_POST['module'])))) : '';
+        $op = isset($_POST['op']) && is_string($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '';
+        $id = isset($_POST['module']) && is_string($_POST['module']) ? sanitize_key(wp_unslash($_POST['module'])) : '';
         // phpcs:enable
-        if (preg_match('/^[a-z][a-z0-9-]{1,40}$/', $id) !== 1 || !isset($this->plugin->modules->records()[$id])) {
+        if (1 !== preg_match('/^[a-z][a-z0-9-]{1,40}$/', $id) || !isset($this->plugin->modules->records()[$id])) {
             $this->back(['moduly_error' => 'unknown_module']);
         }
         try {
@@ -121,8 +123,8 @@ final class AdminPage
                 default => throw new ModulyException('bad_op', __('Unknown action.', 'moduly')),
             };
             $this->back(['moduly_done' => $op, 'module' => $id]);
-        } catch (Throwable $e) {
-            set_transient('moduly_msg_' . get_current_user_id(), $e->getMessage(), 120);
+        } catch (\Throwable $e) {
+            set_transient('moduly_msg_'.get_current_user_id(), $e->getMessage(), 120);
             $this->back(['moduly_error' => $e instanceof ModulyException ? $e->reason : 'failed', 'module' => $id]);
         }
     }
@@ -135,70 +137,70 @@ final class AdminPage
         $modules = $this->plugin->modules;
         $meta = OptionState::meta();
         $canInstall = current_user_can('moduly_install');
-        echo '<div class="wrap"><h1 class="wp-heading-inline">' . esc_html__('Modules', 'moduly') . '</h1>';
-        echo '<p class="description">' . esc_html(sprintf(
+        echo '<div class="wrap"><h1 class="wp-heading-inline">'.esc_html__('Modules', 'moduly').'</h1>';
+        echo '<p class="description">'.esc_html(sprintf(
             /* translators: %s: core version */
             __('ModulY core %s. Modules are verified (schema, sha256, publisher signature, static scan) before anything is executed.', 'moduly'),
             Modules::coreVersion()
-        )) . '</p>';
+        )).'</p>';
         $this->result();
 
         if ($canInstall) {
-            echo '<h2>' . esc_html__('Upload a module', 'moduly') . '</h2>';
-            echo '<form method="post" enctype="multipart/form-data" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            echo '<h2>'.esc_html__('Upload a module', 'moduly').'</h2>';
+            echo '<form method="post" enctype="multipart/form-data" action="'.esc_url(admin_url('admin-post.php')).'">';
             wp_nonce_field('moduly_upload');
             echo '<input type="hidden" name="action" value="moduly_upload">';
             echo '<p><input type="file" name="package" accept=".zip,application/zip" required> ';
-            echo '<label><input type="checkbox" name="enable" value="1" checked> ' . esc_html__('Enable after install', 'moduly') . '</label></p>';
+            echo '<label><input type="checkbox" name="enable" value="1" checked> '.esc_html__('Enable after install', 'moduly').'</label></p>';
             submit_button(__('Install module', 'moduly'), 'primary', 'submit', false);
             echo '</form>';
         } else {
-            echo '<p>' . esc_html__('Module uploads are disabled here (DISALLOW_FILE_MODS or missing capability). Use WP-CLI: wp moduly install <zip>.', 'moduly') . '</p>';
+            echo '<p>'.esc_html__('Module uploads are disabled here (DISALLOW_FILE_MODS or missing capability). Use WP-CLI: wp moduly install <zip>.', 'moduly').'</p>';
         }
 
-        echo '<h2>' . esc_html__('Installed modules', 'moduly') . '</h2>';
+        echo '<h2>'.esc_html__('Installed modules', 'moduly').'</h2>';
         echo '<table class="widefat striped"><thead><tr>';
         foreach ([__('Module', 'moduly'), __('Version', 'moduly'), __('Status', 'moduly'), __('Signature', 'moduly'), __('Permissions', 'moduly'), __('Requires', 'moduly'), __('Actions', 'moduly')] as $h) {
-            echo '<th>' . esc_html($h) . '</th>';
+            echo '<th>'.esc_html($h).'</th>';
         }
         echo '</tr></thead><tbody>';
         $records = $modules->records();
-        if ($records === []) {
-            echo '<tr><td colspan="7">' . esc_html__('No modules installed yet.', 'moduly') . '</td></tr>';
+        if ([] === $records) {
+            echo '<tr><td colspan="7">'.esc_html__('No modules installed yet.', 'moduly').'</td></tr>';
         }
         foreach ($records as $rec) {
             $m = $modules->manifest($rec);
             $signed = $meta[$rec->id]['signed'] ?? false;
-            echo '<tr><td><strong>' . esc_html($m->name ?? $rec->id) . '</strong><br><code>' . esc_html($rec->id) . '</code>';
-            if ($m !== null && $m->description !== '') {
-                echo '<p class="description">' . esc_html($m->description) . '</p>';
+            echo '<tr><td><strong>'.esc_html($m->name ?? $rec->id).'</strong><br><code>'.esc_html($rec->id).'</code>';
+            if (null !== $m && '' !== $m->description) {
+                echo '<p class="description">'.esc_html($m->description).'</p>';
             }
-            echo '</td><td>' . esc_html($rec->version) . ($rec->previous !== '' ? '<br><small>' . esc_html(sprintf(/* translators: %s: version */ __('previous: %s', 'moduly'), $rec->previous)) . '</small>' : '') . '</td>';
-            echo '<td>' . esc_html(self::statusLabel($rec->status)) . ($rec->error !== '' ? '<br><small>' . esc_html($rec->error) . '</small>' : '') . '</td>';
-            echo '<td>' . esc_html($signed ? sprintf(/* translators: %s: publisher */ __('signed by %s', 'moduly'), $m->publisher ?? '?') : __('unsigned (development)', 'moduly')) . '</td>';
-            echo '<td><code>' . esc_html(implode(', ', $m->permissions ?? [])) . '</code></td>';
-            echo '<td>' . esc_html(implode(', ', array_map(static fn (string $k, string $v): string => "{$k} {$v}", array_keys($m->requiresModules ?? []), $m->requiresModules ?? []))) . '</td><td>';
-            $ops = $rec->status === ModuleRecord::ENABLED ? ['disable' => __('Disable', 'moduly')] : ['enable' => __('Enable', 'moduly'), 'remove' => __('Remove files', 'moduly')];
-            if ($rec->previous !== '') {
+            echo '</td><td>'.esc_html($rec->version).('' !== $rec->previous ? '<br><small>'.esc_html(sprintf(/* translators: %s: version */ __('previous: %s', 'moduly'), $rec->previous)).'</small>' : '').'</td>';
+            echo '<td>'.esc_html(self::statusLabel($rec->status)).('' !== $rec->error ? '<br><small>'.esc_html($rec->error).'</small>' : '').'</td>';
+            echo '<td>'.esc_html($signed ? sprintf(/* translators: %s: publisher */ __('signed by %s', 'moduly'), $m->publisher ?? '?') : __('unsigned (development)', 'moduly')).'</td>';
+            echo '<td><code>'.esc_html(implode(', ', $m->permissions ?? [])).'</code></td>';
+            echo '<td>'.esc_html(implode(', ', array_map(static fn (string $k, string $v): string => "{$k} {$v}", array_keys($m->requiresModules ?? []), $m->requiresModules ?? []))).'</td><td>';
+            $ops = ModuleRecord::ENABLED === $rec->status ? ['disable' => __('Disable', 'moduly')] : ['enable' => __('Enable', 'moduly'), 'remove' => __('Remove files', 'moduly')];
+            if ('' !== $rec->previous) {
                 $ops['rollback'] = __('Roll back', 'moduly');
             }
             foreach ($ops as $op => $label) {
-                echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline-block;margin:0 4px 4px 0">';
+                echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'" style="display:inline-block;margin:0 4px 4px 0">';
                 wp_nonce_field('moduly_action');
-                echo '<input type="hidden" name="action" value="moduly_action"><input type="hidden" name="op" value="' . esc_attr($op) . '"><input type="hidden" name="module" value="' . esc_attr($rec->id) . '">';
-                submit_button($label, $op === 'enable' ? 'primary small' : 'secondary small', 'submit', false);
+                echo '<input type="hidden" name="action" value="moduly_action"><input type="hidden" name="op" value="'.esc_attr($op).'"><input type="hidden" name="module" value="'.esc_attr($rec->id).'">';
+                submit_button($label, 'enable' === $op ? 'primary small' : 'secondary small', 'submit', false);
                 echo '</form>';
             }
             echo '</td></tr>';
         }
         echo '</tbody></table>';
-        echo '<p class="description">' . esc_html__('Removing a module deletes its code only; posts, orders and settings it created stay in the database.', 'moduly') . '</p>';
+        echo '<p class="description">'.esc_html__('Removing a module deletes its code only; posts, orders and settings it created stay in the database.', 'moduly').'</p>';
 
         $events = AuditLog::latest(15);
-        if ($events !== []) {
-            echo '<h2>' . esc_html__('Recent activity', 'moduly') . '</h2><table class="widefat striped"><tbody>';
+        if ([] !== $events) {
+            echo '<h2>'.esc_html__('Recent activity', 'moduly').'</h2><table class="widefat striped"><tbody>';
             foreach ($events as $e) {
-                echo '<tr><td>' . esc_html(Value::str(($e['ts'] ?? ''))) . ' UTC</td><td>' . esc_html(Value::str(($e['action'] ?? ''))) . '</td><td>' . esc_html(Value::str(($e['module_id'] ?? ''))) . ' ' . esc_html(Value::str(($e['version'] ?? ''))) . '</td><td>' . esc_html(Value::str(($e['result'] ?? ''))) . '</td></tr>';
+                echo '<tr><td>'.esc_html(Value::str($e['ts'] ?? '')).' UTC</td><td>'.esc_html(Value::str($e['action'] ?? '')).'</td><td>'.esc_html(Value::str($e['module_id'] ?? '')).' '.esc_html(Value::str($e['version'] ?? '')).'</td><td>'.esc_html(Value::str($e['result'] ?? '')).'</td></tr>';
             }
             echo '</tbody></table>';
         }
@@ -208,19 +210,19 @@ final class AdminPage
     private function result(): void
     {
         // phpcs:disable WordPress.Security.NonceVerification.Recommended -- display of a redirect result code.
-        $done = isset($_GET['moduly_done']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['moduly_done'])))) : '';
-        $error = isset($_GET['moduly_error']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['moduly_error'])))) : '';
-        $module = isset($_GET['module']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['module'])))) : '';
+        $done = isset($_GET['moduly_done']) && is_string($_GET['moduly_done']) ? sanitize_key(wp_unslash($_GET['moduly_done'])) : '';
+        $error = isset($_GET['moduly_error']) && is_string($_GET['moduly_error']) ? sanitize_key(wp_unslash($_GET['moduly_error'])) : '';
+        $module = isset($_GET['module']) && is_string($_GET['module']) ? sanitize_key(wp_unslash($_GET['module'])) : '';
         // phpcs:enable
-        if ($done !== '') {
+        if ('' !== $done) {
             printf('<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html(sprintf(/* translators: 1: action, 2: module */ __('Done: %1$s %2$s.', 'moduly'), str_replace('_', ' ', $done), $module)));
         }
-        if ($error !== '') {
-            $msg = get_transient('moduly_msg_' . get_current_user_id());
-            delete_transient('moduly_msg_' . get_current_user_id());
+        if ('' !== $error) {
+            $msg = get_transient('moduly_msg_'.get_current_user_id());
+            delete_transient('moduly_msg_'.get_current_user_id());
             printf(
                 '<div class="notice notice-error is-dismissible"><p>%s <code>%s</code></p></div>',
-                esc_html(is_string($msg) && $msg !== '' ? $msg : __('The module was not installed or changed.', 'moduly')),
+                esc_html(is_string($msg) && '' !== $msg ? $msg : __('The module was not installed or changed.', 'moduly')),
                 esc_html($error)
             );
         }
@@ -237,8 +239,8 @@ final class AdminPage
 
     private function guard(string $cap, string $nonce): void
     {
-        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(Value::str(wp_unslash(Value::str($_SERVER['REQUEST_METHOD'])))) : '';
-        if ($method !== 'post' || !current_user_can($cap)) {
+        $method = isset($_SERVER['REQUEST_METHOD']) && is_string($_SERVER['REQUEST_METHOD']) ? sanitize_key(wp_unslash($_SERVER['REQUEST_METHOD'])) : '';
+        if ('post' !== $method || !current_user_can($cap)) {
             wp_die(esc_html__('Sorry, you are not allowed to do that.', 'moduly'), '', ['response' => 403]);
         }
         check_admin_referer($nonce); // dies on a missing or invalid nonce

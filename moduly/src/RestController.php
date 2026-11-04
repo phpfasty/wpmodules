@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Exception\ModulyException;
-use Throwable;
-use WP_Error;
-use WP_REST_Request;
-use WP_REST_Response;
 use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
@@ -44,7 +40,7 @@ final class RestController
         ]);
     }
 
-    public function list(): WP_REST_Response
+    public function list(): \WP_REST_Response
     {
         $out = [];
         $meta = OptionState::meta();
@@ -63,20 +59,22 @@ final class RestController
                 'requires' => $m->requiresModules ?? [],
             ];
         }
-        return new WP_REST_Response(['core' => Modules::coreVersion(), 'safe_mode' => $this->plugin->safe, 'modules' => $out]);
+
+        return new \WP_REST_Response(['core' => Modules::coreVersion(), 'safe_mode' => $this->plugin->safe, 'modules' => $out]);
     }
 
-    public function install(WP_REST_Request $request): WP_REST_Response|WP_Error
+    public function install(\WP_REST_Request $request): \WP_REST_Response|\WP_Error
     {
         $tmp = self::uploadedFile($request->get_file_params()['package'] ?? null);
-        if ($tmp === '') {
-            return new WP_Error('moduly_upload', __('Upload a module zip in the "package" field.', 'moduly'), ['status' => 400]);
+        if ('' === $tmp) {
+            return new \WP_Error('moduly_upload', __('Upload a module zip in the "package" field.', 'moduly'), ['status' => 400]);
         }
         try {
-            $m = $this->plugin->modules->install($tmp, Value::str($request->get_param('enable')) === '1');
-            return new WP_REST_Response(['id' => $m->id, 'version' => (string) $m->version], 201);
+            $m = $this->plugin->modules->install($tmp, '1' === Value::str($request->get_param('enable')));
+
+            return new \WP_REST_Response(['id' => $m->id, 'version' => (string) $m->version], 201);
         } catch (ModulyException $e) {
-            return new WP_Error('moduly_' . $e->reason, $e->getMessage(), ['status' => 422]);
+            return new \WP_Error('moduly_'.$e->reason, $e->getMessage(), ['status' => 422]);
         } finally {
             if (is_file($tmp)) {
                 wp_delete_file($tmp);
@@ -84,12 +82,12 @@ final class RestController
         }
     }
 
-    public function operate(WP_REST_Request $request): WP_REST_Response|WP_Error
+    public function operate(\WP_REST_Request $request): \WP_REST_Response|\WP_Error
     {
         $id = Value::str($request->get_param('id'));
         $op = Value::str($request->get_param('op'));
         if (!isset($this->plugin->modules->records()[$id])) {
-            return new WP_Error('moduly_not_installed', __('Module is not installed.', 'moduly'), ['status' => 404]);
+            return new \WP_Error('moduly_not_installed', __('Module is not installed.', 'moduly'), ['status' => 404]);
         }
         try {
             match ($op) {
@@ -97,18 +95,20 @@ final class RestController
                 'disable' => $this->plugin->modules->disable($id),
                 default => $this->plugin->modules->rollback($id),
             };
-        } catch (Throwable $e) {
-            return new WP_Error('moduly_' . ($e instanceof ModulyException ? $e->reason : 'failed'), $e->getMessage(), ['status' => 409]);
+        } catch (\Throwable $e) {
+            return new \WP_Error('moduly_'.($e instanceof ModulyException ? $e->reason : 'failed'), $e->getMessage(), ['status' => 409]);
         }
-        return new WP_REST_Response(['id' => $id, 'op' => $op, 'ok' => true]);
+
+        return new \WP_REST_Response(['id' => $id, 'op' => $op, 'ok' => true]);
     }
 
     /** Temp path of a valid HTTP upload, '' otherwise. */
     private static function uploadedFile(mixed $file): string
     {
-        if (!is_array($file) || !is_string($file['tmp_name'] ?? null) || Value::int(($file['error'] ?? 1)) !== UPLOAD_ERR_OK) {
+        if (!is_array($file) || !is_string($file['tmp_name'] ?? null) || UPLOAD_ERR_OK !== Value::int($file['error'] ?? 1)) {
             return '';
         }
+
         return is_uploaded_file($file['tmp_name']) ? $file['tmp_name'] : '';
     }
 }

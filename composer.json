@@ -13,6 +13,8 @@
         "php": ">=8.2"
     },
     "require-dev": {
+        "escapestudios/symfony2-coding-standard": "^3.13",
+        "friendsofphp/php-cs-fixer": "^3",
         "paragonie/sodium_compat": "^2.1",
         "php-stubs/wp-cli-stubs": "^2.12",
         "phpstan/phpstan": "^2.0",
@@ -40,7 +42,15 @@
         "test": "phpunit",
         "phpstan": "phpstan analyse --no-progress --memory-limit=1G",
         "phpcs": "phpcs",
-        "audit": "composer audit --locked"
+        "audit": "composer audit --locked",
+        "cs": [
+            "php-cs-fixer check --diff",
+            "phpcs -n"
+        ],
+        "cs-fix": [
+            "php-cs-fixer fix",
+            "phpcbf"
+        ]
     },
     "config": {
         "sort-packages": true,

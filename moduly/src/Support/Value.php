@@ -2,8 +2,6 @@
 
 /**
  * Narrowing of untyped WordPress values (options, meta, request data, decoded JSON) to scalars and arrays.
- *
- * @package ModulY
  */
 
 declare(strict_types=1);
@@ -53,7 +51,8 @@ final class Value
         return match (true) {
             is_bool($value) => $value,
             is_string($value) => !in_array(strtolower(trim($value)), ['', '0', 'false', 'no', 'off'], true),
-            is_int($value), is_float($value) => $value != 0,
+            is_int($value) => 0 !== $value,
+            is_float($value) => 0.0 !== $value,
             default => false,
         };
     }

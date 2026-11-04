@@ -2,8 +2,6 @@
 
 /**
  * Licenses module entry.
- *
- * @package ModulY\Licenses
  */
 
 declare(strict_types=1);
@@ -18,7 +16,7 @@ final class Module implements ModuleInterface
     public function boot(ModuleContext $context): void
     {
         Licenses::configure($context->settings);
-        $views = $context->path . '/views';
+        $views = $context->path.'/views';
         $host = $context->host;
         $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));
         $host->on('filter', 'wpfasty_shop_product_fields', [Licenses::class, 'fields']);

@@ -2,8 +2,6 @@
 
 /**
  * Types module entry.
- *
- * @package ModulY\Types
  */
 
 declare(strict_types=1);
@@ -13,9 +11,9 @@ namespace PhpFasty\Module\Types;
 use PhpFasty\Module\Types\Migrations\Migration_0001_SchemaSnapshot;
 use PhpFasty\Module\Types\Migrations\Migration_0002_AliasBackfill;
 use PhpFasty\Module\Types\Model\Registry;
-use PhpFasty\Moduly\Migration\Migrator;
 use PhpFasty\Moduly\Contract\ModuleInterface;
 use PhpFasty\Moduly\Kernel\ModuleContext;
+use PhpFasty\Moduly\Migration\Migrator;
 use PhpFasty\Moduly\Wp\Support\Value;
 use PhpFasty\Moduly\Wp\ThemeDefinitions;
 
@@ -43,7 +41,7 @@ final class Module implements ModuleInterface
     private static ?Migrator $migrator = null;
 
     /** @var (callable(list<string>): list<array<mixed>>)|null */
-    private static $definitions = null;
+    private static $definitions;
 
     public function boot(ModuleContext $context): void
     {
@@ -95,15 +93,11 @@ final class Module implements ModuleInterface
         foreach (self::ALIASES as $alias => $target) {
             class_alias($target, $alias);
         }
-        if (self::$definitions !== null) {
+        if (null !== self::$definitions) {
             Registry::setDefinitions(self::$definitions);
         }
-        return true;
-    }
 
-    private static function declared(string $class): bool
-    {
-        return in_array(strtolower($class), array_map('strtolower', get_declared_classes()), true);
+        return true;
     }
 
     public static function detachPlugin(): void
@@ -114,7 +108,7 @@ final class Module implements ModuleInterface
     public static function migrate(Registry $types): void
     {
         $versions = (array) get_option('moduly_schema_version', []);
-        if (self::$migrator === null || Value::int(($versions[self::SCOPE] ?? 0)) >= self::LATEST) {
+        if (null === self::$migrator || Value::int($versions[self::SCOPE] ?? 0) >= self::LATEST) {
             return; // nothing pending: no lock write on every request
         }
         $result = self::$migrator->run(self::SCOPE, self::migrations($types));
@@ -127,5 +121,10 @@ final class Module implements ModuleInterface
     public static function migrations(Registry $types): array
     {
         return [new Migration_0001_SchemaSnapshot($types), new Migration_0002_AliasBackfill($types)];
+    }
+
+    private static function declared(string $class): bool
+    {
+        return in_array(strtolower($class), array_map('strtolower', get_declared_classes()), true);
     }
 }

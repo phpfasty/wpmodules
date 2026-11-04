@@ -6,7 +6,6 @@
  * Consent is read server-side only through `analyticsAllowed()` (cookie value `all`).
  *
  * @moduly-request-handler reads the consent cookie.
- * @package ModulY\CookieConsent
  */
 
 declare(strict_types=1);
@@ -33,11 +32,13 @@ final class CookieConsent
      * Theme data: `wpfasty_cookie_consent` (array) — enabled flag + policy URL.
      *
      * @param array<string, mixed> $state
+     *
      * @return array<string, mixed>
      */
     public static function state(array $state): array
     {
         $page = function_exists('get_page_by_path') ? get_page_by_path(self::$policy) : null;
+
         return array_merge($state, [
             'enabled' => true,
             'cookie' => self::COOKIE,
@@ -49,17 +50,18 @@ final class CookieConsent
     public static function analyticsAllowed(): bool
     {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared to a constant only.
-        return isset($_COOKIE[self::COOKIE]) && wp_unslash($_COOKIE[self::COOKIE]) === 'all';
+
+        return isset($_COOKIE[self::COOKIE]) && is_string($_COOKIE[self::COOKIE]) && 'all' === sanitize_key(wp_unslash($_COOKIE[self::COOKIE]));
     }
 
     /** Config + script inline in the footer (no file URL needed, no external request). */
     public static function printScript(): void
     {
-        if (self::$script === '') {
+        if ('' === self::$script) {
             return;
         }
         wp_print_inline_script_tag(
-            'window.modulyCookieConsent=' . (string) wp_json_encode(['name' => self::COOKIE, 'maxAgeDays' => self::$maxAge]) . ";\n" . self::$script,
+            'window.modulyCookieConsent='.(string) wp_json_encode(['name' => self::COOKIE, 'maxAgeDays' => self::$maxAge]).";\n".self::$script,
             ['id' => 'moduly-cookie-consent']
         );
     }

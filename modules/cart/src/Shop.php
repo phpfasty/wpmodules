@@ -5,8 +5,6 @@
  *   wpfasty_shop_state  (array $shop)            → URLs, nonces, cart count, free-shipping amount
  *   wpfasty_shop_cart   (?array $cart)           → priced cart with display strings
  *   wpfasty_shop_product(array $product, int id) → price / sale / stock / purchasable
- *
- * @package ModulY\Cart
  */
 
 declare(strict_types=1);
@@ -17,6 +15,7 @@ final class Shop
 {
     /**
      * @param array<string, mixed> $shop
+     *
      * @return array<string, mixed>
      */
     public static function state(array $shop): array
@@ -37,14 +36,16 @@ final class Shop
 
     /**
      * @param array<string, mixed>|null $cart
+     *
      * @return array<string, mixed>
      */
     public static function cart(?array $cart): array
     {
         $summary = Cart::summary();
+
         return $summary + [
             'subtotal_display' => Money::format($summary['subtotal']),
-            'shipping_display' => $summary['shipping'] === 0 ? __('Free', 'moduly') : Money::format($summary['shipping']),
+            'shipping_display' => 0 === $summary['shipping'] ? __('Free', 'moduly') : Money::format($summary['shipping']),
             'total_display' => Money::format($summary['total']),
         ];
     }

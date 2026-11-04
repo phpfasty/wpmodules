@@ -2,8 +2,6 @@
 
 /**
  * Shop page URLs (cart / checkout pages by slug, product archive).
- *
- * @package ModulY\Cart
  */
 
 declare(strict_types=1);
@@ -17,7 +15,8 @@ final class Pages
     public static function url(string $slug): string
     {
         $page = get_page_by_path($slug);
-        return $page ? (string) get_permalink($page) : home_url('/' . $slug . '/');
+
+        return $page ? (string) get_permalink($page) : home_url('/'.$slug.'/');
     }
 
     public static function shop(): string

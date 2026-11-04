@@ -27,7 +27,7 @@ final class Host implements HostInterface
 
     public function on(string $type, string $hook, callable $callback, int $priority = 10, int $args = 1): void
     {
-        if ($type === 'filter') {
+        if ('filter' === $type) {
             add_filter($hook, $callback, $priority, $args);
         } else {
             add_action($hook, $callback, $priority, $args);
@@ -56,6 +56,7 @@ final class Host implements HostInterface
             $value = $stored[$key] ?? ($schema['default'] ?? null);
             $out[$key] = self::coerce($value, $schema) ?? ($schema['default'] ?? null);
         }
+
         return $out;
     }
 
@@ -76,7 +77,7 @@ final class Host implements HostInterface
     {
         $type = $schema['type'] ?? 'string';
         $ok = match ($type) {
-            'integer' => is_int($value) || (is_string($value) && preg_match('/^-?\d+$/', $value) === 1),
+            'integer' => is_int($value) || (is_string($value) && 1 === preg_match('/^-?\d+$/', $value)),
             'number' => is_numeric($value),
             'boolean' => is_bool($value),
             'string' => is_string($value),
@@ -101,6 +102,7 @@ final class Host implements HostInterface
                 return null;
             }
         }
+
         return $value;
     }
 }

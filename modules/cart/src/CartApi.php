@@ -2,8 +2,6 @@
 
 /**
  * Service `cart.api` for dependent modules (orders): the only surface they use.
- *
- * @package ModulY\Cart
  */
 
 declare(strict_types=1);

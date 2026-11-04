@@ -24,6 +24,7 @@ final class FakeWpdb
         [, $type, $after, $limit] = $args + [null, null, 0, 0]; // [table, post_type, after id, limit]
         $ids = array_keys(array_filter(FakeWp::$posts, static fn ($t, $id): bool => $t === $type && $id > $after, ARRAY_FILTER_USE_BOTH));
         sort($ids);
+
         return array_map(Value::str(...), array_slice($ids, 0, Value::int($limit)));
     }
 }

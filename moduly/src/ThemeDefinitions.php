@@ -15,6 +15,7 @@ final class ThemeDefinitions
 {
     /**
      * @param list<string> $dirs
+     *
      * @return list<array<mixed>>
      */
     public function arrays(array $dirs): array
@@ -25,23 +26,24 @@ final class ThemeDefinitions
         $themes = realpath(get_theme_root());
         foreach ((array) apply_filters('wpfasty_theme_dirs', []) as $extra) {
             $real = realpath(Value::str($extra));
-            if ($real !== false && $themes !== false && $this->inside($real, [$themes])) {
+            if (false !== $real && false !== $themes && $this->inside($real, [$themes])) {
                 $roots[] = $real;
             }
         }
         $out = [];
         foreach (array_unique($dirs) as $dir) {
             $real = realpath((string) $dir);
-            if ($real === false || !$this->inside($real, $roots)) {
+            if (false === $real || !$this->inside($real, $roots)) {
                 continue;
             }
-            foreach (glob($real . '/*.php') ?: [] as $file) {
+            foreach (glob($real.'/*.php') ?: [] as $file) {
                 $def = include $file;
                 if (is_array($def)) {
                     $out[] = $def;
                 }
             }
         }
+
         return $out;
     }
 
@@ -49,10 +51,11 @@ final class ThemeDefinitions
     private function inside(string $path, array $roots): bool
     {
         foreach ($roots as $root) {
-            if ($path === $root || str_starts_with($path, $root . DIRECTORY_SEPARATOR)) {
+            if ($path === $root || str_starts_with($path, $root.DIRECTORY_SEPARATOR)) {
                 return true;
             }
         }
+
         return false;
     }
 }

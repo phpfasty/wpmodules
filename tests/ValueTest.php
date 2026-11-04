@@ -20,7 +20,7 @@ final class ValueTest extends TestCase
         yield 'false' => [false, ''];
         yield 'null' => [null, ''];
         yield 'array' => [['x'], ''];
-        yield 'stringable' => [new class () implements \Stringable {
+        yield 'stringable' => [new class implements \Stringable {
             public function __toString(): string
             {
                 return 's';

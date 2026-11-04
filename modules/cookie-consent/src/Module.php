@@ -2,8 +2,6 @@
 
 /**
  * Cookie consent module entry.
- *
- * @package ModulY\CookieConsent
  */
 
 declare(strict_types=1);
@@ -17,12 +15,12 @@ final class Module implements ModuleInterface
 {
     public function boot(ModuleContext $context): void
     {
-        $file = $context->path . '/assets/cookie-consent.js';
+        $file = $context->path.'/assets/cookie-consent.js';
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- own packaged asset.
         CookieConsent::configure($context->settings, is_file($file) ? (string) file_get_contents($file) : '');
         $host = $context->host;
         $host->on('filter', 'wpfasty_cookie_consent', [CookieConsent::class, 'state']);
-        $views = $context->path . '/views';
+        $views = $context->path.'/views';
         $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));
         $host->on('filter', 'wpfasty_slots', [Slots::class, 'slots'], 10, 2);
         $host->on('action', 'wp_footer', [CookieConsent::class, 'printScript'], 50);

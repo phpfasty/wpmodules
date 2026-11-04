@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PhpFasty\WpModules\Tests\Fake;
 
 /** In-memory WordPress options/post meta for migration tests (phpunit only). */
-
 final class FakeWp
 {
     /** @var array<string, mixed> */

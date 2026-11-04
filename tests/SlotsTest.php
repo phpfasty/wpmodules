@@ -9,43 +9,13 @@ use PhpFasty\Module\CookieConsent\Slots as CookieSlots;
 use PhpFasty\Module\Downloads\Slots as DownloadSlots;
 use PhpFasty\Module\Licenses\Licenses;
 use PhpFasty\Module\Reviews\Slots as ReviewSlots;
-use PHPUnit\Framework\TestCase;
 use PhpFasty\Moduly\Wp\Support\Value;
+use PHPUnit\Framework\TestCase;
 
 /** Views the modules add to the latte-shop extension points (filter `wpfasty_slots`). */
 final class SlotsTest extends TestCase
 {
     private const VIEW = '#^moduly/[a-z0-9-]+/[a-z0-9_-]+$#';
-
-    /** @param array<string, list<array<string, mixed>>> $slots */
-    private function assertViewsShipped(array $slots): void
-    {
-        $root = dirname(__DIR__) . '/modules';
-        foreach ($slots as $list) {
-            foreach ($list as $slot) {
-                $view = Value::str($slot['view']);
-                $this->assertMatchesRegularExpression(self::VIEW, $view);
-                [, $id, $name] = explode('/', $view);
-                foreach (['.latte', '.html.twig'] as $ext) {
-                    $this->assertFileExists("{$root}/{$id}/views/moduly/{$id}/{$name}{$ext}", 'Latte + Twig twin');
-                }
-            }
-        }
-    }
-
-    /** @return array<string, mixed> */
-    private function product(bool $purchasable = true): array
-    {
-        return ['page' => ['id' => 5, 'fields' => [], 'product' => [
-            'purchasable' => $purchasable,
-            'licenses' => [
-                ['tier' => 'regular', 'label' => 'Regular', 'price' => '10 ₽'],
-                ['tier' => 'extended', 'label' => 'Extended', 'price' => '50 ₽'],
-                ['tier' => 'Bad Tier!', 'label' => 'x'],
-                'not-a-row',
-            ],
-        ]]];
-    }
 
     public function testLicenseTiersAreNormalisedFirstChecked(): void
     {
@@ -133,5 +103,35 @@ final class SlotsTest extends TestCase
         $this->assertSame(['5', '4', '3', '2', '1'], array_column(Value::arr($vm['rating_options']), 'value'));
         $this->assertNull(ReviewSlots::viewModel(['page' => ['product' => []]]));
         $this->assertViewsShipped(ReviewSlots::slots([], $ctx));
+    }
+
+    /** @param array<string, list<array<string, mixed>>> $slots */
+    private function assertViewsShipped(array $slots): void
+    {
+        $root = dirname(__DIR__).'/modules';
+        foreach ($slots as $list) {
+            foreach ($list as $slot) {
+                $view = Value::str($slot['view']);
+                $this->assertMatchesRegularExpression(self::VIEW, $view);
+                [, $id, $name] = explode('/', $view);
+                foreach (['.latte', '.html.twig'] as $ext) {
+                    $this->assertFileExists("{$root}/{$id}/views/moduly/{$id}/{$name}{$ext}", 'Latte + Twig twin');
+                }
+            }
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function product(bool $purchasable = true): array
+    {
+        return ['page' => ['id' => 5, 'fields' => [], 'product' => [
+            'purchasable' => $purchasable,
+            'licenses' => [
+                ['tier' => 'regular', 'label' => 'Regular', 'price' => '10 ₽'],
+                ['tier' => 'extended', 'label' => 'Extended', 'price' => '50 ₽'],
+                ['tier' => 'Bad Tier!', 'label' => 'x'],
+                'not-a-row',
+            ],
+        ]]];
     }
 }

@@ -27,6 +27,7 @@ final class OptionState implements StateStoreInterface
                 }
             }
         }
+
         return $out;
     }
 
@@ -56,6 +57,7 @@ final class OptionState implements StateStoreInterface
                 }
             }
         }
+
         return $out;
     }
 

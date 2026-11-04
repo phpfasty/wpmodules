@@ -22,12 +22,13 @@ final class Keys
             $trusted[$publisher][] = $key;
         }
         $revoked = array_map(static fn (array $p): string => $p[1], self::pairs('MODULY_REVOKED_KEYS'));
+
         return new Keyring($trusted, $revoked, self::allowUnsigned());
     }
 
     public static function allowUnsigned(): bool
     {
-        return defined('MODULY_ALLOW_UNSIGNED') && constant('MODULY_ALLOW_UNSIGNED') === true
+        return defined('MODULY_ALLOW_UNSIGNED') && true === constant('MODULY_ALLOW_UNSIGNED')
             && in_array(wp_get_environment_type(), ['local', 'development'], true);
     }
 
@@ -35,16 +36,17 @@ final class Keys
     private static function pairs(string $constant): array
     {
         $raw = defined($constant) ? constant($constant) : getenv($constant);
-        if (!is_string($raw) || $raw === '') {
+        if (!is_string($raw) || '' === $raw) {
             return [];
         }
         $out = [];
         foreach (explode(',', $raw) as $item) {
             $parts = explode(':', trim($item), 2);
-            if (count($parts) === 2 && preg_match('/^[a-z0-9][a-z0-9-]{1,63}$/', $parts[0]) === 1 && preg_match('#^[A-Za-z0-9+/]{43}=$#', $parts[1]) === 1) {
+            if (2 === count($parts) && 1 === preg_match('/^[a-z0-9][a-z0-9-]{1,63}$/', $parts[0]) && 1 === preg_match('#^[A-Za-z0-9+/]{43}=$#', $parts[1])) {
                 $out[] = [$parts[0], $parts[1]];
             }
         }
+
         return $out;
     }
 }

@@ -12,26 +12,21 @@ use PhpFasty\Moduly\Migration\LockInterface;
 use PhpFasty\Moduly\Migration\MigrationGuard;
 use PhpFasty\Moduly\Migration\Migrator;
 use PhpFasty\Moduly\Migration\SchemaVersionStoreInterface;
-use PHPUnit\Framework\TestCase;
-use PhpFasty\WpModules\Tests\Fake\FakeWp;
 use PhpFasty\Moduly\Wp\Support\Value;
+use PhpFasty\WpModules\Tests\Fake\FakeWp;
+use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/fake-wp-functions.php';
+require_once __DIR__.'/fake-wp-functions.php';
 
 /** Module `types`: forward-only migrations (ADR-002), alias reads, and the no-delete guarantee. */
 final class TypesTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        FakeWp::reset();
-    }
-
     public function testMigrationsContainNoDeletes(): void
     {
-        $dir = dirname(__DIR__) . '/modules/types/src/Migrations';
-        self::assertNotEmpty(glob($dir . '/Migration_*.php'));
+        $dir = dirname(__DIR__).'/modules/types/src/Migrations';
+        self::assertNotEmpty(glob($dir.'/Migration_*.php'));
         self::assertSame([], MigrationGuard::violations($dir));
-        foreach (glob($dir . '/*.php') ?: [] as $file) {
+        foreach (glob($dir.'/*.php') ?: [] as $file) {
             self::assertDoesNotMatchRegularExpression('/\bdelete_\w+\s*\(/', (string) file_get_contents($file), basename($file));
         }
     }
@@ -45,10 +40,10 @@ final class TypesTest extends TestCase
     /** Old schema (field `price` stored under `_old_price`, `year` as text) → migrate twice → nothing lost. */
     public function testOldSchemaMigratesForwardIdempotentlyAndKeepsAllMeta(): void
     {
-        for ($id = 1; $id <= 7; $id++) {
+        for ($id = 1; $id <= 7; ++$id) {
             FakeWp::$posts[$id] = 'book';
             FakeWp::$meta[$id]['_old_price'] = [(string) ($id * 100)];
-            FakeWp::$meta[$id]['_book_note'] = ['n' . $id];
+            FakeWp::$meta[$id]['_book_note'] = ['n'.$id];
         }
         FakeWp::$posts[8] = 'page';
         FakeWp::$meta[8]['_old_price'] = ['999'];
@@ -106,6 +101,27 @@ final class TypesTest extends TestCase
         );
     }
 
+    /** wpfasty_post_data gets the wp-fasty Core Post DTO (id, kind) since 2026-11; it must not fatal. */
+    public function testIdentityAcceptsThePostDto(): void
+    {
+        $dto = new class {
+            public int $id = 42;
+            public string $kind = 'product';
+        };
+        self::assertSame([42, 'product'], Registry::identity($dto));
+        self::assertSame([0, ''], Registry::identity(new \stdClass()));
+        $unknown = new class {
+            public int $id = 7;
+            public string $kind = 'no-such-type';
+        };
+        self::assertSame(['title' => 'x'], self::registry()->postData(['title' => 'x'], $unknown));
+    }
+
+    protected function setUp(): void
+    {
+        FakeWp::reset();
+    }
+
     private static function registry(): Registry
     {
         Registry::setDefinitions(static fn (array $dirs): array => [[
@@ -117,15 +133,16 @@ final class TypesTest extends TestCase
         ]]);
         $r = new Registry(['/theme/types']);
         $r->load();
+
         return $r;
     }
 
     private static function migrator(int $batch): Migrator
     {
-        $versions = new class () implements SchemaVersionStoreInterface {
+        $versions = new class implements SchemaVersionStoreInterface {
             public function get(string $scope): int
             {
-                return Value::int((((array) get_option('moduly_schema_version', []))[$scope] ?? 0));
+                return Value::int(((array) get_option('moduly_schema_version', []))[$scope] ?? 0);
             }
 
             public function set(string $scope, int $version): void
@@ -135,7 +152,7 @@ final class TypesTest extends TestCase
                 update_option('moduly_schema_version', $all);
             }
         };
-        $lock = new class () implements LockInterface {
+        $lock = new class implements LockInterface {
             public function acquire(string $name, int $ttlSeconds): bool
             {
                 return true;
@@ -145,22 +162,7 @@ final class TypesTest extends TestCase
             {
             }
         };
-        return new Migrator($versions, $lock, $batch, 50);
-    }
 
-    /** wpfasty_post_data gets the wp-fasty Core Post DTO (id, kind) since 2026-11; it must not fatal. */
-    public function testIdentityAcceptsThePostDto(): void
-    {
-        $dto = new class () {
-            public int $id = 42;
-            public string $kind = 'product';
-        };
-        self::assertSame([42, 'product'], Registry::identity($dto));
-        self::assertSame([0, ''], Registry::identity(new \stdClass()));
-        $unknown = new class () {
-            public int $id = 7;
-            public string $kind = 'no-such-type';
-        };
-        self::assertSame(['title' => 'x'], self::registry()->postData(['title' => 'x'], $unknown));
+        return new Migrator($versions, $lock, $batch, 50);
     }
 }

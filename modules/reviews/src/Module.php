@@ -2,8 +2,6 @@
 
 /**
  * Verified reviews module entry.
- *
- * @package ModulY\Reviews
  */
 
 declare(strict_types=1);
@@ -26,7 +24,7 @@ final class Module implements ModuleInterface
         $host->on('action', 'comment_post', [Reviews::class, 'saved']);
         $host->on('action', 'wp_set_comment_status', [Reviews::class, 'statusChanged']);
         $host->on('filter', 'wpfasty_shop_product', [Reviews::class, 'product'], 20, 2);
-        $views = $context->path . '/views';
+        $views = $context->path.'/views';
         $host->on('filter', 'wpfasty_view_roots', static fn (array $roots): array => array_merge($roots, [$views]));
         $host->on('filter', 'wpfasty_slots', [Slots::class, 'slots'], 30, 2);
     }

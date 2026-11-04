@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
-use PhpFasty\Moduly\Wp\Support\Value;
 use PhpFasty\Module\Downloads\Token;
+use PhpFasty\Moduly\Wp\Support\Value;
 use PHPUnit\Framework\TestCase;
 
 /** Signed links: 24 h expiry, tamper, unpaid and limit are all refused (served as 403). */
@@ -47,7 +47,7 @@ final class DownloadsTest extends TestCase
 
     public function testEndpointIsDeclaredForTheDisableScenario(): void
     {
-        $m = json_decode((string) file_get_contents(dirname(__DIR__) . '/modules/downloads/module.json'), true);
+        $m = json_decode((string) file_get_contents(dirname(__DIR__).'/modules/downloads/module.json'), true);
         $this->assertSame(['moduly_download'], Value::at(Value::at($m, 'endpoints'), 'actions'));
         $this->assertContains('files:private', Value::arr(Value::at($m, 'permissions')));
     }

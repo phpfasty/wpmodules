@@ -13,7 +13,6 @@ use PhpFasty\Moduly\Moduly;
 use PhpFasty\Moduly\Package\Fs;
 use PhpFasty\Moduly\Package\Installer;
 use PhpFasty\Moduly\Signature\Verifier;
-use Throwable;
 
 /**
  * Admin operations shared by the admin screen, REST and WP-CLI. Every operation is audited.
@@ -38,7 +37,7 @@ final class Modules
     {
         try {
             return $this->kernel->manifest($rec->id, $rec->version);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return null;
         }
     }
@@ -49,7 +48,7 @@ final class Modules
      */
     public function install(string $zipPath, bool $enable = false, bool $allowDowngrade = false): Manifest
     {
-        if (defined('DISALLOW_FILE_MODS') && constant('DISALLOW_FILE_MODS') === true && !(defined('WP_CLI') && constant('WP_CLI'))) {
+        if (defined('DISALLOW_FILE_MODS') && true === constant('DISALLOW_FILE_MODS') && !(defined('WP_CLI') && constant('WP_CLI'))) {
             throw new ModulyException('file_mods_disallowed', esc_html__('Installing modules is disabled on this site (DISALLOW_FILE_MODS). Use WP-CLI from your deployment.', 'moduly'));
         }
         if (!Paths::ensure()) {
@@ -59,7 +58,7 @@ final class Modules
         $installed = [];
         foreach ($records as $id => $rec) {
             $m = $this->manifest($rec);
-            if ($m !== null) {
+            if (null !== $m) {
                 $installed[$id] = $m;
             }
         }
@@ -72,13 +71,13 @@ final class Modules
         }
         $m = $result->manifest;
         $old = $records[$m->id] ?? null;
-        $wasEnabled = $old !== null && $old->status === ModuleRecord::ENABLED;
-        $previous = $old !== null && $old->version !== (string) $m->version ? $old->version : ($old->previous ?? '');
+        $wasEnabled = null !== $old && ModuleRecord::ENABLED === $old->status;
+        $previous = null !== $old && $old->version !== (string) $m->version ? $old->version : ($old->previous ?? '');
         $records = $this->state->load();
-        $records[$m->id] = new ModuleRecord($m->id, (string) $m->version, $old?->status === ModuleRecord::FAILED ? ModuleRecord::INSTALLED : ($old->status ?? ModuleRecord::INSTALLED), '', $previous);
+        $records[$m->id] = new ModuleRecord($m->id, (string) $m->version, ModuleRecord::FAILED === $old?->status ? ModuleRecord::INSTALLED : ($old->status ?? ModuleRecord::INSTALLED), '', $previous);
         $this->state->save($records);
         OptionState::setMeta($m->id, $result->signed, $result->key);
-        $this->audit->record($old === null ? 'install' : 'update', $m->id, (string) $m->version, 'ok', ['signed' => $result->signed, 'permissions' => $m->permissions]);
+        $this->audit->record(null === $old ? 'install' : 'update', $m->id, (string) $m->version, 'ok', ['signed' => $result->signed, 'permissions' => $m->permissions]);
         $this->pruneOldVersions($m->id, (string) $m->version, $previous);
         if ($wasEnabled) {
             // The old version is loaded in this request: activate() of the new code runs on the next request.
@@ -89,6 +88,7 @@ final class Modules
         } elseif ($enable) {
             $this->enable($m->id);
         }
+
         return $m;
     }
 
@@ -96,7 +96,7 @@ final class Modules
     {
         try {
             $this->kernel->enable($id);
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->audit->record('enable', $id, '', 'failed', ['error' => $e->getMessage()]);
             throw $e instanceof ModulyException ? $e : new ModulyException('enable_failed', $e->getMessage());
         }
@@ -114,13 +114,13 @@ final class Modules
     {
         $records = $this->state->load();
         $rec = $records[$id] ?? throw new ModulyException('not_installed', esc_html__('Module is not installed.', 'moduly'));
-        if ($rec->status === ModuleRecord::ENABLED) {
+        if (ModuleRecord::ENABLED === $rec->status) {
             throw new ModulyException('enabled', esc_html__('Disable the module before removing it.', 'moduly'));
         }
-        $dir = Paths::modules() . '/' . $id;
+        $dir = Paths::modules().'/'.$id;
         $real = realpath($dir);
         $root = realpath(Paths::modules());
-        if ($real !== false && $root !== false && str_starts_with($real, $root . DIRECTORY_SEPARATOR)) {
+        if (false !== $real && false !== $root && str_starts_with($real, $root.DIRECTORY_SEPARATOR)) {
             Fs::remove($real);
         }
         unset($records[$id]);
@@ -133,29 +133,29 @@ final class Modules
     {
         $records = $this->state->load();
         $rec = $records[$id] ?? throw new ModulyException('not_installed', esc_html__('Module is not installed.', 'moduly'));
-        if ($rec->previous === '' || !is_dir($this->kernel->dir($id, $rec->previous))) {
+        if ('' === $rec->previous || !is_dir($this->kernel->dir($id, $rec->previous))) {
             throw new ModulyException('no_previous', esc_html__('No previous version is available.', 'moduly'));
         }
-        $records[$id] = new ModuleRecord($id, $rec->previous, $rec->status === ModuleRecord::FAILED ? ModuleRecord::INSTALLED : $rec->status, '', $rec->version);
+        $records[$id] = new ModuleRecord($id, $rec->previous, ModuleRecord::FAILED === $rec->status ? ModuleRecord::INSTALLED : $rec->status, '', $rec->version);
         $this->state->save($records);
         $this->audit->record('rollback', $id, $rec->previous, 'ok', ['from' => $rec->version]);
-    }
-
-    private function pruneOldVersions(string $id, string $keep, string $previous): void
-    {
-        $base = Paths::modules() . '/' . $id;
-        foreach (scandir($base) ?: [] as $v) {
-            if ($v === '.' || $v === '..' || $v === $keep || $v === $previous) {
-                continue;
-            }
-            if (preg_match('/^[0-9A-Za-z.+-]+$/', $v) === 1 && is_dir($base . '/' . $v)) {
-                Fs::remove($base . '/' . $v);
-            }
-        }
     }
 
     public static function coreVersion(): string
     {
         return Moduly::VERSION;
+    }
+
+    private function pruneOldVersions(string $id, string $keep, string $previous): void
+    {
+        $base = Paths::modules().'/'.$id;
+        foreach (scandir($base) ?: [] as $v) {
+            if ('.' === $v || '..' === $v || $v === $keep || $v === $previous) {
+                continue;
+            }
+            if (1 === preg_match('/^[0-9A-Za-z.+-]+$/', $v) && is_dir($base.'/'.$v)) {
+                Fs::remove($base.'/'.$v);
+            }
+        }
     }
 }

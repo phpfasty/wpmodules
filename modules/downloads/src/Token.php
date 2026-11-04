@@ -2,8 +2,6 @@
 
 /**
  * Signed download links: HMAC-SHA256 over order id, item index and expiry (no state needed to check a link).
- *
- * @package ModulY\Downloads
  */
 
 declare(strict_types=1);
@@ -14,7 +12,7 @@ final class Token
 {
     public static function sign(int $order, int $item, int $expires, string $secret): string
     {
-        return hash_hmac('sha256', $order . '|' . $item . '|' . $expires, $secret);
+        return hash_hmac('sha256', $order.'|'.$item.'|'.$expires, $secret);
     }
 
     /** Valid signature and not expired. */

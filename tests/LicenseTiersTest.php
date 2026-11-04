@@ -11,39 +11,6 @@ use PHPUnit\Framework\TestCase;
 /** Cart lines carry a license tier; the price always comes from the product, never from the client. */
 final class LicenseTiersTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $type = new class () {
-            /** @return array<string, string> */
-            public function capability(string $cap): array
-            {
-                return ['price_field' => 'price', 'sale_field' => 'sale_price', 'license_field' => 'licenses'];
-            }
-        };
-        Catalog::setRegistry(new class ($type) {
-            public function __construct(private object $type)
-            {
-            }
-
-            public function get(string $name): object
-            {
-                return $this->type;
-            }
-
-            public function value(int $id, string $field): string
-            {
-                return match ($field) {
-                    'price' => '4900',
-                    'sale_price' => '3900',
-                    'licenses' => $id === 1
-                        ? '[{"tier":"regular","label":"Regular","price":4900},{"tier":"extended","label":"Extended","price":19900}]'
-                        : '',
-                    default => '',
-                };
-            }
-        });
-    }
-
     public function testTierIsResolvedOnTheServer(): void
     {
         $this->assertSame('regular', Catalog::tier(1, ''));
@@ -72,8 +39,41 @@ final class LicenseTiersTest extends TestCase
     public function testTamperedTierOrPriceIsRejected(): void
     {
         [, $sig] = explode('.', Cart::encode(['1~regular' => 1]));
-        $this->assertSame([], Cart::decode('1~extended:1.' . $sig)); // swapped tier, old signature
-        $this->assertSame([], Cart::decode('1~extended:1:1.' . $sig));
+        $this->assertSame([], Cart::decode('1~extended:1.'.$sig)); // swapped tier, old signature
+        $this->assertSame([], Cart::decode('1~extended:1:1.'.$sig));
         $this->assertSame([], Cart::decode(Cart::encode(['1~EXT<script>' => 1])));
+    }
+
+    protected function setUp(): void
+    {
+        $type = new class {
+            /** @return array<string, string> */
+            public function capability(string $cap): array
+            {
+                return ['price_field' => 'price', 'sale_field' => 'sale_price', 'license_field' => 'licenses'];
+            }
+        };
+        Catalog::setRegistry(new class($type) {
+            public function __construct(private object $type)
+            {
+            }
+
+            public function get(string $name): object
+            {
+                return $this->type;
+            }
+
+            public function value(int $id, string $field): string
+            {
+                return match ($field) {
+                    'price' => '4900',
+                    'sale_price' => '3900',
+                    'licenses' => 1 === $id
+                        ? '[{"tier":"regular","label":"Regular","price":4900},{"tier":"extended","label":"Extended","price":19900}]'
+                        : '',
+                    default => '',
+                };
+            }
+        });
     }
 }

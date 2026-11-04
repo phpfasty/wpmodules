@@ -11,11 +11,6 @@ use PHPUnit\Framework\TestCase;
 /** Ported from wp-fasty tests/ShopCartTest.php: same cookie format and money in integer cents. */
 final class CartTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000]);
-    }
-
     public function testMoneyUsesIntegerCents(): void
     {
         $this->assertSame(1999, Money::toCents('19.99'));
@@ -39,8 +34,8 @@ final class CartTest extends TestCase
     public function testTamperedCookieIsRejected(): void
     {
         [$payload, $sig] = explode('.', Cart::encode([5 => 2]));
-        $this->assertSame([], Cart::decode('5:1000.' . $sig));
-        $this->assertSame([], Cart::decode($payload . '.deadbeef'));
+        $this->assertSame([], Cart::decode('5:1000.'.$sig));
+        $this->assertSame([], Cart::decode($payload.'.deadbeef'));
         $this->assertSame([], Cart::decode('garbage'));
     }
 
@@ -64,5 +59,10 @@ final class CartTest extends TestCase
         Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000]);
         $this->assertFalse(Cart::digitalOnly());
         $this->assertSame(500, Cart::shipping(5000));
+    }
+
+    protected function setUp(): void
+    {
+        Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000]);
     }
 }

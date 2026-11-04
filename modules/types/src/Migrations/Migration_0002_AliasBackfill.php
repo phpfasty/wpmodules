@@ -35,10 +35,10 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
         $budget = max(1, $batchSize);
         foreach ($this->types->all() as $type) {
             $fields = array_filter($type->fields, static fn ($f): bool => !empty($f->def['aliases']));
-            if ($fields === []) {
+            if ([] === $fields) {
                 continue;
             }
-            $last = Value::int(($cursor[$type->name] ?? 0));
+            $last = Value::int($cursor[$type->name] ?? 0);
             if ($last < 0) {
                 continue; // this post type is done
             }
@@ -67,6 +67,7 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
                 return false;
             }
         }
+
         return true;
     }
 
@@ -82,11 +83,13 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
             }
             $raw = Value::str(get_post_meta($postId, $old, true));
             $value = $field->toStorage($raw);
-            if ($raw === '' || $value === null) {
+            if ('' === $raw || null === $value) {
                 do_action('moduly_types_invalid_value', $postId, $field->name, $old, 'alias value not convertible, skipped');
+
                 return;
             }
             add_post_meta($postId, $field->metaKey, $value, true);
+
             return;
         }
     }

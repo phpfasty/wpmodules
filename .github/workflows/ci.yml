@@ -29,7 +29,10 @@ jobs:
           key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: composer audit --locked
-      - run: vendor/bin/phpcs -n
+      - name: PHP-CS-Fixer @Symfony (check)
+        run: vendor/bin/php-cs-fixer check --diff
+      - name: PHPCS Symfony + WordPress.Security
+        run: vendor/bin/phpcs -n
       - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
       - run: vendor/bin/phpunit
       - name: Vendored core is CMS-agnostic (no WordPress calls)

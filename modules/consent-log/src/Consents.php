@@ -3,9 +3,8 @@
 /**
  * Checkout consents (152-FZ art. 9, 38-FZ art. 18): which ticks exist, validation and the proof record.
  * Reads the checkout form after the orders module verified its nonce:
- * @moduly-request-handler
  *
- * @package ModulY\ConsentLog
+ * @moduly-request-handler
  */
 
 declare(strict_types=1);
@@ -32,7 +31,8 @@ final class Consents
     public static function version(): string
     {
         $v = self::$settings['legal_version'] ?? '';
-        return is_string($v) && $v !== '' ? $v : '2026-10-30';
+
+        return is_string($v) && '' !== $v ? $v : '2026-10-30';
     }
 
     /**
@@ -59,14 +59,16 @@ final class Consents
                 'page' => Value::str(Value::at($def, 'page')),
             ];
         }
+
         return $out;
     }
 
     /**
      * Missing required ticks → error codes (named after the tick).
      *
-     * @param list<string> $errors
+     * @param list<string>        $errors
      * @param array<string, bool> $ticked
+     *
      * @return list<string>
      */
     public static function validate(array $errors, array $ticked): array
@@ -76,6 +78,7 @@ final class Consents
                 $errors[] = $d['name'];
             }
         }
+
         return $errors;
     }
 
@@ -86,6 +89,7 @@ final class Consents
         foreach (self::definitions() as $d) {
             $out[$d['name']] = isset($_POST[$d['name']]);
         }
+
         return $out;
     }
 
@@ -93,6 +97,7 @@ final class Consents
      * Proof record stored on the order.
      *
      * @param array<string, bool> $ticked
+     *
      * @return array<string, mixed>
      */
     public static function record(array $ticked, string $ip, string $time): array
@@ -109,6 +114,7 @@ final class Consents
 
     /**
      * @param list<string> $errors
+     *
      * @return list<string>
      */
     public static function onValidate(array $errors): array
@@ -118,7 +124,7 @@ final class Consents
 
     public static function onOrderCreated(int $orderId): void
     {
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(Value::str(wp_unslash($_SERVER['REMOTE_ADDR']))) : '';
+        $ip = isset($_SERVER['REMOTE_ADDR']) && is_string($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
         update_post_meta($orderId, self::META, self::record(self::ticked(), $ip, gmdate('c')));
     }
 
@@ -126,15 +132,18 @@ final class Consents
      * Checkout view-model: consent ticks with document links (theme renders them).
      *
      * @param array<string, mixed> $checkout
+     *
      * @return array<string, mixed>
      */
     public static function checkout(array $checkout): array
     {
         $checkout['consents'] = array_map(static function (array $d): array {
             $page = get_page_by_path($d['page']);
+
             return $d + ['url' => $page ? (string) get_permalink($page) : ''];
         }, self::definitions());
         $checkout['consent_version'] = self::version();
+
         return $checkout;
     }
 }

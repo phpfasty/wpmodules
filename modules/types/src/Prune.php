@@ -2,8 +2,6 @@
 
 /**
  * Types module: Prune.
- *
- * @package ModulY\Types
  */
 
 declare(strict_types=1);
@@ -40,7 +38,7 @@ final class Prune
                 foreach ((array) ($field->def['aliases'] ?? []) as $alias) {
                     $known[Value::str($alias)] = true;
                 }
-                $suffix = '_' . $name;
+                $suffix = '_'.$name;
                 if (str_ends_with($field->metaKey, $suffix) && strlen($field->metaKey) > strlen($suffix) + 1) {
                     $prefixes[substr($field->metaKey, 0, -strlen($name))] = true;
                 }
@@ -54,7 +52,7 @@ final class Prune
                     $wpdb->postmeta,
                     $wpdb->posts,
                     $type->name,
-                    $wpdb->esc_like((string) $prefix) . '%'
+                    $wpdb->esc_like((string) $prefix).'%'
                 ), ARRAY_A);
                 foreach ((array) $found as $r) {
                     if (isset($known[Value::str($r['meta_key'])])) {
@@ -72,32 +70,35 @@ final class Prune
                 }
             }
         }
+
         return $rows;
     }
 
     /**
      * @param list<array{post_id: int, post_type: string, key: string, value: string}> $rows
+     *
      * @return string backup file path
      */
     public static function backup(array $rows, string $dir): string
     {
         if (!is_dir($dir) && !wp_mkdir_p($dir)) {
-            throw new \RuntimeException('Cannot create backup directory ' . $dir);
+            throw new \RuntimeException(sprintf('Cannot create backup directory %s', $dir));
         }
-        if (!file_exists($dir . '/index.php')) {
+        if (!file_exists($dir.'/index.php')) {
             // phpcs:ignore WordPress.WP.AlternativeFunctions -- WP-CLI only, private backup dir
-            file_put_contents($dir . '/index.php', "<?php\n// Silence is golden.\n");
+            file_put_contents($dir.'/index.php', "<?php\n// Silence is golden.\n");
         }
-        if (!file_exists($dir . '/.htaccess')) {
+        if (!file_exists($dir.'/.htaccess')) {
             // phpcs:ignore WordPress.WP.AlternativeFunctions -- WP-CLI only, private backup dir
-            file_put_contents($dir . '/.htaccess', "Require all denied\nDeny from all\n");
+            file_put_contents($dir.'/.htaccess', "Require all denied\nDeny from all\n");
         }
-        $file = $dir . '/types-prune-' . gmdate('Ymd-His') . '-' . wp_generate_password(6, false) . '.json';
+        $file = $dir.'/types-prune-'.gmdate('Ymd-His').'-'.wp_generate_password(6, false).'.json';
         $json = wp_json_encode(['created' => gmdate('c'), 'rows' => $rows], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         // phpcs:ignore WordPress.WP.AlternativeFunctions -- WP-CLI only, private backup dir
-        if (!is_string($json) || file_put_contents($file, $json) === false) {
-            throw new \RuntimeException('Cannot write backup ' . $file);
+        if (!is_string($json) || false === file_put_contents($file, $json)) {
+            throw new \RuntimeException(sprintf('Cannot write backup %s', $file));
         }
+
         return $file;
     }
 
@@ -115,10 +116,11 @@ final class Prune
                     ++$deleted;
                 }
             }
-            if ($progress !== null) {
+            if (null !== $progress) {
                 $progress($deleted);
             }
         }
+
         return $deleted;
     }
 }
