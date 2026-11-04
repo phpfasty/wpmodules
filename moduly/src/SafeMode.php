@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 /**
- * Global safe mode: no module is loaded. MODULY_SAFE_MODE (constant or env) or `?moduly_safe=<MODULY_SAFE_TOKEN>`.
+ * Global safe mode: no module is loaded. MODULY_SAFE_MODE (constant or env, preferred), the request header
+ * `X-Moduly-Safe: <MODULY_SAFE_TOKEN>` or, as a last resort, `?moduly_safe=<MODULY_SAFE_TOKEN>` (lands in access
+ * logs and browser history: rotate the token after use). Responses in token mode send `Referrer-Policy: no-referrer`.
  */
 final class SafeMode
 {
@@ -20,7 +22,14 @@ final class SafeMode
         $token = defined('MODULY_SAFE_TOKEN') ? constant('MODULY_SAFE_TOKEN') : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- secret token comparison, no state change.
         $given = isset($_GET['moduly_safe']) && is_string($_GET['moduly_safe']) ? sanitize_text_field(wp_unslash($_GET['moduly_safe'])) : '';
+        if (isset($_SERVER['HTTP_X_MODULY_SAFE']) && is_string($_SERVER['HTTP_X_MODULY_SAFE'])) {
+            $given = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_MODULY_SAFE']));
+        }
+        $active = is_string($token) && strlen($token) >= 16 && '' !== $given && hash_equals($token, $given);
+        if ($active && !headers_sent()) {
+            header('Referrer-Policy: no-referrer');
+        }
 
-        return is_string($token) && strlen($token) >= 16 && '' !== $given && hash_equals($token, $given);
+        return $active;
     }
 }

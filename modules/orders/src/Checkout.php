@@ -30,6 +30,9 @@ final class Checkout
     /** Error codes other modules may add (`wpfasty_shop_checkout_errors`), e.g. consent_offer. */
     private const EXTRA_ERROR = '/^[a-z][a-z0-9_]{1,31}$/';
 
+    /** @var array<string, array<array-key, mixed>> form input restored in this request, by token (read-once) */
+    private static array $restored = [];
+
     private static CartApi $cart;
 
     public static function setCart(CartApi $cart): void
@@ -74,9 +77,10 @@ final class Checkout
         // Other modules (consent-log) add their own checks; unknown error codes are dropped on display.
         $errors = array_values(array_map(Value::str(...), (array) apply_filters('wpfasty_shop_checkout_errors', $errors, $c)));
         if ([] !== $errors) {
-            // Keep non-sensitive input across the redirect for 10 minutes, keyed by a random token.
-            $token = strtolower(wp_generate_password(16, false));
-            set_transient('moduly_co_'.$token, $c, 10 * MINUTE_IN_SECONDS);
+            // Keep the form input across the redirect, keyed by a random token: read once (deleted on first
+            // display), expires after 2 minutes if never displayed. The payment choice is not personal data.
+            $token = strtolower(wp_generate_password(20, false));
+            set_transient('moduly_co_'.$token, $c, 2 * MINUTE_IN_SECONDS);
             wp_safe_redirect(add_query_arg(['co_errors' => implode(',', array_unique($errors)), 'co' => $token], $back));
             exit;
         }
@@ -133,9 +137,13 @@ final class Checkout
             ))
             : [];
         $token = isset($_GET['co']) && is_string($_GET['co']) ? sanitize_key(wp_unslash($_GET['co'])) : '';
-        $old = '' !== $token ? get_transient('moduly_co_'.$token) : false;
-        if (is_array($old)) {
-            $checkout['values'] = $old;
+        if ('' !== $token && !array_key_exists($token, self::$restored)) {
+            $old = get_transient('moduly_co_'.$token);
+            delete_transient('moduly_co_'.$token);
+            self::$restored[$token] = is_array($old) ? $old : [];
+        }
+        if ('' !== $token && [] !== self::$restored[$token]) {
+            $checkout['values'] = self::$restored[$token];
         }
 
         return $checkout;

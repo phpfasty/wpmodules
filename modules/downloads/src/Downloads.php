@@ -193,21 +193,39 @@ final class Downloads
             ];
             wp_die(esc_html($messages[$reason]), esc_html__('Download unavailable', 'moduly'), ['response' => 403, 'back_link' => true]);
         }
-        $counts[$i] = ($counts[$i] ?? 0) + 1;
-        update_post_meta($o, self::COUNT_META, $counts);
         $name = sanitize_file_name((string) preg_replace('/^\d+-[0-9a-f]{16}-/', '', basename($path)));
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="'.$name.'"');
         header('Content-Length: '.(string) filesize($path));
         header('X-Content-Type-Options: nosniff');
         $sendfile = Value::str(apply_filters('moduly_downloads_sendfile_header', ''));
-        if (in_array($sendfile, ['X-Sendfile', 'X-Accel-Redirect'], true)) {
-            header($sendfile.': '.$path);
+        $target = match ($sendfile) {
+            'X-Sendfile' => $path, // Apache mod_xsendfile: filesystem path
+            // nginx: an internal location URI (never a filesystem path), e.g. /protected/<file> mapped by the site
+            'X-Accel-Redirect' => Value::str(apply_filters('moduly_downloads_accel_uri', '', $path)),
+            default => '',
+        };
+        if ('' !== $target && str_starts_with($target, '/') && 1 !== preg_match('/[\r\n]/', $target)) {
+            // handed to the web server: counted when the hand-off is made
+            self::count($o, $i, $counts);
+            header($sendfile.': '.$target);
             exit;
         }
+        ignore_user_abort(true);
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- streaming a private file.
-        readfile($path);
+        $sent = readfile($path);
+        // counted only after the whole file went out (an aborted download does not use up the limit)
+        if (false !== $sent && !connection_aborted()) {
+            self::count($o, $i, $counts);
+        }
         exit;
+    }
+
+    /** @param array<int, int> $counts */
+    private static function count(int $orderId, int $item, array $counts): void
+    {
+        $counts[$item] = ($counts[$item] ?? 0) + 1;
+        update_post_meta($orderId, self::COUNT_META, $counts);
     }
 
     private static function secret(): string
