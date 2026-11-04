@@ -146,4 +146,20 @@ final class TypesTest extends TestCase
         };
         return new Migrator($versions, $lock, $batch, 50);
     }
+
+    /** wpfasty_post_data gets the wp-fasty Core Post DTO (id, kind) since 2026-11; it must not fatal. */
+    public function testIdentityAcceptsThePostDto(): void
+    {
+        $dto = new class () {
+            public int $id = 42;
+            public string $kind = 'product';
+        };
+        self::assertSame([42, 'product'], Registry::identity($dto));
+        self::assertSame([0, ''], Registry::identity(new \stdClass()));
+        $unknown = new class () {
+            public int $id = 7;
+            public string $kind = 'no-such-type';
+        };
+        self::assertSame(['title' => 'x'], self::registry()->postData(['title' => 'x'], $unknown));
+    }
 }

@@ -159,16 +159,19 @@ final class Registry implements BootableServiceInterface
     }
 
     /**
-     * Adds `fields` (name → raw string) and `terms` (taxonomy → list) to the post view-model,
-     * then lets the module shape it via its `context` callable.
+     * `wpfasty_post_data`: adds `fields` (name → raw string) and `terms` (taxonomy → list) to the post view-model,
+     * then lets the module shape it via its `context` callable. The wp-fasty theme passes its Core Post DTO
+     * (`WPFasty\Core\Model\Post`: id, kind, …) since 2026-11; a `WP_Post` (older themes) is still accepted.
+     * The `context` callable receives the same object the filter got.
      *
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    public function postData(array $data, \WP_Post $post): array
+    public function postData(array $data, object $post): array
     {
-        $type = $this->get($post->post_type);
-        if ($type === null) {
+        [$postId, $kind] = self::identity($post);
+        $type = $kind === '' ? null : $this->get($kind);
+        if ($type === null || $postId <= 0) {
             return $data;
         }
         $data['fields'] = [];
@@ -176,12 +179,13 @@ final class Registry implements BootableServiceInterface
             if ($field->isPrivate()) {
                 continue; // e.g. download_file: only the downloads module reads it, after payment
             }
-            $data['fields'][$name] = self::read($post->ID, $field);
+            $data['fields'][$name] = self::read($postId, $field);
         }
         $data['terms'] = [];
         foreach (array_keys($type->taxonomies()) as $taxonomy) {
             $data['terms'][$taxonomy] = [];
-            foreach (get_the_terms($post, (string) $taxonomy) ?: [] as $term) {
+            $terms = get_the_terms($postId, (string) $taxonomy);
+            foreach (is_array($terms) ? $terms : [] as $term) {
                 $data['terms'][$taxonomy][] = [
                     'name' => $term->name,
                     'slug' => $term->slug,
@@ -191,6 +195,22 @@ final class Registry implements BootableServiceInterface
         }
         $context = $type->def['context'] ?? null;
         return is_callable($context) ? (array) $context($data, $post, $type) : $data;
+    }
+
+    /**
+     * Post id and post type of a `WP_Post` or of a view DTO with public `id` and `kind` (wp-fasty Core Post).
+     *
+     * @return array{0: int, 1: string}
+     */
+    public static function identity(object $post): array
+    {
+        if ($post instanceof \WP_Post) {
+            return [(int) $post->ID, (string) $post->post_type];
+        }
+        $vars = get_object_vars($post);
+        $id = $vars['id'] ?? 0;
+        $kind = $vars['kind'] ?? '';
+        return [is_numeric($id) ? (int) $id : 0, is_string($kind) ? $kind : ''];
     }
 
     public function resolveView(string $view): string
