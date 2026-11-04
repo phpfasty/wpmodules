@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PhpFasty\WpModules\Tests;
 
 use PhpFasty\Module\Types\Data;
-use PhpFasty\Module\Types\Model\Field;
+use PhpFasty\Module\Types\Domain\Field;
 use PHPUnit\Framework\TestCase;
 
 /** Module `types` 0.2: digital-goods field kinds (enum, semver, file, user, license_tiers). */

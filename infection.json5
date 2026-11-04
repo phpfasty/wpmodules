@@ -13,7 +13,7 @@
             "modules/consent-log/src/Domain",
             "modules/cookie-consent/src/Domain",
             "modules/downloads/src/Domain",
-            "modules/types/src/Model"
+            "modules/types/src/Domain"
         ],
         "excludes": [
             "Hooks.php",

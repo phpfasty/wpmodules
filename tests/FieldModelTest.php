@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
-use PhpFasty\Module\Types\Model\Field;
+use PhpFasty\Module\Types\Domain\Field;
 use PhpFasty\WpModules\Tests\Fake\TestState;
 use PHPUnit\Framework\TestCase;
 

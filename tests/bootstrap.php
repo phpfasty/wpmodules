@@ -71,3 +71,6 @@ if (!function_exists('sanitize_key')) {
         return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower($key));
     }
 }
+
+// as at runtime: the types domain cleans text through the WordPress adapter (with pure-PHP fallbacks)
+PhpFasty\Module\Types\Domain\Field::useSanitizer(new PhpFasty\Module\Types\WpSanitizer());

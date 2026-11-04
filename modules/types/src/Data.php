@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Types;
 
-use PhpFasty\Module\Types\Model\Field;
-use PhpFasty\Module\Types\Model\PostType;
+use PhpFasty\Module\Types\Domain\Field;
+use PhpFasty\Module\Types\Domain\PostType;
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Wp\Support\Value;
 

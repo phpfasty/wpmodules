@@ -71,7 +71,7 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
         return true;
     }
 
-    private function backfill(int $postId, \PhpFasty\Module\Types\Model\Field $field): void
+    private function backfill(int $postId, \PhpFasty\Module\Types\Domain\Field $field): void
     {
         if (metadata_exists('post', $postId, $field->metaKey)) {
             return;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
+use PhpFasty\Module\Types\Domain\Field;
 use PhpFasty\Module\Types\Migrations\Migration_0002_AliasBackfill;
-use PhpFasty\Module\Types\Model\Field;
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Module\Types\Module;
 use PhpFasty\Moduly\Migration\LockInterface;

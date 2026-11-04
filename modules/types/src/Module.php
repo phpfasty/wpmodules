@@ -34,8 +34,8 @@ final class Module implements ModuleInterface
     /** Classes the module provides under the theme's namespace. */
     public const ALIASES = [
         'WPFasty\\Types\\Registry' => Registry::class,
-        'WPFasty\\Types\\Field' => Model\Field::class,
-        'WPFasty\\Types\\PostType' => Model\PostType::class,
+        'WPFasty\\Types\\Field' => Domain\Field::class,
+        'WPFasty\\Types\\PostType' => Domain\PostType::class,
     ];
 
     private static ?Migrator $migrator = null;
@@ -45,6 +45,7 @@ final class Module implements ModuleInterface
 
     public function boot(ModuleContext $context): void
     {
+        Domain\Field::useSanitizer(new WpSanitizer());
         $c = $context->container;
         if ($c->has('wp.theme_definitions')) {
             $defs = $c->get('wp.theme_definitions');

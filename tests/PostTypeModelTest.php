@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
-use PhpFasty\Module\Types\Model\PostType;
+use PhpFasty\Module\Types\Domain\PostType;
 use PHPUnit\Framework\TestCase;
 
 final class PostTypeModelTest extends TestCase
