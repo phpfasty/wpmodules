@@ -186,14 +186,25 @@ jobs:
           curl -s -o /dev/null -w '%{http_code}\n' -d 'action=moduly_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
       - name: Types module — old schema → migrate → switch theme → back, disable/enable, prune (meta intact)
         working-directory: site
-        env:
-          WPFASTY_GIST: 534c59bcd01563580218570cfac273ca
         run: |
+          # themes + types plugin from the wp-fasty rolling `playground` release (built from wp-fasty main)
           mkdir -p ../themes
-          for f in latte latte-shop wpfasty-types; do
-            curl -fsSL --retry 3 "https://gist.githubusercontent.com/alexy-os/$WPFASTY_GIST/raw/$f.zip.b64" | base64 -d > "../themes/$f.zip"
+          for f in wp-fasty latte-shop wpfasty-types; do
+            curl -fsSL --retry 3 -o "../themes/$f.zip" "https://github.com/alexy-os/wp-fasty/releases/download/playground/$f.zip"
           done
           bash ../tests/wp/types-roundtrip.sh ../dist ../themes
+      - name: N+1 guard — query count of shop / product / cart / checkout does not grow with items
+        working-directory: site
+        run: |
+          wp option update home http://127.0.0.1:8080 --quiet && wp option update siteurl http://127.0.0.1:8080 --quiet
+          wp rewrite structure '/%postname%/' --hard --quiet
+          wp theme activate latte-shop --quiet
+          if ! curl -s -o /dev/null http://127.0.0.1:8080/wp-login.php; then
+            OPC=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION === "8.5" ? 1 : 0;')
+            php -d opcache.enable=$OPC -d opcache.revalidate_freq=0 -S 127.0.0.1:8080 -t . >/tmp/server2.log 2>&1 &
+            for i in $(seq 1 30); do curl -s -o /dev/null http://127.0.0.1:8080/wp-login.php && break; sleep 1; done
+          fi
+          bash ../tests/wp/query-budget.sh http://127.0.0.1:8080 3
       - name: Tampered package is rejected
         working-directory: site
         run: |

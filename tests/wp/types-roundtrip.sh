@@ -3,7 +3,7 @@
 #   old schema data → enable types → migrate → switch theme → back → disable → enable → prune (dry-run, then --yes)
 #   Every original post meta row must survive every step; only rows explicitly pruned with --yes (after a JSON
 #   backup) may disappear.
-# Usage (cwd = WordPress root, ModulY active): types-roundtrip.sh <dist dir> <dir with latte.zip latte-shop.zip wpfasty-types.zip>
+# Usage (cwd = WordPress root, ModulY active): types-roundtrip.sh <dist dir> <dir with wp-fasty.zip latte-shop.zip wpfasty-types.zip (wp-fasty `playground` release)>
 set -euo pipefail
 DIST="$(cd "$1" && pwd)"; THEMES="$(cd "$2" && pwd)"
 # snapshot via $wpdb (works on MySQL/MariaDB and the SQLite drop-in alike)
@@ -17,7 +17,7 @@ contains() { # every row of $1 is in $2
 }
 expect() { if [ "$1" != "$2" ]; then echo "FAIL $3: got '$1', want '$2'"; exit 1; fi; echo "ok   $3"; }
 
-wp theme install "$THEMES/latte.zip" --force --quiet
+wp theme install "$THEMES/wp-fasty.zip" --force --quiet
 wp theme install "$THEMES/latte-shop.zip" --force --activate --quiet
 wp plugin install "$THEMES/wpfasty-types.zip" --force --activate --quiet
 # A field that changed key: `price` used to live in `_legacy_price` (declared as alias via the wpfasty_types filter).
