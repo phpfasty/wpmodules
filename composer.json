@@ -3,8 +3,15 @@
     "description": "ModulY for WordPress: the plugin (moduly/) and its modules (modules/).",
     "type": "project",
     "license": "GPL-2.0-or-later",
-    "authors": [{ "name": "PHP FastY", "homepage": "https://github.com/phpfasty" }],
-    "require": { "php": ">=8.2" },
+    "authors": [
+        {
+            "name": "PHP FastY",
+            "homepage": "https://github.com/phpfasty"
+        }
+    ],
+    "require": {
+        "php": ">=8.2"
+    },
     "require-dev": {
         "paragonie/sodium_compat": "^2.1",
         "php-stubs/wp-cli-stubs": "^2.12",
@@ -32,10 +39,17 @@
     "scripts": {
         "test": "phpunit",
         "phpstan": "phpstan analyse --no-progress --memory-limit=1G",
-        "phpcs": "phpcs"
+        "phpcs": "phpcs",
+        "audit": "composer audit --locked"
     },
     "config": {
         "sort-packages": true,
-        "allow-plugins": { "dealerdirect/phpcodesniffer-composer-installer": true, "phpstan/extension-installer": true }
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        },
+        "platform": {
+            "php": "8.2.35"
+        }
     }
 }
