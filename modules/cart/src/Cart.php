@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Cart
 {
     public const COOKIE = 'latte_shop_cart';
@@ -67,7 +69,7 @@ final class Cart
             return self::$lines;
         }
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- HMAC-verified in decode().
-        self::$lines = self::decode(isset($_COOKIE[self::COOKIE]) ? (string) wp_unslash($_COOKIE[self::COOKIE]) : '');
+        self::$lines = self::decode(isset($_COOKIE[self::COOKIE]) ? Value::str(wp_unslash($_COOKIE[self::COOKIE])) : '');
         return self::$lines;
     }
 
@@ -143,7 +145,7 @@ final class Cart
                 'unit_display' => Money::format($unit),
                 'line_display' => Money::format($line),
                 'image' => $thumb ? (string) wp_get_attachment_image_url((int) $thumb, 'thumbnail') : '',
-                'sku' => function_exists('wpfasty_field') ? (string) wpfasty_field($id, 'sku') : '',
+                'sku' => function_exists('wpfasty_field') ? Value::str(wpfasty_field($id, 'sku')) : '',
                 'digital' => $digital,
             ];
         }
@@ -160,7 +162,7 @@ final class Cart
 
     public static function freeShippingCents(): int
     {
-        return (int) apply_filters('latte_shop_free_shipping_cents', self::$shipping['free']);
+        return Value::int(apply_filters('latte_shop_free_shipping_cents', self::$shipping['free']));
     }
 
     /** Shipping of physical goods (a cart with downloads only never pays shipping, see summary()). */
@@ -170,7 +172,7 @@ final class Cart
             return 0;
         }
         $free = self::freeShippingCents();
-        $flat = (int) apply_filters('latte_shop_flat_shipping_cents', self::$shipping['flat']);
+        $flat = Value::int(apply_filters('latte_shop_flat_shipping_cents', self::$shipping['flat']));
         return $subtotal === 0 || $subtotal >= $free ? 0 : $flat;
     }
 

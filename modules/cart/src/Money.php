@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Money
 {
     public static function toCents(string $amount): int
@@ -21,7 +23,7 @@ final class Money
     /** Store currency, ISO 4217 (option `wpfasty_currency`; default USD). */
     public static function currency(): string
     {
-        $code = strtoupper((string) (function_exists('get_option') ? get_option('wpfasty_currency', 'USD') : 'USD'));
+        $code = strtoupper(Value::str((function_exists('get_option') ? get_option('wpfasty_currency', 'USD') : 'USD')));
         return preg_match('/^[A-Z]{3}$/', $code) === 1 ? $code : 'USD';
     }
 
@@ -36,7 +38,7 @@ final class Money
         $symbols = ['USD' => '$', 'EUR' => '€', 'GBP' => '£', 'RUB' => '₽', 'JPY' => '¥'];
         $currency = self::currency();
         $fallback = $symbols[$currency] ?? $currency . ' ';
-        $symbol = function_exists('apply_filters') ? (string) apply_filters('latte_shop_currency_symbol', $fallback, $currency) : $fallback;
+        $symbol = function_exists('apply_filters') ? Value::str(apply_filters('latte_shop_currency_symbol', $fallback, $currency)) : $fallback;
         $value = function_exists('number_format_i18n')
             ? number_format_i18n($cents / 100, 2)
             : number_format($cents / 100, 2);

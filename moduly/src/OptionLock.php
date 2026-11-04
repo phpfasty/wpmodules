@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Migration\LockInterface;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /** Cross-request lock: add_option() is atomic (unique option_name); a stale lock expires after its TTL. */
 final class OptionLock implements LockInterface
@@ -15,7 +16,7 @@ final class OptionLock implements LockInterface
         if (add_option($key, (string) (time() + $ttlSeconds), '', false)) {
             return true;
         }
-        $until = (int) get_option($key, '0');
+        $until = Value::int(get_option($key, '0'));
         if ($until < time()) {
             delete_option($key);
             return add_option($key, (string) (time() + $ttlSeconds), '', false);

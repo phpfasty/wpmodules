@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Orders;
 
 use PhpFasty\Module\Cart\CartApi;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 // phpcs:disable WordPress.Security.NonceVerification -- the handler verifies first; GET reads are display-only.
 
@@ -46,7 +47,7 @@ final class Checkout
         $c = [];
         foreach (self::FIELDS as $f) {
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized per field just below.
-            $raw = isset($_POST[$f]) ? (string) wp_unslash($_POST[$f]) : '';
+            $raw = isset($_POST[$f]) ? Value::str(wp_unslash($_POST[$f])) : '';
             $c[$f] = match ($f) {
                 'email' => sanitize_email($raw),
                 'notes', 'address' => sanitize_textarea_field($raw),
@@ -68,7 +69,7 @@ final class Checkout
             $errors[] = 'payment';
         }
         // Other modules (consent-log) add their own checks; unknown error codes are dropped on display.
-        $errors = array_values(array_map('strval', (array) apply_filters('wpfasty_shop_checkout_errors', $errors, $c)));
+        $errors = array_values(array_map(Value::str(...), (array) apply_filters('wpfasty_shop_checkout_errors', $errors, $c)));
         if ($errors !== []) {
             // Keep non-sensitive input across the redirect for 10 minutes, keyed by a random token.
             $token = strtolower(wp_generate_password(16, false));
@@ -96,7 +97,7 @@ final class Checkout
     {
         $fields = $digital ? ['name', 'email'] : self::REQUIRED;
         $fields = (array) apply_filters('wpfasty_shop_checkout_required', $fields, $digital);
-        return array_values(array_intersect(array_map('strval', $fields), self::FIELDS));
+        return array_values(array_intersect(array_map(Value::str(...), $fields), self::FIELDS));
     }
 
     /**
@@ -119,11 +120,11 @@ final class Checkout
     {
         $checkout['errors'] = isset($_GET['co_errors'])
             ? array_values(array_filter(
-                explode(',', sanitize_text_field(wp_unslash($_GET['co_errors']))),
+                explode(',', sanitize_text_field(Value::str(wp_unslash($_GET['co_errors'])))),
                 static fn (string $e): bool => in_array($e, self::ERRORS, true) || preg_match(self::EXTRA_ERROR, $e) === 1
             ))
             : [];
-        $token = isset($_GET['co']) ? sanitize_key(wp_unslash($_GET['co'])) : '';
+        $token = isset($_GET['co']) ? sanitize_key(Value::str(wp_unslash($_GET['co']))) : '';
         $old = $token !== '' ? get_transient('latte_shop_co_' . $token) : false;
         if (is_array($old)) {
             $checkout['values'] = $old;
@@ -137,8 +138,8 @@ final class Checkout
      */
     public static function order(?array $order): ?array
     {
-        $id = isset($_GET['order']) ? absint(wp_unslash($_GET['order'])) : 0;
-        $key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+        $id = isset($_GET['order']) ? absint(Value::str(wp_unslash($_GET['order']))) : 0;
+        $key = isset($_GET['key']) ? sanitize_text_field(Value::str(wp_unslash($_GET['key']))) : '';
         return Orders::find($order, $id, $key);
     }
 }

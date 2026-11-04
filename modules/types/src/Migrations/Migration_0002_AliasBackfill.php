@@ -6,6 +6,7 @@ namespace PhpFasty\Module\Types\Migrations;
 
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Migration\MigrationInterface;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * A field whose kind or key changed declares its old keys in `aliases`. This copies the first valid old value to
@@ -29,6 +30,7 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
     public function up(int $batchSize): bool
     {
         global $wpdb;
+        /** @var \wpdb $wpdb */
         $cursor = (array) get_option(self::CURSOR, []);
         $budget = max(1, $batchSize);
         foreach ($this->types->all() as $type) {
@@ -36,30 +38,31 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
             if ($fields === []) {
                 continue;
             }
-            $last = (int) ($cursor[$type->name] ?? 0);
+            $last = Value::int(($cursor[$type->name] ?? 0));
             if ($last < 0) {
                 continue; // this post type is done
             }
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- batched ID scan; meta is read via the meta API below
             $ids = $wpdb->get_col($wpdb->prepare(
-                "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s AND ID > %d ORDER BY ID ASC LIMIT %d",
+                'SELECT ID FROM %i WHERE post_type = %s AND ID > %d ORDER BY ID ASC LIMIT %d',
+                $wpdb->posts,
                 $type->name,
                 $last,
                 $budget
             ));
             foreach ($ids as $id) {
-                $id = (int) $id;
+                $id = Value::int($id);
                 foreach ($fields as $field) {
                     $this->backfill($id, $field);
                 }
                 $last = $id;
             }
-            $cursor[$type->name] = count($ids) < $budget ? -1 : $last;
+            $cursor[$type->name] = count(Value::arr($ids)) < $budget ? -1 : $last;
             update_option(self::CURSOR, $cursor, false);
-            if (count($ids) >= $budget) {
+            if (count(Value::arr($ids)) >= $budget) {
                 return false; // more of this type: next batch
             }
-            $budget -= count($ids);
+            $budget -= count(Value::arr($ids));
             if ($budget <= 0) {
                 return false;
             }
@@ -73,11 +76,11 @@ final class Migration_0002_AliasBackfill implements MigrationInterface
             return;
         }
         foreach ((array) $field->def['aliases'] as $old) {
-            $old = (string) $old;
+            $old = Value::str($old);
             if (!metadata_exists('post', $postId, $old)) {
                 continue;
             }
-            $raw = (string) get_post_meta($postId, $old, true);
+            $raw = Value::str(get_post_meta($postId, $old, true));
             $value = $field->toStorage($raw);
             if ($raw === '' || $value === null) {
                 do_action('moduly_types_invalid_value', $postId, $field->name, $old, 'alias value not convertible, skipped');

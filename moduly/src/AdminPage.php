@@ -7,6 +7,7 @@ namespace PhpFasty\Moduly\Wp;
 use PhpFasty\Moduly\Exception\ModulyException;
 use PhpFasty\Moduly\Kernel\ModuleRecord;
 use Throwable;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * Plugins → Modules: upload a module zip, enable / disable / roll back / remove, recent audit events.
@@ -83,11 +84,11 @@ final class AdminPage
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- nonce verified in guard(); uploaded file array; only tmp_name/size/error are read and validated.
         $file = isset($_FILES['package']) && is_array($_FILES['package']) ? $_FILES['package'] : [];
         $tmp = isset($file['tmp_name']) && is_string($file['tmp_name']) ? $file['tmp_name'] : '';
-        $error = isset($file['error']) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE;
+        $error = isset($file['error']) ? Value::int($file['error']) : UPLOAD_ERR_NO_FILE;
         if ($error !== UPLOAD_ERR_OK || $tmp === '' || !is_uploaded_file($tmp)) {
             $this->back(['moduly_error' => 'upload']);
         }
-        $enable = isset($_POST['enable']) && sanitize_key(wp_unslash((string) $_POST['enable'])) === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in guard().
+        $enable = isset($_POST['enable']) && sanitize_key(Value::str(wp_unslash(Value::str($_POST['enable'])))) === '1'; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in guard().
         try {
             $m = $this->plugin->modules->install($tmp, $enable);
             $this->back(['moduly_done' => $enable ? 'installed_enabled' : 'installed', 'module' => $m->id]);
@@ -105,8 +106,8 @@ final class AdminPage
     {
         $this->guard('moduly_manage', 'moduly_action');
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- verified in guard().
-        $op = isset($_POST['op']) ? sanitize_key(wp_unslash((string) $_POST['op'])) : '';
-        $id = isset($_POST['module']) ? sanitize_key(wp_unslash((string) $_POST['module'])) : '';
+        $op = isset($_POST['op']) ? sanitize_key(Value::str(wp_unslash(Value::str($_POST['op'])))) : '';
+        $id = isset($_POST['module']) ? sanitize_key(Value::str(wp_unslash(Value::str($_POST['module'])))) : '';
         // phpcs:enable
         if (preg_match('/^[a-z][a-z0-9-]{1,40}$/', $id) !== 1 || !isset($this->plugin->modules->records()[$id])) {
             $this->back(['moduly_error' => 'unknown_module']);
@@ -197,7 +198,7 @@ final class AdminPage
         if ($events !== []) {
             echo '<h2>' . esc_html__('Recent activity', 'moduly') . '</h2><table class="widefat striped"><tbody>';
             foreach ($events as $e) {
-                echo '<tr><td>' . esc_html((string) ($e['ts'] ?? '')) . ' UTC</td><td>' . esc_html((string) ($e['action'] ?? '')) . '</td><td>' . esc_html((string) ($e['module_id'] ?? '')) . ' ' . esc_html((string) ($e['version'] ?? '')) . '</td><td>' . esc_html((string) ($e['result'] ?? '')) . '</td></tr>';
+                echo '<tr><td>' . esc_html(Value::str(($e['ts'] ?? ''))) . ' UTC</td><td>' . esc_html(Value::str(($e['action'] ?? ''))) . '</td><td>' . esc_html(Value::str(($e['module_id'] ?? ''))) . ' ' . esc_html(Value::str(($e['version'] ?? ''))) . '</td><td>' . esc_html(Value::str(($e['result'] ?? ''))) . '</td></tr>';
             }
             echo '</tbody></table>';
         }
@@ -207,9 +208,9 @@ final class AdminPage
     private function result(): void
     {
         // phpcs:disable WordPress.Security.NonceVerification.Recommended -- display of a redirect result code.
-        $done = isset($_GET['moduly_done']) ? sanitize_key(wp_unslash((string) $_GET['moduly_done'])) : '';
-        $error = isset($_GET['moduly_error']) ? sanitize_key(wp_unslash((string) $_GET['moduly_error'])) : '';
-        $module = isset($_GET['module']) ? sanitize_key(wp_unslash((string) $_GET['module'])) : '';
+        $done = isset($_GET['moduly_done']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['moduly_done'])))) : '';
+        $error = isset($_GET['moduly_error']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['moduly_error'])))) : '';
+        $module = isset($_GET['module']) ? sanitize_key(Value::str(wp_unslash(Value::str($_GET['module'])))) : '';
         // phpcs:enable
         if ($done !== '') {
             printf('<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html(sprintf(/* translators: 1: action, 2: module */ __('Done: %1$s %2$s.', 'moduly'), str_replace('_', ' ', $done), $module)));
@@ -236,7 +237,7 @@ final class AdminPage
 
     private function guard(string $cap, string $nonce): void
     {
-        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(wp_unslash((string) $_SERVER['REQUEST_METHOD'])) : '';
+        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(Value::str(wp_unslash(Value::str($_SERVER['REQUEST_METHOD'])))) : '';
         if ($method !== 'post' || !current_user_can($cap)) {
             wp_die(esc_html__('Sorry, you are not allowed to do that.', 'moduly'), '', ['response' => 403]);
         }

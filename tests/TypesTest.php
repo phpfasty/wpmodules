@@ -14,6 +14,7 @@ use PhpFasty\Moduly\Migration\Migrator;
 use PhpFasty\Moduly\Migration\SchemaVersionStoreInterface;
 use PHPUnit\Framework\TestCase;
 use PhpFasty\WpModules\Tests\Fake\FakeWp;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 require_once __DIR__ . '/fake-wp-functions.php';
 
@@ -38,7 +39,7 @@ final class TypesTest extends TestCase
     public function testLatestMatchesShippedMigrations(): void
     {
         $versions = array_map(static fn ($m): int => $m->version(), Module::migrations(self::registry()));
-        self::assertSame(Module::LATEST, max($versions));
+        self::assertSame(Module::LATEST, max([0, ...$versions]));
     }
 
     /** Old schema (field `price` stored under `_old_price`, `year` as text) → migrate twice → nothing lost. */
@@ -68,14 +69,14 @@ final class TypesTest extends TestCase
                 self::assertSame($values, $after['meta'][$id][$key], "{$id}:{$key}");
             }
         }
-        self::assertSame(['100'], $after['meta'][1]['_book_price']);
-        self::assertSame(['5'], $after['meta'][3]['_book_price']);
-        self::assertArrayNotHasKey('_book_price', $after['meta'][4]);
-        self::assertArrayNotHasKey('_book_price', $after['meta'][8]);
-        self::assertSame(['700'], $after['meta'][7]['_book_price']);
+        self::assertSame(['100'], Value::at(Value::at($after['meta'], 1), '_book_price'));
+        self::assertSame(['5'], Value::at(Value::at($after['meta'], 3), '_book_price'));
+        self::assertArrayNotHasKey('_book_price', Value::arr(Value::at($after['meta'], 4)));
+        self::assertArrayNotHasKey('_book_price', Value::arr(Value::at($after['meta'], 8)));
+        self::assertSame(['700'], Value::at(Value::at($after['meta'], 7), '_book_price'));
         self::assertContains('moduly_types_invalid_value', array_column(FakeWp::$actions, 0));
-        self::assertSame(2, FakeWp::$options['moduly_schema_version']['types']);
-        self::assertArrayHasKey('book', FakeWp::$options['moduly_types_schema']['current']);
+        self::assertSame(2, Value::at(FakeWp::$options['moduly_schema_version'], 'types'));
+        self::assertArrayHasKey('book', Value::arr(Value::at(FakeWp::$options['moduly_types_schema'], 'current')));
 
         // re-run: no-op (version recorded), and re-running a migration directly changes nothing either
         $second = $migrator->run(Module::SCOPE, Module::migrations($registry));
@@ -124,7 +125,7 @@ final class TypesTest extends TestCase
         $versions = new class () implements SchemaVersionStoreInterface {
             public function get(string $scope): int
             {
-                return (int) (((array) get_option('moduly_schema_version', []))[$scope] ?? 0);
+                return Value::int((((array) get_option('moduly_schema_version', []))[$scope] ?? 0));
             }
 
             public function set(string $scope, int $version): void

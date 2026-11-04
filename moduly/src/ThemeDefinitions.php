@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Wp;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 /**
  * Host service `wp.theme_definitions`: modules may not include files (static scan), so the host reads the
  * array-returning definition files (e.g. `types/*.php`) of the active theme and its parent for them.
@@ -22,7 +24,7 @@ final class ThemeDefinitions
         // only directories inside the themes root are accepted.
         $themes = realpath(get_theme_root());
         foreach ((array) apply_filters('wpfasty_theme_dirs', []) as $extra) {
-            $real = realpath((string) $extra);
+            $real = realpath(Value::str($extra));
             if ($real !== false && $themes !== false && $this->inside($real, [$themes])) {
                 $roots[] = $real;
             }

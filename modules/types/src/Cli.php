@@ -42,6 +42,7 @@ final class Cli
         $registry = Data::registry();
         if ($registry === null) {
             \WP_CLI::error('No types registry: the active theme declares no types (or the module is not active).');
+            return;
         }
         $rows = (new Prune($registry))->candidates();
         $format = (string) ($assoc['format'] ?? 'table');

@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Types\Model;
 
 use WPFasty\Core\BootableServiceInterface;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Registry implements BootableServiceInterface
 {
@@ -68,13 +69,13 @@ final class Registry implements BootableServiceInterface
             ? (array) apply_filters('wpfasty_type_dirs', $this->dirs)
             : $this->dirs;
         $defs = self::$definitions !== null
-            ? (self::$definitions)(array_values(array_map('strval', array_unique($dirs))))
+            ? (self::$definitions)(array_values(array_unique(Value::strings($dirs))))
             : [];
         if (function_exists('apply_filters')) {
             $defs = (array) apply_filters('wpfasty_types', $defs);
         }
         foreach ($defs as $def) {
-            $this->add(PostType::fromArray((array) $def));
+            $this->add(PostType::fromArray(Value::map($def)));
         }
         /*
          * Data registration (post types, taxonomies, meta, metaboxes) is plugin territory
@@ -124,22 +125,22 @@ final class Registry implements BootableServiceInterface
         // An existing new key wins even when empty (cleared by the editor): aliases are read only before backfill.
         $keys = metadata_exists('post', $postId, $field->metaKey)
             ? [$field->metaKey]
-            : array_values(array_map('strval', (array) ($field->def['aliases'] ?? [])));
+            : array_values(array_map(Value::str(...), (array) ($field->def['aliases'] ?? [])));
         $value = \PhpFasty\Moduly\Migration\FieldValue::read(
             static function (string $key) use ($postId): ?string {
                 if (!metadata_exists('post', $postId, $key)) {
                     return null;
                 }
-                return (string) get_post_meta($postId, $key, true);
+                return Value::str(get_post_meta($postId, $key, true));
             },
             $keys,
-            static fn (mixed $raw): bool => self::valid($field, (string) $raw),
+            static fn (mixed $raw): bool => self::valid($field, Value::str($raw)),
             '',
             static function (string $message, array $ctx) use ($postId, $field): void {
                 do_action('moduly_types_invalid_value', $postId, $field->name, $ctx['key'] ?? '', $message);
             },
         );
-        return (string) $value;
+        return Value::str($value);
     }
 
     /** Can the field type hold this stored string? (text kinds always can) */
@@ -189,12 +190,12 @@ final class Registry implements BootableServiceInterface
                 $data['terms'][$taxonomy][] = [
                     'name' => $term->name,
                     'slug' => $term->slug,
-                    'url' => (string) get_term_link($term),
+                    'url' => Value::str(get_term_link($term)),
                 ];
             }
         }
         $context = $type->def['context'] ?? null;
-        return is_callable($context) ? (array) $context($data, $post, $type) : $data;
+        return is_callable($context) ? Value::map($context($data, $post, $type)) : $data;
     }
 
     /**
@@ -243,7 +244,7 @@ final class Registry implements BootableServiceInterface
             }
             $archive = $type->archive();
             if (isset($archive['per_page'])) {
-                $query->set('posts_per_page', (int) $archive['per_page']);
+                $query->set('posts_per_page', Value::int($archive['per_page']));
             }
             if (isset($archive['orderby'])) {
                 $query->set('orderby', $archive['orderby']);
@@ -284,10 +285,11 @@ final class Registry implements BootableServiceInterface
         if ($type === null) {
             return [];
         }
+        $orderby = $type->archive()['orderby'] ?? null;
         $posts = get_posts([
             'post_type' => $postType,
             'numberposts' => $count,
-            'orderby' => $type->archive()['orderby'] ?? ['date' => 'DESC'],
+            'orderby' => is_string($orderby) ? $orderby : (is_array($orderby) ? array_map(Value::str(...), Value::map($orderby)) : ['date' => 'DESC']),
         ]);
         return array_values($posts);
     }
@@ -302,7 +304,7 @@ final class Registry implements BootableServiceInterface
         $items = [];
         $terms = taxonomy_exists($taxonomy) ? get_terms(['taxonomy' => $taxonomy, 'hide_empty' => true]) : [];
         foreach (is_array($terms) ? $terms : [] as $term) {
-            $items[] = ['name' => $term->name, 'slug' => $term->slug, 'url' => (string) get_term_link($term)];
+            $items[] = ['name' => $term->name, 'slug' => $term->slug, 'url' => Value::str(get_term_link($term))];
         }
         $current = is_tax($taxonomy) ? get_queried_object() : null;
         return ['items' => $items, 'current' => $current instanceof \WP_Term ? $current->slug : ''];

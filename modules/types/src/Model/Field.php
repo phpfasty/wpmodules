@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Types\Model;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Field
 {
     public const TYPES = ['string', 'text', 'url', 'email', 'integer', 'number', 'money', 'boolean', 'date', 'enum', 'semver', 'file', 'user', 'license_tiers'];
@@ -47,7 +49,7 @@ final class Field
      */
     public static function fromArray(string $name, array $def, string $prefix): self
     {
-        $type = (string) ($def['type'] ?? 'string');
+        $type = Value::str(($def['type'] ?? 'string'));
         if (!in_array($type, self::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Unknown field type "%s" for "%s"', $type, $name));
         }
@@ -57,8 +59,8 @@ final class Field
         return new self(
             $name,
             $type,
-            (string) ($def['label'] ?? $name),
-            (string) ($def['meta_key'] ?? '_' . $prefix . '_' . $name),
+            Value::str(($def['label'] ?? $name)),
+            Value::str(($def['meta_key'] ?? '_' . $prefix . '_' . $name)),
             $def['sanitize'] ?? null,
             $def,
         );
@@ -67,7 +69,7 @@ final class Field
     public function sanitize(mixed $raw): string
     {
         if (is_callable($this->sanitize)) {
-            return (string) call_user_func($this->sanitize, $raw);
+            return Value::str(call_user_func($this->sanitize, $raw));
         }
         $raw = is_scalar($raw) ? trim((string) $raw) : '';
         return match ($this->type) {
@@ -99,7 +101,7 @@ final class Field
      */
     public function options(): array
     {
-        return array_values(array_map('strval', (array) ($this->def['options'] ?? [])));
+        return array_values(array_map(Value::str(...), (array) ($this->def['options'] ?? [])));
     }
 
     /** @param list<string> $options */
@@ -164,13 +166,13 @@ final class Field
             return '';
         }
         return match ($this->type) {
-            'money' => number_format(((int) $stored) / 100, 2, '.', ''),
+            'money' => number_format((Value::int($stored)) / 100, 2, '.', ''),
             'boolean' => $stored ? '1' : '',
             'license_tiers' => implode("\n", array_map(
                 static fn (array $t): string => $t['tier'] . '|' . $t['label'] . '|' . number_format($t['price'] / 100, 2, '.', ''),
                 self::tiers($stored, false)
             )),
-            default => (string) $stored,
+            default => Value::str($stored),
         };
     }
 
@@ -241,11 +243,11 @@ final class Field
             if (!is_array($row) || count($out) >= self::MAX_TIERS) {
                 continue;
             }
-            $tier = strtolower((string) preg_replace('/[^a-z0-9_-]/i', '', (string) ($row['tier'] ?? '')));
-            $label = trim(function_exists('wp_strip_all_tags') ? wp_strip_all_tags((string) ($row['label'] ?? '')) : strip_tags((string) ($row['label'] ?? '')));
+            $tier = strtolower(Value::str(preg_replace('/[^a-z0-9_-]/i', '', Value::str(($row['tier'] ?? '')))));
+            $label = trim(function_exists('wp_strip_all_tags') ? wp_strip_all_tags(Value::str(($row['label'] ?? ''))) : strip_tags(Value::str(($row['label'] ?? ''))));
             $price = $row['price'] ?? '';
             $cents = $decimal
-                ? (self::number(is_scalar($price) ? (string) $price : '') === '' ? -1 : (int) round((float) self::number((string) $price) * 100))
+                ? (self::number(is_scalar($price) ? Value::str($price) : '') === '' ? -1 : (int) round((float) self::number(Value::str($price)) * 100))
                 : (is_numeric($price) ? (int) round((float) $price) : -1);
             if ($tier === '' || $cents <= 0 || isset($out[$tier])) {
                 continue;

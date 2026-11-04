@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests;
 
+use PhpFasty\Moduly\Wp\Support\Value;
 use PhpFasty\Module\Downloads\Token;
 use PHPUnit\Framework\TestCase;
 
@@ -47,7 +48,7 @@ final class DownloadsTest extends TestCase
     public function testEndpointIsDeclaredForTheDisableScenario(): void
     {
         $m = json_decode((string) file_get_contents(dirname(__DIR__) . '/modules/downloads/module.json'), true);
-        $this->assertSame(['moduly_download'], $m['endpoints']['actions']);
-        $this->assertContains('files:private', $m['permissions']);
+        $this->assertSame(['moduly_download'], Value::at(Value::at($m, 'endpoints'), 'actions'));
+        $this->assertContains('files:private', Value::arr(Value::at($m, 'permissions')));
     }
 }

@@ -1,12 +1,13 @@
 includes:
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
 parameters:
-    level: 6
+    level: max
     dynamicConstantNames:
         - COOKIEPATH
         - COOKIE_DOMAIN
     paths:
         - moduly/src
+        - moduly/lib/core/src
         - modules
         - tests
     excludePaths:

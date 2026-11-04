@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Reviews;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 // phpcs:disable WordPress.Security.NonceVerification.Missing -- the core comment form (wp-comments-post.php) has no nonce for guests; we only read the rating.
 
 final class Reviews
@@ -70,7 +72,7 @@ final class Reviews
                 continue;
             }
             foreach ($o['items'] as $item) {
-                if (is_array($item) && (int) ($item['id'] ?? 0) === $productId) {
+                if (is_array($item) && Value::int(($item['id'] ?? 0)) === $productId) {
                     return true;
                 }
             }
@@ -93,10 +95,10 @@ final class Reviews
         ]);
         // one query for the meta of all orders (fields=ids does not prime the meta cache)
         update_meta_cache('post', array_map('intval', $ids));
-        $orders = array_map(static fn ($id): array => [
-            'status' => (string) get_post_meta((int) $id, '_order_status', true),
-            'items' => (array) get_post_meta((int) $id, '_order_items', true),
-        ], $ids);
+        $orders = array_values(array_map(static fn ($id): array => [
+            'status' => Value::str(get_post_meta((int) $id, '_order_status', true)),
+            'items' => Value::arr(get_post_meta((int) $id, '_order_items', true)),
+        ], $ids));
         return self::bought($orders, $productId);
     }
 
@@ -119,12 +121,12 @@ final class Reviews
      */
     public static function preprocess(array $data): array
     {
-        $postId = (int) ($data['comment_post_ID'] ?? 0);
+        $postId = Value::int(($data['comment_post_ID'] ?? 0));
         if (!self::supports($postId) || ($data['comment_type'] ?? 'comment') !== 'comment' || !empty($data['comment_parent'])) {
             return $data;
         }
-        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(wp_unslash($_POST['rating'])) : '');
-        $email = strtolower((string) ($data['comment_author_email'] ?? ''));
+        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(Value::str(wp_unslash($_POST['rating']))) : '');
+        $email = strtolower(Value::str(($data['comment_author_email'] ?? '')));
         if ($rating === 0) {
             wp_die(esc_html__('Please choose a rating from 1 to 5.', 'moduly'), esc_html__('Review not saved', 'moduly'), ['response' => 400, 'back_link' => true]);
         }
@@ -140,7 +142,7 @@ final class Reviews
         if (!$c instanceof \WP_Comment || !self::supports((int) $c->comment_post_ID)) {
             return;
         }
-        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(wp_unslash($_POST['rating'])) : '');
+        $rating = self::rating(isset($_POST['rating']) ? sanitize_text_field(Value::str(wp_unslash($_POST['rating']))) : '');
         if ($rating > 0) {
             update_comment_meta($commentId, self::META, $rating);
             update_comment_meta($commentId, 'verified', 1);
@@ -160,7 +162,7 @@ final class Reviews
     public static function recount(int $postId): void
     {
         $ratings = [];
-        foreach (get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment']) as $c) {
+        foreach (Value::list(get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment'])) as $c) {
             if ($c instanceof \WP_Comment) {
                 $ratings[] = self::rating(get_comment_meta((int) $c->comment_ID, self::META, true));
             }
@@ -192,7 +194,7 @@ final class Reviews
             return $product;
         }
         $list = [];
-        foreach (get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment', 'number' => 20]) as $c) {
+        foreach (Value::list(get_comments(['post_id' => $postId, 'status' => 'approve', 'type' => 'comment', 'number' => 20])) as $c) {
             if (!$c instanceof \WP_Comment) {
                 continue;
             }

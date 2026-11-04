@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Downloads;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Slots
 {
     public static function t(string $en, string $ru): string
@@ -52,7 +54,7 @@ final class Slots
     public static function changelog(array $fields): array
     {
         $out = [];
-        foreach (preg_split('/\R/', (string) ($fields['changelog'] ?? '')) ?: [] as $line) {
+        foreach (preg_split('/\R/', Value::str(($fields['changelog'] ?? ''))) ?: [] as $line) {
             $parts = array_map('trim', explode('|', $line, 3));
             if (count($parts) === 3 && $parts[0] !== '') {
                 $out[] = ['version' => $parts[0], 'date' => $parts[1], 'notes' => $parts[2]];
@@ -69,14 +71,14 @@ final class Slots
     public static function slots(array $slots, array $context): array
     {
         $page = (array) ($context['page'] ?? []);
-        $fields = (array) ($page['fields'] ?? []);
+        $fields = Value::map($page['fields'] ?? []);
         if (isset($page['product']) && is_array($page['product'])) {
             $rows = [];
             foreach (
                 [
-                [self::t('Version', 'Версия'), (string) ($fields['version'] ?? '')],
-                ['WordPress', ($fields['requires_wp'] ?? '') !== '' ? $fields['requires_wp'] . '+' : ''],
-                ['PHP', ($fields['requires_php'] ?? '') !== '' ? $fields['requires_php'] . '+' : ''],
+                [self::t('Version', 'Версия'), Value::str(($fields['version'] ?? ''))],
+                ['WordPress', Value::str($fields['requires_wp'] ?? '') !== '' ? Value::str($fields['requires_wp']) . '+' : ''],
+                ['PHP', Value::str($fields['requires_php'] ?? '') !== '' ? Value::str($fields['requires_php']) . '+' : ''],
                 ] as [$k, $v]
             ) {
                 if ((string) $v !== '') {
@@ -84,7 +86,7 @@ final class Slots
                 }
             }
             $log = self::changelog($fields);
-            $preview = (string) ($fields['preview_url'] ?? '');
+            $preview = Value::str(($fields['preview_url'] ?? ''));
             if ($rows !== [] || $log !== [] || $preview !== '') {
                 $slots['product.after'][] = [
                     'view' => 'moduly/downloads/details',

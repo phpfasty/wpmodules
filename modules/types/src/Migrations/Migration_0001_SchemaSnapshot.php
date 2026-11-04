@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Types\Migrations;
 
+use PhpFasty\Moduly\Wp\Support\Value;
 use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Migration\MigrationInterface;
 
@@ -45,7 +46,7 @@ final class Migration_0001_SchemaSnapshot implements MigrationInterface
                 $out[$type->name][(string) $name] = [
                     'key' => $field->metaKey,
                     'type' => $field->type,
-                    'aliases' => array_values(array_map('strval', (array) ($field->def['aliases'] ?? []))),
+                    'aliases' => array_values(array_map(Value::str(...), (array) ($field->def['aliases'] ?? []))),
                 ];
             }
         }

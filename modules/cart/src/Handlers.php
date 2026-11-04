@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 // phpcs:disable WordPress.Security.NonceVerification -- every handler calls self::verify() first.
 
 final class Handlers
@@ -27,11 +29,11 @@ final class Handlers
     public static function cart(): void
     {
         self::verify('latte_shop_cart');
-        $op = isset($_POST['op']) ? sanitize_key(wp_unslash($_POST['op'])) : '';
-        $id = isset($_POST['product_id']) ? absint(wp_unslash($_POST['product_id'])) : 0;
-        $qty = isset($_POST['qty']) ? absint(wp_unslash($_POST['qty'])) : 1;
-        $tier = isset($_POST['license']) ? sanitize_key(wp_unslash($_POST['license'])) : '';
-        $key = isset($_POST['key']) ? sanitize_text_field(wp_unslash($_POST['key'])) : (string) $id;
+        $op = isset($_POST['op']) ? sanitize_key(Value::str(wp_unslash($_POST['op']))) : '';
+        $id = isset($_POST['product_id']) ? absint(Value::str(wp_unslash($_POST['product_id']))) : 0;
+        $qty = isset($_POST['qty']) ? absint(Value::str(wp_unslash($_POST['qty']))) : 1;
+        $tier = isset($_POST['license']) ? sanitize_key(Value::str(wp_unslash($_POST['license']))) : '';
+        $key = isset($_POST['key']) ? sanitize_text_field(Value::str(wp_unslash($_POST['key']))) : (string) $id;
         $notice = 'updated';
 
         switch ($op) {
@@ -39,7 +41,7 @@ final class Handlers
                 $notice = Cart::add($id, max(1, min(Cart::MAX_QTY, $qty)), $tier) ? 'added' : 'unavailable';
                 break;
             case 'update':
-                $qtys = isset($_POST['qtys']) && is_array($_POST['qtys']) ? array_map('absint', wp_unslash($_POST['qtys'])) : [];
+                $qtys = isset($_POST['qtys']) && is_array($_POST['qtys']) ? array_map(static fn (mixed $q): int => absint(Value::int($q)), Value::arr(wp_unslash($_POST['qtys']))) : [];
                 foreach ((array) $qtys as $lineKey => $q) {
                     Cart::set(self::lineKey((string) $lineKey), max(0, min(Cart::MAX_QTY, (int) $q)));
                 }
@@ -70,8 +72,8 @@ final class Handlers
     /** Nonce + POST + rate limit (shared with the orders module). */
     public static function verify(string $action): void
     {
-        $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field(wp_unslash($_POST['_wpnonce'])) : '';
-        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(wp_unslash($_SERVER['REQUEST_METHOD'])) : '';
+        $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field(Value::str(wp_unslash($_POST['_wpnonce']))) : '';
+        $method = isset($_SERVER['REQUEST_METHOD']) ? sanitize_key(Value::str(wp_unslash($_SERVER['REQUEST_METHOD']))) : '';
         if ($method !== 'post' || !wp_verify_nonce($nonce, $action)) {
             wp_die(
                 esc_html__('Your session expired. Please go back and try again.', 'moduly'),

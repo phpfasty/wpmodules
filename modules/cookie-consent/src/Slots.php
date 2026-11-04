@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\CookieConsent;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Slots
 {
     public static function t(string $en, string $ru): string
@@ -33,7 +35,7 @@ final class Slots
         $slots['footer'][] = [
             'view' => 'moduly/cookie-consent/banner',
             'data' => [
-                'policy_url' => (string) ($state['policy_url'] ?? ''),
+                'policy_url' => Value::str(($state['policy_url'] ?? '')),
                 'labels' => [
                     'text' => self::t(
                         'We use necessary cookies to run the store and, with your consent, analytics cookies.',

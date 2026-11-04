@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\ConsentLog;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 // phpcs:disable WordPress.Security.NonceVerification.Missing -- runs inside the orders checkout handler after its nonce check.
 
 final class Consents
@@ -46,7 +48,18 @@ final class Consents
             ['name' => 'consent_pd', 'required' => true, 'page' => $page('personal_data_page', 'consent')],
             ['name' => 'consent_news', 'required' => false, 'page' => $page('newsletter_page', 'newsletter-consent')],
         ];
-        return function_exists('apply_filters') ? array_values((array) apply_filters('moduly_consents', $defs)) : $defs;
+        if (!function_exists('apply_filters')) {
+            return $defs;
+        }
+        $out = [];
+        foreach (Value::list(apply_filters('moduly_consents', $defs)) as $def) {
+            $out[] = [
+                'name' => Value::str(Value::at($def, 'name')),
+                'required' => Value::bool(Value::at($def, 'required')),
+                'page' => Value::str(Value::at($def, 'page')),
+            ];
+        }
+        return $out;
     }
 
     /**
@@ -105,7 +118,7 @@ final class Consents
 
     public static function onOrderCreated(int $orderId): void
     {
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(Value::str(wp_unslash($_SERVER['REMOTE_ADDR']))) : '';
         update_post_meta($orderId, self::META, self::record(self::ticked(), $ip, gmdate('c')));
     }
 

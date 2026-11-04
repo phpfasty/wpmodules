@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\WpModules\Tests\Fake;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 /** $wpdb stand-in: answers the ID scan of Migration_0002 from FakeWp::$posts. */
 final class FakeWpdb
 {
@@ -18,9 +20,10 @@ final class FakeWpdb
     /** @return list<string> */
     public function get_col(string $prepared): array // phpcs:ignore PSR1.Methods.CamelCapsMethodName
     {
-        [, [$type, $after, $limit]] = json_decode($prepared, true, 512, JSON_THROW_ON_ERROR);
+        $args = Value::list(Value::at(json_decode($prepared, true, 512, JSON_THROW_ON_ERROR), 1));
+        [, $type, $after, $limit] = $args + [null, null, 0, 0]; // [table, post_type, after id, limit]
         $ids = array_keys(array_filter(FakeWp::$posts, static fn ($t, $id): bool => $t === $type && $id > $after, ARRAY_FILTER_USE_BOTH));
         sort($ids);
-        return array_map('strval', array_slice($ids, 0, (int) $limit));
+        return array_map(Value::str(...), array_slice($ids, 0, Value::int($limit)));
     }
 }

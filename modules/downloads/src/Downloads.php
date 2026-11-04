@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Downloads;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- the link is HMAC-signed (Token), no nonce by design.
 
 final class Downloads
@@ -48,19 +50,19 @@ final class Downloads
         if (self::$registry === null || !method_exists(self::$registry, 'value')) {
             return 0;
         }
-        return (int) self::$registry->value($productId, self::$field);
+        return Value::int(self::$registry->value($productId, self::$field));
     }
 
     /** @return array<int, int> item index => downloads used */
     private static function counts(int $orderId): array
     {
         $raw = get_post_meta($orderId, self::COUNT_META, true);
-        return is_array($raw) ? array_map('intval', $raw) : [];
+        return is_array($raw) ? array_map(Value::int(...), array_filter($raw, 'is_int', ARRAY_FILTER_USE_KEY)) : [];
     }
 
     private static function paid(int $orderId): bool
     {
-        return in_array((string) get_post_meta($orderId, '_order_status', true), ['paid', 'processing', 'completed'], true);
+        return in_array(Value::str(get_post_meta($orderId, '_order_status', true)), ['paid', 'processing', 'completed'], true);
     }
 
     /**
@@ -77,7 +79,7 @@ final class Downloads
         $counts = self::counts($orderId);
         $out = [];
         foreach ((array) get_post_meta($orderId, '_order_items', true) as $i => $item) {
-            if (!is_array($item) || self::attachment((int) ($item['id'] ?? 0)) <= 0) {
+            if (!is_array($item) || self::attachment(Value::int(($item['id'] ?? 0))) <= 0) {
                 continue;
             }
             $i = (int) $i;
@@ -88,12 +90,12 @@ final class Downloads
                 'e' => $expires,
                 's' => Token::sign($orderId, $i, $expires, self::secret()),
             ], admin_url('admin-post.php'));
-            $tier = (string) ($item['tier_label'] ?? '');
+            $tier = Value::str(($item['tier_label'] ?? ''));
             $out[] = [
-                'title' => (string) ($item['title'] ?? '') . ($tier !== '' ? ' — ' . $tier : ''),
+                'title' => Value::str(($item['title'] ?? '')) . ($tier !== '' ? ' — ' . $tier : ''),
                 'url' => $url,
                 'remaining' => max(0, self::$limit - ($counts[$i] ?? 0)),
-                'expires' => wp_date((string) get_option('date_format') . ' ' . (string) get_option('time_format'), $expires),
+                'expires' => (string) wp_date(Value::str(get_option('date_format')) . ' ' . Value::str(get_option('time_format')), $expires),
             ];
         }
         return $out;
@@ -107,10 +109,10 @@ final class Downloads
      */
     public static function order(?array $order): ?array
     {
-        if (!is_array($order) || (int) ($order['id'] ?? 0) <= 0) {
+        if (!is_array($order) || Value::int(($order['id'] ?? 0)) <= 0) {
             return $order;
         }
-        $order['downloads'] = self::links((int) $order['id']);
+        $order['downloads'] = self::links(Value::int($order['id']));
         $order['downloads_available'] = true;
         return $order;
     }
@@ -123,11 +125,11 @@ final class Downloads
         }
         foreach ((array) get_post_meta($orderId, '_order_items', true) as $item) {
             if (is_array($item)) {
-                self::protectProduct((int) ($item['id'] ?? 0)); // a file uploaded before the module ran
+                self::protectProduct(Value::int(($item['id'] ?? 0))); // a file uploaded before the module ran
             }
         }
         $links = self::links($orderId);
-        $email = (string) get_post_meta($orderId, '_order_email', true);
+        $email = Value::str(get_post_meta($orderId, '_order_email', true));
         if ($links === [] || !is_email($email)) {
             return;
         }
@@ -173,17 +175,17 @@ final class Downloads
     /** admin-post.php?action=moduly_download — serve or 403. */
     public static function serve(): void
     {
-        $o = isset($_GET['o']) ? absint(wp_unslash($_GET['o'])) : 0;
-        $i = isset($_GET['i']) ? absint(wp_unslash($_GET['i'])) : -1;
-        $e = isset($_GET['e']) ? absint(wp_unslash($_GET['e'])) : 0;
-        $s = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        $o = isset($_GET['o']) ? absint(Value::str(wp_unslash($_GET['o']))) : 0;
+        $i = isset($_GET['i']) ? absint(Value::str(wp_unslash($_GET['i']))) : -1;
+        $e = isset($_GET['e']) ? absint(Value::str(wp_unslash($_GET['e']))) : 0;
+        $s = isset($_GET['s']) ? sanitize_text_field(Value::str(wp_unslash($_GET['s']))) : '';
         $valid = Token::valid($o, $i, $e, $s, self::secret(), time())
             && get_post_type($o) === 'shop_order';
         $items = $valid ? (array) get_post_meta($o, '_order_items', true) : [];
         $item = $items[$i] ?? null;
         $path = '';
         if (is_array($item)) {
-            $att = self::attachment((int) ($item['id'] ?? 0));
+            $att = self::attachment(Value::int(($item['id'] ?? 0)));
             $path = $att > 0 ? Storage::protect($att) : '';
         }
         $counts = $valid ? self::counts($o) : [];
@@ -211,7 +213,7 @@ final class Downloads
         header('Content-Disposition: attachment; filename="' . $name . '"');
         header('Content-Length: ' . (string) filesize($path));
         header('X-Content-Type-Options: nosniff');
-        $sendfile = (string) apply_filters('moduly_downloads_sendfile_header', '');
+        $sendfile = Value::str(apply_filters('moduly_downloads_sendfile_header', ''));
         if (in_array($sendfile, ['X-Sendfile', 'X-Accel-Redirect'], true)) {
             header($sendfile . ': ' . $path);
             exit;

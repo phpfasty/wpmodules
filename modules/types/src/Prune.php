@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Types;
 
 use PhpFasty\Module\Types\Model\Registry;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * Finds post meta of declared post types that no field (meta key or alias) claims any more, under the key prefixes
@@ -29,6 +30,7 @@ final class Prune
     public function candidates(int $limit = 0): array
     {
         global $wpdb;
+        /** @var \wpdb $wpdb */
         $rows = [];
         foreach ($this->types->all() as $type) {
             $known = [];
@@ -36,7 +38,7 @@ final class Prune
             foreach ($type->fields as $name => $field) {
                 $known[$field->metaKey] = true;
                 foreach ((array) ($field->def['aliases'] ?? []) as $alias) {
-                    $known[(string) $alias] = true;
+                    $known[Value::str($alias)] = true;
                 }
                 $suffix = '_' . $name;
                 if (str_ends_with($field->metaKey, $suffix) && strlen($field->metaKey) > strlen($suffix) + 1) {
@@ -46,21 +48,23 @@ final class Prune
             foreach (array_keys($prefixes) as $prefix) {
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- read-only listing for a CLI command
                 $found = $wpdb->get_results($wpdb->prepare(
-                    "SELECT pm.post_id, pm.meta_key, pm.meta_value FROM {$wpdb->postmeta} pm
-                     JOIN {$wpdb->posts} p ON p.ID = pm.post_id
-                     WHERE p.post_type = %s AND pm.meta_key LIKE %s ORDER BY pm.meta_id ASC",
+                    'SELECT pm.post_id, pm.meta_key, pm.meta_value FROM %i pm
+                     JOIN %i p ON p.ID = pm.post_id
+                     WHERE p.post_type = %s AND pm.meta_key LIKE %s ORDER BY pm.meta_id ASC',
+                    $wpdb->postmeta,
+                    $wpdb->posts,
                     $type->name,
                     $wpdb->esc_like((string) $prefix) . '%'
                 ), ARRAY_A);
                 foreach ((array) $found as $r) {
-                    if (isset($known[$r['meta_key']])) {
+                    if (isset($known[Value::str($r['meta_key'])])) {
                         continue;
                     }
                     $rows[] = [
-                        'post_id' => (int) $r['post_id'],
+                        'post_id' => Value::int($r['post_id']),
                         'post_type' => $type->name,
-                        'key' => (string) $r['meta_key'],
-                        'value' => (string) $r['meta_value'],
+                        'key' => Value::str($r['meta_key']),
+                        'value' => Value::str($r['meta_value']),
                     ];
                     if ($limit > 0 && count($rows) >= $limit) {
                         return $rows;

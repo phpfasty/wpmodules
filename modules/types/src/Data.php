@@ -16,6 +16,7 @@ namespace PhpFasty\Module\Types;
 use PhpFasty\Module\Types\Model\Field;
 use PhpFasty\Module\Types\Model\PostType;
 use PhpFasty\Module\Types\Model\Registry;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * Data side of the module system; the (aliased) Registry hands itself over on `wpfasty_types_loaded`.
@@ -81,7 +82,7 @@ final class Data
             printf(
                 '<input name="wpfasty_currency" id="wpfasty_currency" type="text" maxlength="3"'
                     . ' class="small-text" value="%s"> <span class="description">%s</span>',
-                esc_attr((string) get_option('wpfasty_currency', 'USD')),
+                esc_attr(Value::str(get_option('wpfasty_currency', 'USD'))),
                 esc_html__('ISO 4217 code, e.g. USD, EUR.', 'moduly')
             );
         }, 'general');
@@ -90,9 +91,11 @@ final class Data
     public function register(): void
     {
         foreach ($this->types->all() as $type) {
+            /** @phpstan-ignore argument.type, argument.type (validated name; theme-defined args are passed through to WordPress) */
             register_post_type($type->name, $type->args());
             foreach ($type->taxonomies() as $taxonomy => $args) {
-                register_taxonomy((string) $taxonomy, $type->name, (array) $args);
+                /** @phpstan-ignore argument.type (theme-defined taxonomy args are passed through to WordPress) */
+                register_taxonomy((string) $taxonomy, $type->name, $args);
             }
             if ($type->fields !== []) {
                 // REST exposes `meta` only for post types that support custom-fields
@@ -142,7 +145,7 @@ final class Data
     {
         $data = $response->get_data();
         $type = $this->types->get($post->post_type);
-        if ($type === null || !isset($data['meta']) || !is_array($data['meta'])) {
+        if ($type === null || !is_array($data) || !is_array($data['meta'] ?? null)) {
             return $response;
         }
         foreach ($type->fields as $field) {
@@ -164,11 +167,11 @@ final class Data
         }
         add_meta_box(
             'wpfasty-' . $type->name . '-fields',
-            (string) ($box['title'] ?? __('Details', 'moduly')),
+            Value::str(($box['title'] ?? __('Details', 'moduly'))),
             fn (\WP_Post $post) => $this->renderMetaBox($type, $post),
             $type->name,
-            (string) ($box['context'] ?? 'side'),
-            (string) ($box['priority'] ?? 'default')
+            Value::str(($box['context'] ?? 'side')),
+            self::priority($box['priority'] ?? null)
         );
     }
 
@@ -197,7 +200,7 @@ final class Data
                         '<option value="%1$s"%2$s>%3$s</option>',
                         esc_attr($option),
                         selected($value, $option, false),
-                        esc_html((string) ($field->def['option_labels'][$option] ?? $option))
+                        esc_html(Value::str(Value::at($field->def['option_labels'] ?? null, $option) ?? $option))
                     );
                 }
                 printf(
@@ -245,7 +248,7 @@ final class Data
             return;
         }
         $key = 'wpfasty_' . $type->name . '_nonce';
-        $nonce = isset($_POST[$key]) ? sanitize_text_field(wp_unslash($_POST[$key])) : '';
+        $nonce = isset($_POST[$key]) ? sanitize_text_field(Value::str(wp_unslash($_POST[$key]))) : '';
         if (
             !wp_verify_nonce($nonce, 'wpfasty_save_' . $type->name)
             || (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
@@ -260,7 +263,7 @@ final class Data
             : [];
         // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         foreach ($type->fields as $name => $field) {
-            $value = $field->fromInput($input[$name] ?? '');
+            $value = $field->fromInput(Value::at($input, $name) ?? '');
             if ($value === null) {
                 update_post_meta($postId, $field->metaKey, ''); // cleared by the editor; rows are never deleted here
             } else {
@@ -280,16 +283,28 @@ final class Data
             add_filter('manage_' . $type->name . '_posts_columns', static function (array $c) use ($columns): array {
                 $extra = [];
                 foreach ($columns as $key => $col) {
-                    $extra[(string) $key] = (string) ($col['label'] ?? $key);
+                    $extra[Value::str($key)] = Value::str((Value::at($col, 'label') ?? $key));
                 }
                 return array_slice($c, 0, 2, true) + $extra + $c;
             });
             $hook = 'manage_' . $type->name . '_posts_custom_column';
             add_action($hook, static function (string $col, int $id) use ($columns): void {
-                if (isset($columns[$col]['value']) && is_callable($columns[$col]['value'])) {
-                    echo esc_html((string) $columns[$col]['value']($id));
+                $render = Value::at($columns[$col] ?? null, 'value');
+                if (is_callable($render)) {
+                    echo esc_html(Value::str($render($id)));
                 }
             }, 10, 2);
         }
+    }
+
+    /**
+     * @return 'core'|'default'|'high'|'low'
+     */
+    private static function priority(mixed $value): string
+    {
+        return match ($value) {
+            'core', 'high', 'low' => $value,
+            default => 'default',
+        };
     }
 }

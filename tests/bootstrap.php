@@ -37,10 +37,10 @@ if (!function_exists('wp_strip_all_tags')) {
     }
 }
 if (!function_exists('get_post_type')) {
-    /** Post type by id from $GLOBALS['moduly_test_post_types'] (default "product"). */
-    function get_post_type(int $id): string|false
+    /** Post type by id from \PhpFasty\WpModules\Tests\Fake\TestState::$postTypes (default "product"). */
+    function get_post_type(int $id): string
     {
-        return $GLOBALS['moduly_test_post_types'][$id] ?? 'product';
+        return \PhpFasty\WpModules\Tests\Fake\TestState::$postTypes[$id] ?? 'product';
     }
 }
 if (!function_exists('wp_unslash')) {

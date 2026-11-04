@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\ConsentLog;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Slots
 {
     public static function t(string $en, string $ru): string
@@ -35,10 +37,10 @@ final class Slots
     public static function items(array $context): array
     {
         $checkout = (array) ($context['checkout'] ?? []);
-        $errors = array_map('strval', (array) ($checkout['errors'] ?? []));
+        $errors = array_map(Value::str(...), (array) ($checkout['errors'] ?? []));
         $out = [];
         foreach ((array) ($checkout['consents'] ?? []) as $c) {
-            $name = (string) ($c['name'] ?? '');
+            $name = Value::str((Value::at($c, 'name') ?? ''));
             if (preg_match('/^[a-z0-9_]{1,40}$/', $name) !== 1) {
                 continue;
             }
@@ -46,9 +48,9 @@ final class Slots
                 'name' => $name,
                 'id' => 'co-' . str_replace('_', '-', $name),
                 'label' => self::label($name),
-                'url' => (string) ($c['url'] ?? ''),
+                'url' => Value::str((Value::at($c, 'url') ?? '')),
                 'link' => self::t('document', 'документ'),
-                'required' => !empty($c['required']),
+                'required' => !empty(Value::at($c, 'required')),
                 'error' => in_array($name, $errors, true),
             ];
         }

@@ -22,7 +22,7 @@ final class FakeWp
         self::$options = self::$posts = self::$meta = self::$actions = [];
     }
 
-    /** @return array<string, mixed> deep copy of all stored data */
+    /** @return array{meta: array<int, array<string, list<mixed>>>, posts: array<int, string>} copy of all stored data */
     public static function dump(): array
     {
         return ['meta' => self::$meta, 'posts' => self::$posts];

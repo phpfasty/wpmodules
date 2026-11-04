@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Wp;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 /**
  * Fixed-window rate limit per (bucket, client) in transients / object cache. Service `wp.rate_limiter`.
  */
@@ -13,7 +15,7 @@ final class RateLimiter
     public function hit(string $bucket, int $perMinute = 30): bool
     {
         $key = 'moduly_rl_' . md5($bucket . '|' . AuditLog::ipHash() . '|' . (string) floor(time() / 60));
-        $count = (int) get_transient($key);
+        $count = Value::int(get_transient($key));
         if ($count >= $perMinute) {
             return false;
         }

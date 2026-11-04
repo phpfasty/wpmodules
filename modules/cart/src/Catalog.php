@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Cart;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Catalog
 {
     private static ?object $registry = null;
@@ -28,16 +30,16 @@ final class Catalog
             return [];
         }
         $cap = $type->capability('purchasable');
-        return is_array($cap) ? $cap : [];
+        return Value::map($cap);
     }
 
     private static function fieldValue(int $id, string $option): string
     {
-        $field = (string) (self::capability($id)[$option] ?? '');
+        $field = Value::str((self::capability($id)[$option] ?? ''));
         if ($field === '' || self::$registry === null || !method_exists(self::$registry, 'value')) {
             return '';
         }
-        return (string) self::$registry->value($id, $field);
+        return Value::str(self::$registry->value($id, $field));
     }
 
     public static function isPurchasable(int $id): bool
@@ -67,10 +69,10 @@ final class Catalog
         $rows = $raw !== '' ? json_decode($raw, true) : null;
         $out = [];
         foreach (is_array($rows) ? $rows : [] as $row) {
-            $tier = is_array($row) ? (string) ($row['tier'] ?? '') : '';
+            $tier = is_array($row) ? Value::str(($row['tier'] ?? '')) : '';
             $price = is_array($row) && is_numeric($row['price'] ?? null) ? (int) $row['price'] : 0;
             if (preg_match('/^[a-z0-9_-]{1,32}$/', $tier) === 1 && $price > 0) {
-                $out[] = ['tier' => $tier, 'label' => (string) ($row['label'] ?? $tier), 'price' => $price];
+                $out[] = ['tier' => $tier, 'label' => Value::str(($row['label'] ?? $tier)), 'price' => $price];
             }
         }
         return $out;
@@ -132,7 +134,7 @@ final class Catalog
 
     public static function setStock(int $id, int $stock): void
     {
-        $field = (string) (self::capability($id)['stock_field'] ?? '');
+        $field = Value::str((self::capability($id)['stock_field'] ?? ''));
         $type = self::$registry !== null && method_exists(self::$registry, 'get') ? self::$registry->get((string) get_post_type($id)) : null;
         $fields = is_object($type) && property_exists($type, 'fields') && is_array($type->fields) ? $type->fields : [];
         $def = $fields[$field] ?? null;

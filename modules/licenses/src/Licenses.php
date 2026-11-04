@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Licenses;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Licenses
 {
     private static string $field = 'licenses';
@@ -18,8 +20,8 @@ final class Licenses
     /** @param array<string, mixed> $settings */
     public static function configure(array $settings): void
     {
-        self::$field = (string) ($settings['field'] ?? 'licenses');
-        self::$termsPage = (string) ($settings['terms_page'] ?? 'oferta');
+        self::$field = Value::str(($settings['field'] ?? 'licenses'));
+        self::$termsPage = Value::str(($settings['terms_page'] ?? 'oferta'));
     }
 
     public static function field(): string
@@ -94,15 +96,15 @@ final class Licenses
             if (!is_array($row)) {
                 continue;
             }
-            $id = (string) ($row['tier'] ?? $row['id'] ?? '');
+            $id = Value::str(($row['tier'] ?? $row['id'] ?? ''));
             if (preg_match('/^[a-z0-9_-]{1,32}$/', $id) !== 1) {
                 continue;
             }
             $out[] = [
                 'id' => $id,
-                'label' => self::label($id, (string) ($row['label'] ?? $id)),
+                'label' => self::label($id, Value::str(($row['label'] ?? $id))),
                 'summary' => self::summary($id),
-                'price' => (string) ($row['price'] ?? ''),
+                'price' => Value::str(($row['price'] ?? '')),
                 'terms' => self::terms($id),
                 'checked' => $out === [],
             ];
@@ -129,7 +131,7 @@ final class Licenses
     public static function slots(array $slots, array $context): array
     {
         $page = (array) ($context['page'] ?? []);
-        $product = (array) ($page['product'] ?? []);
+        $product = Value::map($page['product'] ?? []);
         $tiers = self::tiers($product);
         if ($tiers === []) {
             return $slots;

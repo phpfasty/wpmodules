@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 use PhpFasty\Moduly\Contract\HostInterface;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /**
  * WordPress implementation of the core host port.
@@ -85,8 +86,8 @@ final class Host implements HostInterface
             return null;
         }
         $value = match ($type) {
-            'integer' => (int) $value,
-            'number' => (float) $value,
+            'integer' => Value::int($value),
+            'number' => Value::float($value),
             default => $value,
         };
         if (isset($schema['enum']) && is_array($schema['enum']) && !in_array($value, $schema['enum'], true)) {

@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\Types\Model;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class PostType
 {
     /** @var array<string, Field> */
@@ -20,10 +22,10 @@ final class PostType
      */
     public function __construct(public readonly string $name, public readonly array $def)
     {
-        $prefix = (string) ($def['meta_prefix'] ?? $name);
+        $prefix = Value::str(($def['meta_prefix'] ?? $name));
         $fields = [];
         foreach ((array) ($def['fields'] ?? []) as $key => $field) {
-            $fields[(string) $key] = Field::fromArray((string) $key, (array) $field, $prefix);
+            $fields[(string) $key] = Field::fromArray((string) $key, Value::map($field), $prefix);
         }
         $this->fields = $fields;
     }
@@ -33,7 +35,7 @@ final class PostType
      */
     public static function fromArray(array $def): self
     {
-        $name = (string) ($def['name'] ?? '');
+        $name = Value::str(($def['name'] ?? ''));
         if (!preg_match('/^[a-z][a-z0-9_]{1,19}$/', $name)) {
             throw new \InvalidArgumentException(sprintf('Invalid post type name "%s"', $name));
         }
@@ -43,13 +45,13 @@ final class PostType
     /** @return array<string, mixed> */
     public function args(): array
     {
-        return (array) ($this->def['args'] ?? []);
+        return Value::map($this->def['args'] ?? []);
     }
 
     /** @return array<string, array<string, mixed>> */
     public function taxonomies(): array
     {
-        return (array) ($this->def['taxonomies'] ?? []);
+        return array_map(Value::map(...), Value::map($this->def['taxonomies'] ?? []));
     }
 
     public function supports(string $capability): bool
@@ -62,7 +64,7 @@ final class PostType
     public function capability(string $capability): array
     {
         $value = ((array) ($this->def['supports'] ?? []))[$capability] ?? [];
-        return is_array($value) ? $value : [];
+        return Value::map($value);
     }
 
     public function view(string $kind): ?string
@@ -74,18 +76,18 @@ final class PostType
     /** @return array<string, mixed> */
     public function archive(): array
     {
-        return (array) ($this->def['archive'] ?? []);
+        return Value::map($this->def['archive'] ?? []);
     }
 
     /** @return array<string, mixed>|false */
     public function metabox(): array|false
     {
         $box = $this->def['metabox'] ?? [];
-        return $box === false ? false : (array) $box;
+        return $box === false ? false : Value::map($box);
     }
 
     public function textDomain(): string
     {
-        return (string) ($this->def['text_domain'] ?? 'latte');
+        return Value::str(($this->def['text_domain'] ?? 'latte'));
     }
 }

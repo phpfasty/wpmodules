@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace PhpFasty\Module\Orders;
 
 use PhpFasty\Module\Cart\CartApi;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 final class Orders
 {
@@ -37,7 +38,7 @@ final class Orders
     public static function paymentMethods(): array
     {
         $ids = (array) apply_filters('wpfasty_shop_payment_methods', self::PAYMENT_METHODS);
-        return array_values(array_filter(array_map('strval', $ids), static fn (string $id): bool => preg_match('/^[a-z0-9_-]{1,32}$/', $id) === 1));
+        return array_values(array_filter(array_map(Value::str(...), $ids), static fn (string $id): bool => preg_match('/^[a-z0-9_-]{1,32}$/', $id) === 1));
     }
 
     /** Register the post type unless the active theme / types layer already declared it (same arguments). */
@@ -75,11 +76,11 @@ final class Orders
         add_action('manage_shop_order_posts_custom_column', static function (string $col, int $id): void {
             match ($col) {
                 'customer' => print(esc_html(
-                    (string) get_post_meta($id, '_order_name', true)
-                    . ' <' . (string) get_post_meta($id, '_order_email', true) . '>'
+                    Value::str(get_post_meta($id, '_order_name', true))
+                    . ' <' . Value::str(get_post_meta($id, '_order_email', true)) . '>'
                 )),
-                'total' => print(esc_html(self::$cart->format((int) get_post_meta($id, '_order_total', true)))),
-                'order_status' => print(esc_html(ucfirst((string) get_post_meta($id, '_order_status', true)))),
+                'total' => print(esc_html(self::$cart->format(Value::int(get_post_meta($id, '_order_total', true))))),
+                'order_status' => print(esc_html(ucfirst(Value::str(get_post_meta($id, '_order_status', true))))),
                 default => null,
             };
         }, 10, 2);
@@ -109,9 +110,9 @@ final class Orders
             update_post_meta($id, "_order_{$field}", $value);
         }
         $items = array_map(static fn (array $i): array => [
-            'id' => (int) $i['id'], 'title' => (string) $i['title'], 'sku' => (string) $i['sku'],
-            'qty' => (int) $i['qty'], 'unit' => (int) $i['unit'], 'line' => (int) $i['line'],
-            'tier' => (string) ($i['tier'] ?? ''), 'tier_label' => (string) ($i['tier_label'] ?? ''),
+            'id' => Value::int($i['id']), 'title' => Value::str($i['title']), 'sku' => Value::str($i['sku']),
+            'qty' => Value::int($i['qty']), 'unit' => Value::int($i['unit']), 'line' => Value::int($i['line']),
+            'tier' => Value::str(($i['tier'] ?? '')), 'tier_label' => Value::str(($i['tier_label'] ?? '')),
             'digital' => (bool) ($i['digital'] ?? false),
         ], $summary['items']);
         update_post_meta($id, '_order_items', $items);
@@ -131,7 +132,7 @@ final class Orders
 
         do_action('latte_shop_order_created', $id);
         wp_mail(
-            (string) get_option('admin_email'),
+            Value::str(get_option('admin_email')),
             sprintf(/* translators: %d order id */ __('New order #%d', 'moduly'), $id),
             sprintf("%s\n%s\n%s", $customer['name'], $customer['email'], self::$cart->format($summary['total']))
         );
@@ -146,10 +147,10 @@ final class Orders
     public static function find(mixed $order, int $id, string $key): ?array
     {
         if ($id <= 0 || $key === '') {
-            return is_array($order) ? $order : null;
+            return is_array($order) ? Value::map($order) : null;
         }
         $post = get_post($id);
-        $stored = (string) get_post_meta($id, '_order_key', true);
+        $stored = Value::str(get_post_meta($id, '_order_key', true));
         $isOrder = $post instanceof \WP_Post && $post->post_type === 'shop_order';
         if (!$isOrder || $stored === '' || !hash_equals($stored, $key)) {
             return null;
@@ -157,20 +158,20 @@ final class Orders
         $items = (array) get_post_meta($id, '_order_items', true);
         return [
             'id' => $id,
-            'name' => (string) get_post_meta($id, '_order_name', true),
-            'email' => (string) get_post_meta($id, '_order_email', true),
-            'payment' => (string) get_post_meta($id, '_order_payment', true),
-            'status' => (string) get_post_meta($id, '_order_status', true),
-            'paid' => in_array((string) get_post_meta($id, '_order_status', true), self::PAID, true),
+            'name' => Value::str(get_post_meta($id, '_order_name', true)),
+            'email' => Value::str(get_post_meta($id, '_order_email', true)),
+            'payment' => Value::str(get_post_meta($id, '_order_payment', true)),
+            'status' => Value::str(get_post_meta($id, '_order_status', true)),
+            'paid' => in_array(Value::str(get_post_meta($id, '_order_status', true)), self::PAID, true),
             'key' => $key,
             'items' => array_map(
-                static fn (array $i): array => $i + ['line_display' => self::$cart->format((int) $i['line'])],
+                static fn (array $i): array => $i + ['line_display' => self::$cart->format(Value::int($i['line']))],
                 array_filter($items, 'is_array')
             ),
-            'subtotal_display' => self::$cart->format((int) get_post_meta($id, '_order_subtotal', true)),
-            'shipping' => (int) get_post_meta($id, '_order_shipping', true),
-            'shipping_display' => self::$cart->format((int) get_post_meta($id, '_order_shipping', true)),
-            'total_display' => self::$cart->format((int) get_post_meta($id, '_order_total', true)),
+            'subtotal_display' => self::$cart->format(Value::int(get_post_meta($id, '_order_subtotal', true))),
+            'shipping' => Value::int(get_post_meta($id, '_order_shipping', true)),
+            'shipping_display' => self::$cart->format(Value::int(get_post_meta($id, '_order_shipping', true))),
+            'total_display' => self::$cart->format(Value::int(get_post_meta($id, '_order_total', true))),
         ];
     }
 
@@ -187,17 +188,17 @@ final class Orders
                 if (!is_array($item)) {
                     continue;
                 }
-                $tier = (string) ($item['tier_label'] ?? '');
+                $tier = Value::str(($item['tier_label'] ?? ''));
                 printf(
                     '<tr><td>%s</td><td>%d</td><td>%s</td></tr>',
-                    esc_html((string) ($item['title'] ?? '') . ($tier !== '' ? ' — ' . $tier : '')),
-                    (int) ($item['qty'] ?? 0),
-                    esc_html(self::$cart->format((int) ($item['line'] ?? 0)))
+                    esc_html(Value::str(($item['title'] ?? '')) . ($tier !== '' ? ' — ' . $tier : '')),
+                    Value::int(($item['qty'] ?? 0)),
+                    esc_html(self::$cart->format(Value::int(($item['line'] ?? 0))))
                 );
             }
             echo '</tbody></table><p>';
             foreach (['name', 'email', 'phone', 'address', 'city', 'postcode', 'country', 'payment', 'notes'] as $f) {
-                $v = (string) get_post_meta($id, "_order_{$f}", true);
+                $v = Value::str(get_post_meta($id, "_order_{$f}", true));
                 if ($v !== '') {
                     printf('<strong>%s:</strong> %s<br>', esc_html(ucfirst($f)), esc_html($v));
                 }
@@ -205,13 +206,13 @@ final class Orders
             printf(
                 '<strong>%s:</strong> %s</p>',
                 esc_html__('Total', 'moduly'),
-                esc_html(self::$cart->format((int) get_post_meta($id, '_order_total', true)))
+                esc_html(self::$cart->format(Value::int(get_post_meta($id, '_order_total', true))))
             );
         }, 'shop_order', 'normal', 'high');
 
         add_meta_box('latte-shop-order-status', __('Status', 'moduly'), static function (\WP_Post $post): void {
             wp_nonce_field('latte_shop_order_status', 'latte_shop_order_nonce');
-            $current = (string) get_post_meta($post->ID, '_order_status', true);
+            $current = Value::str(get_post_meta($post->ID, '_order_status', true));
             echo '<select name="order_status" class="widefat">';
             foreach (self::STATUSES as $s) {
                 printf(
@@ -228,12 +229,12 @@ final class Orders
     public static function saveStatus(int $postId): void
     {
         $nonce = isset($_POST['latte_shop_order_nonce'])
-            ? sanitize_text_field(wp_unslash($_POST['latte_shop_order_nonce']))
+            ? sanitize_text_field(Value::str(wp_unslash($_POST['latte_shop_order_nonce'])))
             : '';
         if (!wp_verify_nonce($nonce, 'latte_shop_order_status') || !current_user_can('edit_post', $postId)) {
             return;
         }
-        $status = isset($_POST['order_status']) ? sanitize_key(wp_unslash($_POST['order_status'])) : '';
+        $status = isset($_POST['order_status']) ? sanitize_key(Value::str(wp_unslash($_POST['order_status']))) : '';
         if (in_array($status, self::STATUSES, true)) {
             self::setStatus($postId, $status);
         }
@@ -242,7 +243,7 @@ final class Orders
     /** Change the status; `wpfasty_shop_order_status` (id, new, old) fires on a real change (downloads, reviews). */
     public static function setStatus(int $postId, string $status): void
     {
-        $old = (string) get_post_meta($postId, '_order_status', true);
+        $old = Value::str(get_post_meta($postId, '_order_status', true));
         if (!in_array($status, self::STATUSES, true) || $old === $status) {
             return;
         }

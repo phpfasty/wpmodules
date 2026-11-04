@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Moduly\Wp;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 /**
  * Filesystem layout: modules live outside the plugin (they survive plugin updates) in wp-content/moduly/.
  */
@@ -11,7 +13,7 @@ final class Paths
 {
     public static function root(): string
     {
-        $root = defined('MODULY_DIR') && is_string(constant('MODULY_DIR')) ? (string) constant('MODULY_DIR') : WP_CONTENT_DIR . '/moduly';
+        $root = defined('MODULY_DIR') && is_string(constant('MODULY_DIR')) ? Value::str(constant('MODULY_DIR')) : WP_CONTENT_DIR . '/moduly';
         return rtrim($root, '/\\');
     }
 

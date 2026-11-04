@@ -16,6 +16,8 @@ use PhpFasty\Module\Types\Model\Registry;
 use PhpFasty\Moduly\Migration\Migrator;
 use PhpFasty\Moduly\Contract\ModuleInterface;
 use PhpFasty\Moduly\Kernel\ModuleContext;
+use PhpFasty\Moduly\Wp\Support\Value;
+use PhpFasty\Moduly\Wp\ThemeDefinitions;
 
 /**
  * Module `types`: takes over WPFasty\Types\{Registry,Field,PostType} (class_alias on plugins_loaded, before the
@@ -48,10 +50,13 @@ final class Module implements ModuleInterface
         $c = $context->container;
         if ($c->has('wp.theme_definitions')) {
             $defs = $c->get('wp.theme_definitions');
-            self::$definitions = static fn (array $dirs): array => $defs->arrays($dirs);
+            if ($defs instanceof ThemeDefinitions) {
+                self::$definitions = static fn (array $dirs): array => $defs->arrays(Value::strings($dirs));
+            }
         }
         if ($c->has('wp.migrator')) {
-            self::$migrator = $c->get('wp.migrator');
+            $migrator = $c->get('wp.migrator');
+            self::$migrator = $migrator instanceof Migrator ? $migrator : null;
         }
         if (!self::alias()) {
             return; // a theme Registry is already loaded: leave everything to the theme (same as disabled)
@@ -109,7 +114,7 @@ final class Module implements ModuleInterface
     public static function migrate(Registry $types): void
     {
         $versions = (array) get_option('moduly_schema_version', []);
-        if (self::$migrator === null || (int) ($versions[self::SCOPE] ?? 0) >= self::LATEST) {
+        if (self::$migrator === null || Value::int(($versions[self::SCOPE] ?? 0)) >= self::LATEST) {
             return; // nothing pending: no lock write on every request
         }
         $result = self::$migrator->run(self::SCOPE, self::migrations($types));

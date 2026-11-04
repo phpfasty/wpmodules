@@ -10,6 +10,7 @@ use PhpFasty\Module\Downloads\Slots as DownloadSlots;
 use PhpFasty\Module\Licenses\Licenses;
 use PhpFasty\Module\Reviews\Slots as ReviewSlots;
 use PHPUnit\Framework\TestCase;
+use PhpFasty\Moduly\Wp\Support\Value;
 
 /** Views the modules add to the latte-shop extension points (filter `wpfasty_slots`). */
 final class SlotsTest extends TestCase
@@ -22,7 +23,7 @@ final class SlotsTest extends TestCase
         $root = dirname(__DIR__) . '/modules';
         foreach ($slots as $list) {
             foreach ($list as $slot) {
-                $view = (string) $slot['view'];
+                $view = Value::str($slot['view']);
                 $this->assertMatchesRegularExpression(self::VIEW, $view);
                 [, $id, $name] = explode('/', $view);
                 foreach (['.latte', '.html.twig'] as $ext) {
@@ -48,7 +49,7 @@ final class SlotsTest extends TestCase
 
     public function testLicenseTiersAreNormalisedFirstChecked(): void
     {
-        $tiers = Licenses::tiers($this->product()['page']['product']);
+        $tiers = Licenses::tiers(Value::map(Value::at(Value::at($this->product(), 'page'), 'product')));
         $this->assertSame(['regular', 'extended'], array_column($tiers, 'id'));
         $this->assertSame([true, false], array_column($tiers, 'checked'));
         $this->assertSame('50 ₽', $tiers[1]['price']);
@@ -72,9 +73,9 @@ final class SlotsTest extends TestCase
     public function testLicenseFieldIsDeclaredOnce(): void
     {
         $fields = Licenses::fields([]);
-        $this->assertSame('license_tiers', $fields[Licenses::field()]['type']);
+        $this->assertSame('license_tiers', Value::at($fields[Licenses::field()], 'type'));
         $kept = Licenses::fields([Licenses::field() => ['type' => 'custom']]);
-        $this->assertSame('custom', $kept[Licenses::field()]['type']);
+        $this->assertSame('custom', Value::at($kept[Licenses::field()], 'type'));
     }
 
     public function testDownloadsChangelogAndDetails(): void
@@ -86,7 +87,7 @@ final class SlotsTest extends TestCase
         $ctx = ['page' => ['product' => [], 'fields' => ['version' => '1.1.0', 'requires_php' => '8.2']]];
         $slots = DownloadSlots::slots([], $ctx);
         $this->assertSame('moduly/downloads/details', $slots['product.after'][0]['view']);
-        $this->assertSame('8.2+', $slots['product.after'][0]['data']['rows'][1]['value']);
+        $this->assertSame('8.2+', Value::at(Value::at(Value::at($slots['product.after'][0]['data'], 'rows'), 1), 'value'));
         $this->assertArrayNotHasKey('checkout.order', $slots);
 
         $paid = DownloadSlots::slots([], ['order' => ['downloads_available' => true, 'downloads' => [['url' => 'u']]]]);
@@ -114,7 +115,7 @@ final class SlotsTest extends TestCase
         $slots = CookieSlots::slots([], []);
         $this->assertSame('moduly/cookie-consent/banner', $slots['footer'][0]['view']);
         $this->assertSame('moduly/cookie-consent/settings', $slots['footer.links'][0]['view']);
-        $this->assertNotSame('', $slots['footer'][0]['data']['labels']['settings']);
+        $this->assertNotSame('', Value::at(Value::at($slots['footer'][0]['data'], 'labels'), 'settings'));
         $this->assertViewsShipped($slots);
     }
 
@@ -128,8 +129,8 @@ final class SlotsTest extends TestCase
         $this->assertNotNull($vm);
         $this->assertSame('4.5', $vm['rating']);
         $this->assertSame(2, $vm['count']);
-        $this->assertSame('★★★★☆', $vm['reviews'][1]['stars']);
-        $this->assertSame(['5', '4', '3', '2', '1'], array_column($vm['rating_options'], 'value'));
+        $this->assertSame('★★★★☆', Value::at(Value::at($vm['reviews'], 1), 'stars'));
+        $this->assertSame(['5', '4', '3', '2', '1'], array_column(Value::arr($vm['rating_options']), 'value'));
         $this->assertNull(ReviewSlots::viewModel(['page' => ['product' => []]]));
         $this->assertViewsShipped(ReviewSlots::slots([], $ctx));
     }

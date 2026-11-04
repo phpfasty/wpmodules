@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PhpFasty\Module\ConsentLog;
 
+use PhpFasty\Moduly\Wp\Support\Value;
+
 final class Privacy
 {
     public const PERSONAL = ['name', 'phone', 'address', 'city', 'postcode', 'notes'];
@@ -48,7 +50,7 @@ final class Privacy
             // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- privacy request, admin-only, paged.
             'meta_query' => [['key' => '_order_email', 'value' => $email]],
         ]);
-        return array_map('intval', $ids);
+        return Value::ints($ids);
     }
 
     /** @return array{data: list<array<string, mixed>>, done: bool} */
@@ -59,12 +61,12 @@ final class Privacy
         foreach ($ids as $id) {
             $items = [];
             foreach (array_merge(self::PERSONAL, ['email', 'status', 'total']) as $f) {
-                $items[] = ['name' => ucfirst($f), 'value' => (string) get_post_meta($id, '_order_' . $f, true)];
+                $items[] = ['name' => ucfirst($f), 'value' => Value::str(get_post_meta($id, '_order_' . $f, true))];
             }
             $log = get_post_meta($id, Consents::META, true);
             if (is_array($log)) {
                 foreach ($log as $k => $v) {
-                    $items[] = ['name' => 'Consent ' . $k, 'value' => is_bool($v) ? ($v ? 'yes' : 'no') : (string) $v];
+                    $items[] = ['name' => 'Consent ' . $k, 'value' => is_bool($v) ? ($v ? 'yes' : 'no') : Value::str($v)];
                 }
             }
             $data[] = ['group_id' => 'moduly-orders', 'group_label' => __('Orders', 'moduly'), 'item_id' => 'order-' . $id, 'data' => $items];
@@ -78,13 +80,13 @@ final class Privacy
         $ids = self::orders($email, $page);
         foreach ($ids as $id) {
             foreach (self::PERSONAL as $f) {
-                if ((string) get_post_meta($id, '_order_' . $f, true) !== '') {
+                if (Value::str(get_post_meta($id, '_order_' . $f, true)) !== '') {
                     update_post_meta($id, '_order_' . $f, self::anonymous($f));
                 }
             }
             $log = get_post_meta($id, Consents::META, true);
             if (is_array($log)) {
-                update_post_meta($id, Consents::META, self::anonymizeLog($log));
+                update_post_meta($id, Consents::META, self::anonymizeLog(Value::map($log)));
             }
         }
         return [
