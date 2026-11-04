@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 /** Views the modules add to the latte-shop extension points (filter `wpfasty_slots`). */
 final class SlotsTest extends TestCase
 {
-    use SnapshotAssertions;
+    use SnapshotAssertionsTrait;
 
     private const VIEW = '#^moduly/[a-z0-9-]+/[a-z0-9_-]+$#';
 

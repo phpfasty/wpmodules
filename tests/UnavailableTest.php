@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 /** Disable scenario: declared endpoints of modules that are not running are answered (503), never a blank page. */
 final class UnavailableTest extends TestCase
 {
-    use SnapshotAssertions;
+    use SnapshotAssertionsTrait;
 
     public function testDisabledOrdersKeepsCheckoutAnswered(): void
     {

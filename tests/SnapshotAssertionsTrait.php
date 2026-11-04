@@ -8,7 +8,7 @@ namespace PhpFasty\WpModules\Tests;
  * Golden-file snapshots (tests/snapshots/). A missing snapshot fails; `UPDATE_SNAPSHOTS=1 vendor/bin/phpunit`
  * (re)writes them: review the diff like any code change.
  */
-trait SnapshotAssertions
+trait SnapshotAssertionsTrait
 {
     protected function assertMatchesSnapshot(string $name, string $actual): void
     {

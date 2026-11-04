@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CartDomainTest extends TestCase
 {
-    use SnapshotAssertions;
+    use SnapshotAssertionsTrait;
 
     public function testRoundTripAndFormat(): void
     {
