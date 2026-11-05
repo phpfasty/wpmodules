@@ -74,3 +74,12 @@ if (!function_exists('sanitize_key')) {
 
 // as at runtime: the types domain cleans text through the WordPress adapter (with pure-PHP fallbacks)
 PhpFasty\Module\Types\Domain\Field::useSanitizer(new PhpFasty\Module\Types\WpSanitizer());
+if (!function_exists('sanitize_text_field')) {
+    function sanitize_text_field(string $str): string
+    {
+        $str = strip_tags($str);
+        $str = preg_replace('/[\r\n\t]+/', ' ', $str) ?? $str;
+
+        return trim($str);
+    }
+}

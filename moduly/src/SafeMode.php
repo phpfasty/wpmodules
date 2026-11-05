@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace PhpFasty\Moduly\Wp;
 
 /**
- * Global safe mode: no module is loaded. MODULY_SAFE_MODE (constant or env, preferred), the request header
- * `X-Moduly-Safe: <MODULY_SAFE_TOKEN>` or, as a last resort, `?moduly_safe=<MODULY_SAFE_TOKEN>` (lands in access
- * logs and browser history: rotate the token after use). Responses in token mode send `Referrer-Policy: no-referrer`.
+ * Global safe mode: no module is loaded. MODULY_SAFE_MODE (constant or env, preferred), or the request header
+ * `X-Moduly-Safe: <MODULY_SAFE_TOKEN>` (token length ≥ 16). Query-string tokens are not accepted (they land in
+ * access logs and browser history). Responses in token mode send `Referrer-Policy: no-referrer`.
  */
 final class SafeMode
 {
@@ -20,8 +20,7 @@ final class SafeMode
             return true;
         }
         $token = defined('MODULY_SAFE_TOKEN') ? constant('MODULY_SAFE_TOKEN') : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- secret token comparison, no state change.
-        $given = isset($_GET['moduly_safe']) && is_string($_GET['moduly_safe']) ? sanitize_text_field(wp_unslash($_GET['moduly_safe'])) : '';
+        $given = '';
         if (isset($_SERVER['HTTP_X_MODULY_SAFE']) && is_string($_SERVER['HTTP_X_MODULY_SAFE'])) {
             $given = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_MODULY_SAFE']));
         }

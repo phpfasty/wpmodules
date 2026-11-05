@@ -63,7 +63,7 @@ Yes: with `DISALLOW_FILE_MODS` uploads from wp-admin are disabled; WP-CLI still 
 * Typed value helpers for modules (Support\Value, Support\Hooks, Support\Db); prepared SQL with %i identifiers.
 * Downloads are counted after the whole file is sent; X-Accel-Redirect takes an internal URI (filter moduly_downloads_accel_uri).
 * Checkout form input is kept read-once for 2 minutes after a validation error.
-* Safe-mode token accepted in the X-Moduly-Safe header.
+* Safe-mode token accepted only in the X-Moduly-Safe header (query-string tokens removed).
 
 = 0.1.2 =
 * Theme definitions: accept a base theme layer of the active theme (filter wpfasty_theme_dirs, inside the themes root).
