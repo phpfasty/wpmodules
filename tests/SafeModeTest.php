@@ -14,23 +14,6 @@ final class SafeModeTest extends TestCase
 {
     private const TOKEN = '0123456789abcdef';
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        if (!defined('MODULY_SAFE_TOKEN')) {
-            define('MODULY_SAFE_TOKEN', self::TOKEN);
-        }
-        putenv('MODULY_SAFE_MODE');
-        unset($_GET['moduly_safe'], $_SERVER['HTTP_X_MODULY_SAFE']);
-    }
-
-    protected function tearDown(): void
-    {
-        putenv('MODULY_SAFE_MODE');
-        unset($_GET['moduly_safe'], $_SERVER['HTTP_X_MODULY_SAFE']);
-        parent::tearDown();
-    }
-
     public function testQueryStringTokenIsIgnored(): void
     {
         $_GET['moduly_safe'] = self::TOKEN;
@@ -72,8 +55,25 @@ final class SafeModeTest extends TestCase
     public function testSourceRejectsGetParamPath(): void
     {
         $src = (string) file_get_contents(dirname(__DIR__).'/moduly/src/SafeMode.php');
-        $this->assertStringNotContainsString("\$_GET", $src);
+        $this->assertStringNotContainsString('$_GET', $src);
         $this->assertStringNotContainsString('moduly_safe', $src);
         $this->assertStringContainsString('HTTP_X_MODULY_SAFE', $src);
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        if (!defined('MODULY_SAFE_TOKEN')) {
+            define('MODULY_SAFE_TOKEN', self::TOKEN);
+        }
+        putenv('MODULY_SAFE_MODE');
+        unset($_GET['moduly_safe'], $_SERVER['HTTP_X_MODULY_SAFE']);
+    }
+
+    protected function tearDown(): void
+    {
+        putenv('MODULY_SAFE_MODE');
+        unset($_GET['moduly_safe'], $_SERVER['HTTP_X_MODULY_SAFE']);
+        parent::tearDown();
     }
 }
