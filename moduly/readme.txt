@@ -47,6 +47,9 @@ Yes: with `DISALLOW_FILE_MODS` uploads from wp-admin are disabled; WP-CLI still 
 
 == Changelog ==
 
+= Modules 2026-11-06 =
+* cart 0.4.1: changing line quantity on the cart form (`qtys[product_id]`) applies again. Value::ints() reindexes to a list and turned the update into Cart::set('0', N), a no-op.
+
 = 0.3.0 =
 * BREAKING: the deprecated latte_shop_* names are removed: admin-post latte_shop_cart / latte_shop_checkout (forms must post moduly_cart / moduly_checkout), action latte_shop_order_created, filters latte_shop_currency_symbol / latte_shop_flat_shipping_cents / latte_shop_free_shipping_cents. Support\Hooks (the alias helper) is removed.
 * BREAKING (modules): cart 0.4.0 — cart cookie renamed latte_shop_cart → moduly_cart (open carts are emptied once); orders 0.4.0; types 0.5.0 — Model\Field / Model\PostType aliases removed (use Domain\Field / Domain\PostType); downloads 0.3.0 — Downloads\Token alias removed (use Downloads\Domain\Token). consent-log, licenses, reviews 0.2.2 require cart / orders ^0.4.

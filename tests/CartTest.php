@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace PhpFasty\WpModules\Tests;
 
 use PhpFasty\Module\Cart\Cart;
+use PhpFasty\Module\Cart\Handlers;
 use PhpFasty\Module\Cart\Money;
+use PhpFasty\Moduly\Wp\Support\Value;
 use PHPUnit\Framework\TestCase;
 
 /** Ported from wp-fasty tests/ShopCartTest.php: same cookie format and money in integer cents. */
@@ -61,8 +63,36 @@ final class CartTest extends TestCase
         $this->assertSame(500, Cart::shipping(5000));
     }
 
+    public function testQuantitiesPreserveProductKeys(): void
+    {
+        $posted = [42 => '2', '9~extended' => 3];
+        $this->assertSame(['42' => 2, '9~extended' => 3], Handlers::quantities($posted));
+        $this->assertSame([2], Value::ints([42 => 2]));
+    }
+
+    public function testPostedQuantitiesUpdateExistingLines(): void
+    {
+        $lines = new \ReflectionProperty(Cart::class, 'lines');
+        $lines->setValue(null, [42 => 1, '9~extended' => 1]);
+        try {
+            foreach (Handlers::quantities([42 => 2, '9~extended' => 3]) as $key => $qty) {
+                Cart::set($key, $qty);
+            }
+            $this->assertSame([42 => 2, '9~extended' => 3], Cart::lines());
+        } finally {
+            $lines->setValue(null, null);
+        }
+    }
+
     protected function setUp(): void
     {
         Cart::configure(['flat_shipping_cents' => 500, 'free_shipping_cents' => 10000]);
+    }
+
+    protected function tearDown(): void
+    {
+        $lines = new \ReflectionProperty(Cart::class, 'lines');
+        $lines->setValue(null, null);
+        parent::tearDown();
     }
 }

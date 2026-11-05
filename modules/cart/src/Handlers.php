@@ -42,9 +42,11 @@ final class Handlers
                 $notice = Cart::add($id, max(1, min(Cart::MAX_QTY, $qty)), $tier) ? 'added' : 'unavailable';
                 break;
             case 'update':
-                $qtys = isset($_POST['qtys']) && is_array($_POST['qtys']) ? Value::ints(map_deep(wp_unslash($_POST['qtys']), 'absint')) : [];
-                foreach ((array) $qtys as $lineKey => $q) {
-                    Cart::set(self::lineKey((string) $lineKey), max(0, min(Cart::MAX_QTY, (int) $q)));
+                $raw = isset($_POST['qtys']) && is_array($_POST['qtys'])
+                    ? map_deep(wp_unslash($_POST['qtys']), 'absint')
+                    : [];
+                foreach (self::quantities(Value::arr($raw)) as $lineKey => $q) {
+                    Cart::set($lineKey, $q);
                 }
                 break;
             case 'remove':
@@ -85,6 +87,24 @@ final class Handlers
             header('Retry-After: 60');
             wp_die(esc_html__('Too many requests. Please wait a minute and try again.', 'moduly'), '', ['response' => 429]);
         }
+    }
+
+    /**
+     * Line key => qty from the cart form `qtys[product_id]` (or `qtys[id~tier]`).
+     * Keys are kept: Value::ints() returns a list (array_values) and would call Cart::set('0', N), a no-op.
+     *
+     * @param array<array-key, mixed> $qtys
+     *
+     * @return array<string, int>
+     */
+    public static function quantities(array $qtys): array
+    {
+        $out = [];
+        foreach ($qtys as $lineKey => $q) {
+            $out[self::lineKey((string) $lineKey)] = max(0, min(Cart::MAX_QTY, Value::int($q)));
+        }
+
+        return $out;
     }
 
     /** Cart line key from a form (`5` or `5~extended`); anything else matches no line. */
