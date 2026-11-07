@@ -1,0 +1,76 @@
+name: Signed Builder Agent
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: signed-builder-agent-0.1.0
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: publisher
+          persist-credentials: false
+      - name: Read reviewed immutable source manifest
+        id: source
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          c = json.load(open('publisher/tools/builder-agent-source.json'))
+          print('commit=' + c['commit'])
+          PY
+      - name: Require green source CI and new immutable release tag
+        uses: actions/github-script@v7
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.commit }}
+        with:
+          script: |
+            const source = await github.rest.actions.listWorkflowRuns({owner:'alexy-os',repo:'wp-fasty',workflow_id:'ci.yml',head_sha:process.env.SOURCE_SHA});
+            if (!source.data.workflow_runs.some(r => r.head_sha === process.env.SOURCE_SHA && r.status === 'completed' && r.conclusion === 'success' && r.event === 'push')) throw Error('Approved source CI must be green');
+            try { await github.rest.repos.getReleaseByTag({...context.repo,tag:'builder-agent-v0.1.0'}); throw Error('Immutable release already exists'); }
+            catch (e) { if(e.status !== 404) throw e; }
+      - uses: actions/checkout@v4
+        with:
+          repository: alexy-os/wp-fasty
+          ref: ${{ steps.source.outputs.commit }}
+          path: source
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: zip, sodium
+          coverage: none
+      - name: Test fail-closed staging
+        run: python3 -m unittest discover -s publisher/tools -p test_stage_builder_agent.py
+      - name: Stage only approved source digests (no source scripts)
+        run: python3 publisher/tools/stage_builder_agent.py source staged/builder-agent
+      - name: Sign with existing publisher key (fail closed)
+        env:
+          MODULY_SIGNING_KEY: ${{ secrets.MODULY_SIGNING_KEY }}
+        run: |
+          test -n "$MODULY_SIGNING_KEY" || { echo '::error::MODULY_SIGNING_KEY missing'; exit 1; }
+          php publisher/tools/moduly.php sign staged/builder-agent
+      - name: Pack, verify existing trust and reproducibility
+        run: |
+          mkdir out
+          php publisher/tools/moduly.php pack staged/builder-agent out/builder-agent-0.1.0.zip
+          php publisher/tools/moduly.php pack staged/builder-agent /tmp/builder-agent-again.zip
+          cmp out/builder-agent-0.1.0.zip /tmp/builder-agent-again.zip
+          KEY=$(php -r 'require "publisher/moduly/src/Keys.php"; echo PhpFasty\Moduly\Wp\Keys::PHPFASTY;')
+          php publisher/tools/moduly.php verify out/builder-agent-0.1.0.zip phpfasty "$KEY"
+          cp publisher/tools/builder-agent-source.json out/source.json
+          (cd out && sha256sum builder-agent-0.1.0.zip source.json > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-builder-agent-0.1.0
+          path: out/*
+      - name: Publish immutable signed module
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: publisher
+        run: gh release create builder-agent-v0.1.0 ../out/* --target "$GITHUB_SHA" --title 'Builder Agent 0.1.0' --notes 'Trusted phpfasty-signed optional Builder Agent. Immutable source and digests in source.json. No live model calls.'
