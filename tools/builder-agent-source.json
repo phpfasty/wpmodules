@@ -1,6 +1,6 @@
 {
   "repository": "alexy-os/wp-fasty",
-  "commit": "9cb13612780f4d35a44cf8b2207f23880d8425d4",
+  "commit": "06669fc11a23e961c16a1294f14130e6a01331f8",
   "module": "builder-agent",
   "version": "0.1.2",
   "publisher": "phpfasty",
