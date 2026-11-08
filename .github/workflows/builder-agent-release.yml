@@ -5,7 +5,7 @@ permissions:
   contents: write
   actions: read
 concurrency:
-  group: signed-builder-agent-0.1.1
+  group: signed-builder-agent-0.1.2
   cancel-in-progress: false
 jobs:
   release:
@@ -32,7 +32,7 @@ jobs:
           script: |
             const source = await github.rest.actions.listWorkflowRuns({owner:'alexy-os',repo:'wp-fasty',workflow_id:'ci.yml',head_sha:process.env.SOURCE_SHA});
             if (!source.data.workflow_runs.some(r => r.head_sha === process.env.SOURCE_SHA && r.status === 'completed' && r.conclusion === 'success' && r.event === 'push')) throw Error('Approved source CI must be green');
-            try { await github.rest.repos.getReleaseByTag({...context.repo,tag:'builder-agent-v0.1.1'}); throw Error('Immutable release already exists'); }
+            try { await github.rest.repos.getReleaseByTag({...context.repo,tag:'builder-agent-v0.1.2'}); throw Error('Immutable release already exists'); }
             catch (e) { if(e.status !== 404) throw e; }
       - uses: actions/checkout@v4
         with:
@@ -58,19 +58,19 @@ jobs:
       - name: Pack, verify existing trust and reproducibility
         run: |
           mkdir out
-          php publisher/tools/moduly.php pack staged/builder-agent out/builder-agent-0.1.1.zip
+          php publisher/tools/moduly.php pack staged/builder-agent out/builder-agent-0.1.2.zip
           php publisher/tools/moduly.php pack staged/builder-agent /tmp/builder-agent-again.zip
-          cmp out/builder-agent-0.1.1.zip /tmp/builder-agent-again.zip
+          cmp out/builder-agent-0.1.2.zip /tmp/builder-agent-again.zip
           KEY=$(php -r 'require "publisher/moduly/src/Keys.php"; echo PhpFasty\Moduly\Wp\Keys::PHPFASTY;')
-          php publisher/tools/moduly.php verify out/builder-agent-0.1.1.zip phpfasty "$KEY"
+          php publisher/tools/moduly.php verify out/builder-agent-0.1.2.zip phpfasty "$KEY"
           cp publisher/tools/builder-agent-source.json out/source.json
-          (cd out && sha256sum builder-agent-0.1.1.zip source.json > SHA256SUMS)
+          (cd out && sha256sum builder-agent-0.1.2.zip source.json > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
-          name: signed-builder-agent-0.1.1
+          name: signed-builder-agent-0.1.2
           path: out/*
       - name: Publish immutable signed module
         env:
           GH_TOKEN: ${{ github.token }}
         working-directory: publisher
-        run: gh release create builder-agent-v0.1.1 ../out/* --target "$GITHUB_SHA" --title 'Builder Agent 0.1.1' --notes 'Trusted phpfasty-signed optional Builder Agent. Immutable source and digests in source.json. No live model calls.'
+        run: gh release create builder-agent-v0.1.2 ../out/* --target "$GITHUB_SHA" --title 'Builder Agent 0.1.2' --notes 'Trusted phpfasty-signed optional Builder Agent. Immutable source and digests in source.json. No live model calls.'
