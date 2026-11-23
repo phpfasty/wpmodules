@@ -1,0 +1,13 @@
+.sitepulse-score{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.sitepulse-score__value{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;font-size:20px;font-weight:600;border:4px solid currentColor}
+.sitepulse-score--good{color:#008a20}.sitepulse-score--ok{color:#b26200}.sitepulse-score--bad{color:#cc1818}
+.sitepulse-issue{margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid #e0e0e0}
+.sitepulse-issue:last-child{border-bottom:0}
+.sitepulse-issue__title{font-weight:600}
+.sitepulse-issue__rec{color:#555;margin:4px 0 0}
+.sitepulse-issue__spans{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.sitepulse-issue__span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sitepulse-badge{display:inline-block;font-size:11px;padding:0 6px;border-radius:2px;margin-left:6px;background:#f0f0f0;color:#1e1e1e;font-weight:400}
+.sitepulse-muted{color:#757575}
+.sitepulse-list{margin:0;padding:0;list-style:none}
+.sitepulse-list li{margin:0 0 6px}

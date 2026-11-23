@@ -1,0 +1,51 @@
+{
+    "$schema": "https://moduly.phpfasty.dev/schema/module-1.json",
+    "id": "site-pulse",
+    "name": "SitePulse",
+    "version": "0.1.0",
+    "publisher": "phpfasty",
+    "license": "GPL-2.0-or-later",
+    "description": "Connects the site to a SitePulse server (diagd 0.1): Gutenberg sidebar with article analysis through a server-side proxy (the sk_live_ secret never reaches the browser) and the sitepulse.js tracker in wp_head, optionally only after cookie consent.",
+    "requires": {
+        "core": "^0.1",
+        "php": ">=8.2",
+        "wp": ">=6.6"
+    },
+    "provides": {
+        "features": [
+            "site-pulse"
+        ],
+        "types": [],
+        "capabilities": []
+    },
+    "permissions": [
+        "http:outbound:127.0.0.1",
+        "db:options",
+        "db:postmeta",
+        "rest:admin"
+    ],
+    "entry": "PhpFasty\\Module\\SitePulse\\Module",
+    "autoload": {
+        "psr-4": {
+            "PhpFasty\\Module\\SitePulse\\": "src/"
+        }
+    },
+    "settings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "timeout_seconds": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 30,
+                "default": 15
+            }
+        }
+    },
+    "endpoints": {
+        "actions": [],
+        "rest": [
+            "sitepulse/v1"
+        ]
+    }
+}

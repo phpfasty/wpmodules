@@ -37,6 +37,7 @@
             "PhpFasty\\Module\\CookieConsent\\": "modules/cookie-consent/src/",
             "PhpFasty\\Module\\Reviews\\": "modules/reviews/src/",
             "PhpFasty\\Module\\Licenses\\": "modules/licenses/src/",
+            "PhpFasty\\Module\\SitePulse\\": "modules/site-pulse/src/",
             "PhpFasty\\WpModules\\Tests\\": "tests/"
         }
     },

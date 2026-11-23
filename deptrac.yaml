@@ -114,6 +114,16 @@ deptrac:
             - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\.*' }
           must_not:
             - { type: classLike, value: '^PhpFasty\\Module\\Reviews\\Domain\\.*' }
+    - name: SitePulseDomain
+      collectors:
+        - { type: classLike, value: '^PhpFasty\\Module\\SitePulse\\Domain\\.*' }
+    - name: SitePulse
+      collectors:
+        - type: bool
+          must:
+            - { type: classLike, value: '^PhpFasty\\Module\\SitePulse\\.*' }
+          must_not:
+            - { type: classLike, value: '^PhpFasty\\Module\\SitePulse\\Domain\\.*' }
     - name: TypesDomain
       collectors:
         - { type: classLike, value: '^PhpFasty\\Module\\Types\\Domain\\.*' }
@@ -145,6 +155,8 @@ deptrac:
     Orders: [Core, Support, WordPress, OrdersDomain, Cart, CartDomain]
     ReviewsDomain: [Core, OrdersDomain]
     Reviews: [Core, Support, WordPress, ReviewsDomain, Orders, OrdersDomain]
+    SitePulseDomain: [Core]
+    SitePulse: [Core, Support, WordPress, SitePulseDomain]
     TypesDomain: [Core]
     Types: [Core, Support, WordPress, HostServices, TypesDomain]
     # END generated: module rules
