@@ -17,9 +17,8 @@ use PHPUnit\Framework\TestCase;
 /** SitePulse settings domain: server URL (SSRF rules), keys, consent mode, keywords, tracker tag. */
 final class SitePulseConfigTest extends TestCase
 {
-    // Synthetic fixtures, split so secret scanners do not mistake them for real keys.
-    private const SK = 'sk_'.'live_'.'0123456789abcdef0123456789abcdef1234';
-    private const PK = 'pk_'.'live_'.'0123456789abcdef0123456789abcdef5678';
+    // Synthetic fixtures, assembled at runtime so secret scanners do not mistake them for real keys.
+    private const TAIL = '0123456789abcdef0123456789abcdef';
 
     /** @return iterable<string, array{string, string}> */
     public static function validUrls(): iterable
@@ -103,17 +102,17 @@ final class SitePulseConfigTest extends TestCase
 
     public function testKeyValidation(): void
     {
-        $this->assertTrue(ApiKey::isValid(ApiKey::SECRET, self::SK));
-        $this->assertTrue(ApiKey::isValid(ApiKey::PUBLIC, self::PK));
+        $this->assertTrue(ApiKey::isValid(ApiKey::SECRET, self::sk()));
+        $this->assertTrue(ApiKey::isValid(ApiKey::PUBLIC, self::pk()));
         $this->assertTrue(ApiKey::isValid('sk', 'sk_test_'.str_repeat('a', 16)));
         $this->assertTrue(ApiKey::isValid('sk', 'sk_live_'.str_repeat('Z', 128)));
         $this->assertFalse(ApiKey::isValid('sk', 'sk_live_'.str_repeat('a', 15)));
         $this->assertFalse(ApiKey::isValid('sk', 'sk_live_'.str_repeat('a', 129)));
-        $this->assertFalse(ApiKey::isValid(ApiKey::SECRET, self::PK));
-        $this->assertFalse(ApiKey::isValid(ApiKey::PUBLIC, self::SK));
+        $this->assertFalse(ApiKey::isValid(ApiKey::SECRET, self::pk()));
+        $this->assertFalse(ApiKey::isValid(ApiKey::PUBLIC, self::sk()));
         $this->assertFalse(ApiKey::isValid('st', 'st_live_'.str_repeat('a', 20)));
-        $this->assertFalse(ApiKey::isValid('sk', 'x'.self::SK));
-        $this->assertFalse(ApiKey::isValid('sk', self::SK.'!'));
+        $this->assertFalse(ApiKey::isValid('sk', 'x'.self::sk()));
+        $this->assertFalse(ApiKey::isValid('sk', self::sk().'!'));
         $this->assertFalse(ApiKey::isValid('sk', 'sk_prod_'.str_repeat('a', 20)));
         $this->assertFalse(ApiKey::isValid('sk', ''));
     }
@@ -121,17 +120,17 @@ final class SitePulseConfigTest extends TestCase
     public function testMaskNeverShowsTheSecret(): void
     {
         $this->assertSame('', ApiKey::mask(''));
-        $this->assertSame('sk_live_…1234', ApiKey::mask(self::SK));
-        $this->assertSame('pk_test_…wxyz', ApiKey::mask('pk_'.'test_abcdefghwxyz'));
+        $this->assertSame('sk_live_…1234', ApiKey::mask(self::sk()));
+        $this->assertSame('pk_test_…wxyz', ApiKey::mask(sprintf('%s_test_%s', 'pk', 'abcdefghwxyz')));
         $this->assertSame('…cdef', ApiKey::mask('0123456789abcdef'));
         $this->assertSame('…89ab', ApiKey::mask('0123456789ab'));
         $this->assertSame('…', ApiKey::mask('0123456789a'));
-        $this->assertStringNotContainsString('0123456789abcdef0123', ApiKey::mask(self::SK));
+        $this->assertStringNotContainsString('0123456789abcdef0123', ApiKey::mask(self::sk()));
     }
 
     public function testResolveSecret(): void
     {
-        $old = self::SK;
+        $old = self::sk();
         $new = 'sk_live_'.str_repeat('b', 36);
         $this->assertSame('', ApiKey::resolveSecret($old, $new, true));
         $this->assertSame($old, ApiKey::resolveSecret($old, '', false));
@@ -139,7 +138,7 @@ final class SitePulseConfigTest extends TestCase
         $this->assertSame($new, ApiKey::resolveSecret($old, ' '.$new.' ', false));
         $this->assertSame($new, ApiKey::resolveSecret('', $new, false));
         try {
-            ApiKey::resolveSecret($old, self::PK, false);
+            ApiKey::resolveSecret($old, self::pk(), false);
             $this->fail('pk accepted as secret');
         } catch (InvalidInputException $e) {
             $this->assertSame('sitepulse_invalid_secret', $e->errorCode());
@@ -171,12 +170,12 @@ final class SitePulseConfigTest extends TestCase
 
     public function testTrackerTagMatchesTheInstallSnippet(): void
     {
-        $tag = TrackerTag::create(ServerUrl::fromString('http://127.0.0.1:8080/'), self::PK);
-        $this->assertSame('<script src="http://127.0.0.1:8080/sitepulse.js" data-site="'.self::PK.'" defer></script>', $tag->html());
+        $tag = TrackerTag::create(ServerUrl::fromString('http://127.0.0.1:8080/'), self::pk());
+        $this->assertSame('<script src="http://127.0.0.1:8080/sitepulse.js" data-site="'.self::pk().'" defer></script>', $tag->html());
         $this->assertSame('http://127.0.0.1:8080/sitepulse.js', $tag->src);
-        $this->assertSame(self::PK, $tag->siteKey);
+        $this->assertSame(self::pk(), $tag->siteKey);
         try {
-            TrackerTag::create(ServerUrl::fromString('https://p.example'), self::SK);
+            TrackerTag::create(ServerUrl::fromString('https://p.example'), self::sk());
             $this->fail('secret accepted as tracker key');
         } catch (InvalidInputException $e) {
             $this->assertSame('sitepulse_invalid_public_key', $e->errorCode());
@@ -200,7 +199,7 @@ final class SitePulseConfigTest extends TestCase
 
     public function testSettingsTrackerTag(): void
     {
-        $base = ['server_url' => 'https://api.example.com', 'public_key' => self::PK, 'tracker_enabled' => true, 'auto_analyze' => true];
+        $base = ['server_url' => 'https://api.example.com', 'public_key' => self::pk(), 'tracker_enabled' => true, 'auto_analyze' => true];
         $s = Settings::fromStored($base);
         $this->assertTrue($s->autoAnalyze);
         $this->assertSame('https://api.example.com', $s->server()?->base());
@@ -218,11 +217,11 @@ final class SitePulseConfigTest extends TestCase
 
     public function testSettingsSanitize(): void
     {
-        $prev = Settings::fromStored(['server_url' => 'https://old.example.com', 'tracker_url' => 'https://t.example.com', 'public_key' => self::PK, 'tracker_enabled' => true, 'consent_mode' => 'off', 'auto_analyze' => true]);
+        $prev = Settings::fromStored(['server_url' => 'https://old.example.com', 'tracker_url' => 'https://t.example.com', 'public_key' => self::pk(), 'tracker_enabled' => true, 'consent_mode' => 'off', 'auto_analyze' => true]);
         [$out, $errors] = Settings::sanitize([
             'server_url' => ' https://New.example.com/ ',
             'tracker_url' => '',
-            'public_key' => ' '.self::PK.' ',
+            'public_key' => ' '.self::pk().' ',
             'tracker_enabled' => '1',
             'consent_mode' => 'require',
             'auto_analyze' => 'on',
@@ -231,7 +230,7 @@ final class SitePulseConfigTest extends TestCase
         $this->assertSame([
             'server_url' => 'https://new.example.com',
             'tracker_url' => '',
-            'public_key' => self::PK,
+            'public_key' => self::pk(),
             'tracker_enabled' => true,
             'consent_mode' => 'require',
             'auto_analyze' => true,
@@ -241,7 +240,7 @@ final class SitePulseConfigTest extends TestCase
         $this->assertCount(3, $errors);
         $this->assertSame('https://old.example.com', $out['server_url']);
         $this->assertSame('https://t.example.com', $out['tracker_url']);
-        $this->assertSame(self::PK, $out['public_key']);
+        $this->assertSame(self::pk(), $out['public_key']);
         $this->assertTrue($out['tracker_enabled']);
         $this->assertFalse($out['auto_analyze']);
         $this->assertSame('require', $out['consent_mode']);
@@ -254,5 +253,15 @@ final class SitePulseConfigTest extends TestCase
         $this->assertFalse($out['tracker_enabled']);
         $this->assertFalse($out['auto_analyze']);
         $this->assertSame('off', $out['consent_mode']);
+    }
+
+    private static function sk(): string
+    {
+        return sprintf('%s_live_%s1234', 'sk', self::TAIL);
+    }
+
+    private static function pk(): string
+    {
+        return sprintf('%s_live_%s5678', 'pk', self::TAIL);
     }
 }

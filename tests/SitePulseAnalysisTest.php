@@ -187,7 +187,7 @@ final class SitePulseAnalysisTest extends TestCase
         $this->assertSame('', ErrorMapper::detail([]));
         $this->assertSame('', ErrorMapper::detail(['detail' => ['x']]));
         $this->assertSame('bad thing here', ErrorMapper::detail(['detail' => "  <b>bad</b>\n\tthing   here "]));
-        $this->assertSame('invalid key [key] for [key] / [key]', ErrorMapper::detail(['detail' => 'invalid key sk_'.'live_0123456789abcdef for pk_'.'live_abcdefgh / st_0123456789']));
+        $this->assertSame('invalid key [key] for [key] / [key]', ErrorMapper::detail(['detail' => sprintf('invalid key %s_live_0123456789abcdef for %s_live_abcdefgh / st_0123456789', 'sk', 'pk')]));
         $this->assertSame('sk_short ok', ErrorMapper::detail(['detail' => 'sk_short ok']));
         $this->assertSame(str_repeat('ш', ErrorMapper::MAX_DETAIL), ErrorMapper::detail(['detail' => str_repeat('ш', 300)]));
     }
