@@ -92,6 +92,7 @@ jobs:
           php tools/moduly.php verify dist/modules/cookie-consent-*.zip phpfasty "$KEY"
           php tools/moduly.php verify dist/modules/reviews-*.zip phpfasty "$KEY" dist/modules/cart-*.zip dist/modules/orders-*.zip
           php tools/moduly.php verify dist/modules/licenses-*.zip phpfasty "$KEY" dist/modules/cart-*.zip
+          php tools/moduly.php verify dist/modules/site-pulse-*.zip phpfasty "$KEY"
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -148,9 +149,10 @@ jobs:
           wp moduly install ../dist/modules/consent-log-*.zip --enable
           wp moduly install ../dist/modules/cookie-consent-*.zip --enable
           wp moduly install ../dist/modules/reviews-*.zip --enable
+          wp moduly install ../dist/modules/site-pulse-*.zip --enable
           wp moduly list
           wp moduly status
-          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "6"
+          test "$(wp moduly list --format=json | php -r '$m=json_decode(stream_get_contents(STDIN),true);echo count(array_filter($m,fn($r)=>$r["status"]==="enabled"));')" = "7"
       - name: Cart/orders are wired (filters, handlers)
         working-directory: site
         run: |
@@ -184,6 +186,28 @@ jobs:
           wp moduly enable downloads
           test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8080/wp-admin/admin-post.php?action=moduly_download&o=1&i=0&e=1&s=x')" = "403"
           curl -s -o /dev/null -w '%{http_code}\n' -d 'action=moduly_checkout' http://127.0.0.1:8080/wp-admin/admin-post.php | grep -qv '^503$'
+      - name: SitePulse — install snippet, consent loader, REST proxy guards, secret never printed
+        working-directory: site
+        run: |
+          # synthetic keys (assembled so secret scanners do not flag the workflow)
+          export SP_SK="sk_live_$(printf 'a%.0s' $(seq 36))" SP_PK="pk_live_$(printf 'b%.0s' $(seq 36))"
+          wp eval 'update_option("sitepulse_settings", ["server_url" => "https://pulse.invalid", "tracker_url" => "", "public_key" => getenv("SP_PK"), "tracker_enabled" => true, "consent_mode" => "off", "auto_analyze" => false]); update_option("sitepulse_secret", getenv("SP_SK"));'
+          wp eval 'PhpFasty\Module\SitePulse\Tracker::print();' > /tmp/sp-off.html
+          grep -qF "<script src=\"https://pulse.invalid/sitepulse.js\" data-site=\"$SP_PK\" defer></script>" /tmp/sp-off.html
+          wp eval '$s = get_option("sitepulse_settings"); $s["consent_mode"] = "require"; update_option("sitepulse_settings", $s); PhpFasty\Module\SitePulse\Tracker::print();' > /tmp/sp-require.html
+          grep -q 'id="sitepulse-consent-loader"' /tmp/sp-require.html
+          ! grep -q '<script src="https://pulse.invalid/sitepulse.js"' /tmp/sp-require.html
+          # FRA (EU) preset: tag on the tracker origin, consent mode switched on by choosing the region
+          wp eval '$o = get_option("sitepulse_settings"); $o["consent_mode"] = "off"; [$out] = PhpFasty\Module\SitePulse\Domain\Settings::sanitize(["region" => "fra", "consent_mode" => "off", "public_key" => getenv("SP_PK"), "tracker_enabled" => "1"], PhpFasty\Module\SitePulse\Domain\Settings::fromStored($o)); update_option("sitepulse_settings", $out); PhpFasty\Module\SitePulse\Tracker::print();' > /tmp/sp-fra.html
+          grep -qF '"src":"https://events.yself.link/sitepulse.js"' /tmp/sp-fra.html
+          test "$(wp eval 'echo get_option("sitepulse_settings")["server_url"];')" = "https://pulse.yself.link"
+          ! grep -q "$SP_SK" /tmp/sp-off.html /tmp/sp-require.html /tmp/sp-fra.html
+          wp eval '$s = get_option("sitepulse_settings"); $s["region"] = "custom"; $s["server_url"] = "https://pulse.invalid"; update_option("sitepulse_settings", $s);'
+          wp eval 'foreach (["/sitepulse/v1/analyze", "/sitepulse/v1/status"] as $r) { if (!isset(rest_get_server()->get_routes()[$r])) { echo "missing $r\n"; exit(1); } } echo "routes ok\n";'
+          # anonymous → 401; admin with an unreachable server → sitepulse_unreachable (502), never the secret
+          wp eval '$q = new WP_REST_Request("POST", "/sitepulse/v1/analyze"); $q->set_param("post_id", 1); $q->set_param("html", "<p>x</p>"); $r = rest_do_request($q); echo $r->get_status(), "\n"; exit(401 === $r->get_status() ? 0 : 1);'
+          wp eval --user=admin '$q = new WP_REST_Request("POST", "/sitepulse/v1/analyze"); $q->set_param("post_id", 1); $q->set_param("html", "<p>x</p>"); $r = rest_do_request($q); $j = wp_json_encode($r->get_data()); echo $r->get_status(), " ", $j, "\n"; exit(502 === $r->get_status() && str_contains($j, "sitepulse_unreachable") && !str_contains($j, getenv("SP_SK")) ? 0 : 1);'
+          wp eval 'global $wpdb; $a = $wpdb->get_var("SELECT autoload FROM {$wpdb->options} WHERE option_name = '"'"'sitepulse_secret'"'"'"); echo "secret autoload: $a\n"; exit(in_array($a, ["off", "no", "auto-off"], true) ? 0 : 1);'
       - name: Types module — old schema → migrate → switch theme → back, disable/enable, prune (meta intact)
         working-directory: site
         run: |
