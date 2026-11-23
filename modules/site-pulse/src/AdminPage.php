@@ -12,6 +12,7 @@ namespace PhpFasty\Module\SitePulse;
 use PhpFasty\Module\SitePulse\Domain\ApiKey;
 use PhpFasty\Module\SitePulse\Domain\ConsentMode;
 use PhpFasty\Module\SitePulse\Domain\InvalidInputException;
+use PhpFasty\Module\SitePulse\Domain\Region;
 use PhpFasty\Module\SitePulse\Domain\Settings;
 
 final class AdminPage
@@ -91,9 +92,23 @@ final class AdminPage
         settings_fields(self::GROUP);
         echo '<table class="form-table" role="presentation">';
 
-        echo '<tr><th scope="row"><label for="sitepulse-server">'.esc_html__('Server URL', 'moduly').'</label></th><td>';
+        echo '<tr><th scope="row">'.esc_html__('Region', 'moduly').'</th><td><fieldset id="sitepulse-region">';
+        foreach (Region::cases() as $region) {
+            $hint = Region::Custom === $region
+                ? __('your own diagd (e.g. http://localhost:8080 for both URLs with diagd --demo)', 'moduly')
+                : $region->apiUrl().' · '.$region->trackerUrl();
+            echo '<label><input type="radio" name="'.esc_attr($name('region')).'" value="'.esc_attr($region->value).'"'.checked($s->region->value, $region->value, false).'> <strong>'.esc_html($region->label()).'</strong> <span class="description">'.esc_html($hint).'</span></label><br>';
+        }
+        echo '<p class="description">'.esc_html__('Each SitePulse server has two origins: the studio/API (used by this site with the secret key) and the tracker/ingest host (sitepulse.js and events, public key). Choosing the EU preset switches the tracker to consent mode.', 'moduly').'</p>';
+        echo '</fieldset></td></tr>';
+
+        echo '<tr class="sitepulse-custom"><th scope="row"><label for="sitepulse-server">'.esc_html__('Studio / API URL', 'moduly').'</label></th><td>';
         echo '<input type="url" class="regular-text code" id="sitepulse-server" name="'.esc_attr($name('server_url')).'" value="'.esc_attr($s->serverUrl).'" placeholder="https://pulse.example.com">';
-        echo '<p class="description">'.esc_html__('SitePulse API (diagd). https only; http is accepted for localhost during development.', 'moduly').'</p></td></tr>';
+        echo '<p class="description">'.esc_html__('Used server-side for /v1/analyze and the other API calls with the secret key. https only; http is accepted for localhost during development.', 'moduly').'</p></td></tr>';
+
+        echo '<tr class="sitepulse-custom"><th scope="row"><label for="sitepulse-tracker-url">'.esc_html__('Tracker / ingest URL', 'moduly').'</label></th><td>';
+        echo '<input type="url" class="regular-text code" id="sitepulse-tracker-url" name="'.esc_attr($name('tracker_url')).'" value="'.esc_attr($s->trackerUrl).'" placeholder="https://events.example.com">';
+        echo '<p class="description">'.esc_html__('Origin of sitepulse.js; the tracker sends events to the same origin (/v1/ingest). Empty: same as the Studio / API URL.', 'moduly').'</p></td></tr>';
 
         echo '<tr><th scope="row"><label for="sitepulse-secret">'.esc_html__('Secret key', 'moduly').'</label></th><td>';
         echo '<input type="password" class="regular-text code" id="sitepulse-secret" name="'.esc_attr(Options::SECRET).'[new]" value="" autocomplete="new-password" spellcheck="false" placeholder="'.esc_attr('' === $mask ? 'sk_live_…' : $mask).'">';
@@ -120,8 +135,6 @@ final class AdminPage
             __('Add %s to the allowed origins of this site in the SitePulse studio, otherwise events are rejected (403).', 'moduly'),
             $origin
         )).'</p>';
-        echo '<p><label for="sitepulse-tracker-url">'.esc_html__('Tracker / ingest URL (optional)', 'moduly').'</label><br>';
-        echo '<input type="url" class="regular-text code" id="sitepulse-tracker-url" name="'.esc_attr($name('tracker_url')).'" value="'.esc_attr($s->trackerUrl).'" placeholder="'.esc_attr__('same as the server URL', 'moduly').'"></p>';
         echo '</td></tr>';
 
         echo '<tr><th scope="row">'.esc_html__('Cookie consent', 'moduly').'</th><td><fieldset>';

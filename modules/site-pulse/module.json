@@ -19,6 +19,8 @@
         "capabilities": []
     },
     "permissions": [
+        "http:outbound:pulse.yself.link",
+        "http:outbound:pulse.yself.ru.net",
         "http:outbound:127.0.0.1",
         "db:options",
         "db:postmeta",

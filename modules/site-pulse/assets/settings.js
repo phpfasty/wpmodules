@@ -1,6 +1,14 @@
-/* SitePulse settings page: "Test connection" → GET /wp-json/sitepulse/v1/status (manage_options, wp_rest nonce). */
+/* SitePulse settings page: region presets; "Test connection" → GET /wp-json/sitepulse/v1/status (manage_options, wp_rest nonce). */
 (function () {
 	'use strict';
+	// Region presets: the URL fields apply to "Custom" only (the server ignores them for presets).
+	var region = document.getElementById('sitepulse-region');
+	function sync() {
+		var r = region && region.querySelector('input:checked');
+		var custom = !r || r.value === 'custom';
+		document.querySelectorAll('.sitepulse-custom input').forEach(function (i) { i.disabled = !custom; });
+	}
+	if (region) { region.addEventListener('change', sync); sync(); }
 	var btn = document.getElementById('sitepulse-test');
 	var out = document.getElementById('sitepulse-test-result');
 	if (!btn || !out || !window.wp || !window.wp.apiFetch) { return; }

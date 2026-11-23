@@ -2,8 +2,20 @@
 
 Connects a WordPress site to a [SitePulse](https://github.com/fastygo/site-pulse) server (`diagd` 0.1.0):
 
-- **Settings → SitePulse** (`manage_options`): server URL, secret key `sk_live_…`, public key `pk_live_…`, tracker
-  on/off, optional tracker/ingest URL, cookie-consent mode, automatic re-analysis.
+- **Settings → SitePulse** (`manage_options`): region preset, Studio/API URL, Tracker/ingest URL, secret key
+  `sk_live_…`, public key `pk_live_…`, tracker on/off, cookie-consent mode, automatic re-analysis.
+
+  Every SitePulse server has two origins:
+
+  | Region | Studio / API (PHP proxy, `sk_live_`) | Tracker / ingest (`sitepulse.js`, `POST /v1/ingest`, `pk_live_`) |
+  |---|---|---|
+  | FRA (EU) — consent mode is switched on when chosen | `https://pulse.yself.link` | `https://events.yself.link` |
+  | RU | `https://pulse.yself.ru.net` | `https://events.yself.ru.net` |
+  | Custom (e.g. local `diagd --demo`) | e.g. `http://localhost:8080` | e.g. `http://localhost:8080` (empty = API URL) |
+
+  The proxy calls only the API origin; the tag is rendered only with the tracker origin. `sitepulse.js` derives its
+  ingest endpoint from its own script origin (`new URL(script.src).origin + "/v1/ingest"`, key from `data-site`), so
+  the tag's `src` on the tracker host is all it needs.
 - **Editor sidebar** (Gutenberg, `PluginSidebar`): up to 5 focus keywords (post meta `_sitepulse_keywords`), *Analyze*
   (optionally debounced while typing), score 0–100, findings grouped fail / warn / pass / not measured, and
   highlighting of `spans` in the editor canvas. *In SitePulse*: score history and internal-link ideas when the studio
@@ -34,8 +46,8 @@ WordPress REST stays enabled: the studio imports posts through `wp-json` (`POST 
   `sitepulse_bad_request` (400/422 → 422), `sitepulse_too_large` (413), `sitepulse_rate_limited` (429, `retry_after`),
   `sitepulse_upstream` (other → 502), `sitepulse_unreachable` (transport → 502), `sitepulse_not_configured` (503).
   Key-like strings in upstream messages are replaced with `[key]`.
-- `module.json` declares `http:outbound:127.0.0.1` (local `diagd`); the production SitePulse host is chosen by the
-  administrator, which ModulY permissions (`http:outbound:<fixed host>`) cannot express yet.
+- `module.json` declares `http:outbound:` for the two preset API hosts and `127.0.0.1` (local `diagd`). A Custom
+  API host is chosen by the administrator, which ModulY permissions (`http:outbound:<fixed host>`) cannot express.
 - While the module is disabled ModulY answers `sitepulse/v1` with 503 and prints no tag; settings and meta stay.
 
 ## Cookie consent

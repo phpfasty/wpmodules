@@ -8,6 +8,7 @@ use PhpFasty\Module\SitePulse\Domain\ApiKey;
 use PhpFasty\Module\SitePulse\Domain\ConsentMode;
 use PhpFasty\Module\SitePulse\Domain\InvalidInputException;
 use PhpFasty\Module\SitePulse\Domain\Keywords;
+use PhpFasty\Module\SitePulse\Domain\Region;
 use PhpFasty\Module\SitePulse\Domain\ServerUrl;
 use PhpFasty\Module\SitePulse\Domain\Settings;
 use PhpFasty\Module\SitePulse\Domain\TrackerTag;
@@ -228,6 +229,7 @@ final class SitePulseConfigTest extends TestCase
         ], $prev);
         $this->assertSame([], $errors);
         $this->assertSame([
+            'region' => 'custom',
             'server_url' => 'https://new.example.com',
             'tracker_url' => '',
             'public_key' => self::pk(),
@@ -253,6 +255,53 @@ final class SitePulseConfigTest extends TestCase
         $this->assertFalse($out['tracker_enabled']);
         $this->assertFalse($out['auto_analyze']);
         $this->assertSame('off', $out['consent_mode']);
+    }
+
+    public function testRegionPresets(): void
+    {
+        $this->assertSame(Region::Fra, Region::fromInput('fra'));
+        $this->assertSame(Region::Ru, Region::fromInput('ru'));
+        $this->assertSame(Region::Custom, Region::fromInput('custom'));
+        $this->assertSame(Region::Custom, Region::fromInput('FRA'));
+        $this->assertSame(Region::Custom, Region::fromInput(null));
+        $this->assertSame(['https://pulse.yself.link', 'https://events.yself.link', 'FRA (EU)', true], [Region::Fra->apiUrl(), Region::Fra->trackerUrl(), Region::Fra->label(), Region::Fra->requiresConsent()]);
+        $this->assertSame(['https://pulse.yself.ru.net', 'https://events.yself.ru.net', 'RU', false], [Region::Ru->apiUrl(), Region::Ru->trackerUrl(), Region::Ru->label(), Region::Ru->requiresConsent()]);
+        $this->assertSame(['', '', 'Custom', false], [Region::Custom->apiUrl(), Region::Custom->trackerUrl(), Region::Custom->label(), Region::Custom->requiresConsent()]);
+        foreach ([Region::Fra, Region::Ru] as $r) {
+            $this->assertSame($r->apiUrl(), ServerUrl::fromString($r->apiUrl())->base());
+            $this->assertSame($r->trackerUrl(), ServerUrl::fromString($r->trackerUrl())->base());
+        }
+    }
+
+    public function testPresetSettingsUseBothOrigins(): void
+    {
+        $s = Settings::fromStored(['region' => 'fra', 'server_url' => 'https://stale.example', 'tracker_url' => '', 'public_key' => self::pk(), 'tracker_enabled' => true]);
+        $this->assertSame(Region::Fra, $s->region);
+        $this->assertSame('https://pulse.yself.link', $s->server()?->base());
+        $this->assertSame('https://events.yself.link/sitepulse.js', $s->trackerTag()?->src);
+        $tag = $s->trackerTag();
+        $this->assertSame('<script src="https://events.yself.link/sitepulse.js" data-site="'.self::pk().'" defer></script>', $tag->html());
+        $ru = Settings::fromStored(['region' => 'ru', 'public_key' => self::pk(), 'tracker_enabled' => true]);
+        $this->assertSame('https://pulse.yself.ru.net', $ru->serverUrl);
+        $this->assertSame('https://events.yself.ru.net', $ru->trackerUrl);
+        $local = Settings::fromStored(['region' => 'custom', 'server_url' => 'http://localhost:8080', 'tracker_url' => 'http://localhost:8080']);
+        $this->assertSame('http://localhost:8080', $local->server()?->base());
+        $this->assertSame('http://localhost:8080', $local->trackerServer()?->base());
+    }
+
+    public function testPresetSanitize(): void
+    {
+        $custom = Settings::fromStored(['region' => 'custom', 'server_url' => 'http://localhost:8080', 'consent_mode' => 'off']);
+        [$out, $errors] = Settings::sanitize(['region' => 'fra', 'server_url' => 'http://evil.example', 'tracker_url' => 'ftp://x', 'consent_mode' => 'off'], $custom);
+        $this->assertSame([], $errors);
+        $this->assertSame(['fra', 'https://pulse.yself.link', 'https://events.yself.link', 'require'], [$out['region'], $out['server_url'], $out['tracker_url'], $out['consent_mode']]);
+        $fra = Settings::fromStored($out);
+        [$out] = Settings::sanitize(['region' => 'fra', 'consent_mode' => 'off'], $fra);
+        $this->assertSame('off', $out['consent_mode'], 'EU preset only switches consent on when it is chosen');
+        [$out] = Settings::sanitize(['region' => 'ru', 'consent_mode' => 'off'], $custom);
+        $this->assertSame(['ru', 'https://pulse.yself.ru.net', 'https://events.yself.ru.net', 'off'], [$out['region'], $out['server_url'], $out['tracker_url'], $out['consent_mode']]);
+        [$out] = Settings::sanitize(['region' => 'custom', 'server_url' => 'http://localhost:8080', 'tracker_url' => 'http://localhost:8080/'], $fra);
+        $this->assertSame(['custom', 'http://localhost:8080', 'http://localhost:8080'], [$out['region'], $out['server_url'], $out['tracker_url']]);
     }
 
     private static function sk(): string
