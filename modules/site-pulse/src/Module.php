@@ -26,6 +26,8 @@ final class Module implements ModuleInterface
         $host->on('action', 'admin_menu', [AdminPage::class, 'menu']);
         $host->on('action', 'admin_init', [AdminPage::class, 'registerSettings']);
         $host->on('action', 'admin_init', [Tracker::class, 'privacyText']);
+        // The secret is never autoloaded, even when the Settings API creates the option on first save.
+        $host->on('filter', 'wp_default_autoload_value', [Options::class, 'secretAutoload'], 10, 2);
     }
 
     public function activate(ModuleContext $context): void

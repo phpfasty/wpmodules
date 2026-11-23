@@ -58,6 +58,13 @@ final class Options
     {
         if (false === get_option(self::SECRET, false)) {
             add_option(self::SECRET, '', '', false);
+        } else {
+            wp_set_option_autoload(self::SECRET, false);
         }
+    }
+
+    public static function secretAutoload(mixed $autoload, mixed $option): mixed
+    {
+        return self::SECRET === $option ? false : $autoload;
     }
 }
