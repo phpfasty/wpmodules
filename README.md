@@ -22,6 +22,11 @@ Monorepo of the WordPress side of [phpfasty/moduly](https://github.com/phpfasty/
   plugin resume, data intact (`tests/wp/types-roundtrip.sh` in CI).
 - `modules/licenses` — license tiers of digital products (types field `license_tiers`, prices in cents, first =
   default): the picker inside the add-to-cart form and a "what each license allows" comparison.
+- `modules/site-pulse` — SitePulse (fastygo/site-pulse) client: Settings → SitePulse (region preset FRA (EU) / RU /
+  Custom with separate Studio/API and Tracker/ingest origins, masked secret key), the install snippet in `wp_head`
+  gated by cookie consent, and a Gutenberg sidebar (focus keywords, score, issues, span highlighting) backed by an
+  `edit_post`-guarded REST proxy to `POST /v1/analyze` — the secret stays server-side. See
+  [modules/site-pulse/README.md](modules/site-pulse/README.md).
 - Slots: modules add views to the latte-shop extension points without template overrides — filter `wpfasty_slots`
   (name → list of `['view' => 'moduly/<id>/<view>', 'data' => …]`) and their `views/` dir via `wpfasty_view_roots`
   (Latte `.latte` + Twig `.html.twig` twins): `product.purchase` (licenses picker), `product.after` (licenses
